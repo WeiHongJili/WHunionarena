@@ -55,14 +55,12 @@
         .board-wrapper::-webkit-scrollbar-track { background: #1a0808; border-radius: 5px; }
         .board-wrapper::-webkit-scrollbar-thumb { background: #f1c40f; border-radius: 5px; }
 
-        .game-table { min-width: 900px; width: 100%; display: flex; flex-direction: column; align-items: center; gap: 0; margin: 0 auto; }
+        .game-table { min-width: 950px; width: 100%; display: flex; flex-direction: column; align-items: center; gap: 0; margin: 0 auto; }
 
-        /* === 🌌 究極相連 2.5D 高級桌墊 (無文字、帶漸層陰影) === */
         .battlefield { display: flex; flex-direction: column; width: 100%; background: linear-gradient(145deg, #1c2833, #2c0e0e); border: 3px solid #d32f2f; border-radius: 15px; box-shadow: inset 0 0 40px rgba(0,0,0,0.9), 0 15px 30px rgba(0,0,0,0.9); position: relative; overflow: hidden; }
         
         .playmat { display: grid; grid-template-columns: calc(var(--card-w) + 1vw) auto calc(var(--card-w) + 1vw); gap: 2vw; padding: 2vh 2vw; width: 100%; box-sizing: border-box; }
         
-        /* 低調的發光分隔線 */
         .board-divider { width: 100%; height: 2px; background: rgba(241, 196, 15, 0.3); box-shadow: 0 0 10px rgba(241, 196, 15, 0.6); }
 
         .line-label { color: rgba(255,255,255,0.8); font-size: var(--font-size-base); font-weight: bold; text-align: center; margin: 0.3vh 0; letter-spacing: 1px; text-shadow: 1px 1px 3px black; z-index: 1;}
@@ -71,9 +69,9 @@
         .side-zone { display: flex; flex-direction: column; gap: var(--gap-size); height: 100%; z-index: 1; justify-content: space-between; } 
         .card-row { display: flex; gap: calc(var(--gap-size) * 1.5); }
 
-        /* ✨ 高級金色邊框的卡槽 */
+        /* 🩸 生命區長方形特化 (垂直發展) */
         .slot { width: var(--card-w); height: var(--card-h); background-color: rgba(0,0,0,0.5); border: 2px dashed rgba(241, 196, 15, 0.5); border-radius: 6px; box-shadow: inset 0 0 15px rgba(0,0,0,0.8); position: relative; display: flex; justify-content: center; align-items: center; }
-        .slot.life-slot { width: calc(var(--card-h) * 1.6); height: var(--card-w); justify-content: flex-start; padding-left: 5px; } 
+        .slot.life-slot { width: var(--card-h); height: calc(var(--card-w) + 15vh); justify-content: flex-start; align-items: flex-start; } 
         
         .slot::after { content: attr(data-count); position: absolute; top: -5px; right: -5px; background-color: #e74c3c; color: white; border-radius: 50%; width: min(2.5vh, 22px); height: min(2.5vh, 22px); display: flex; justify-content: center; align-items: center; font-size: var(--font-size-base); opacity: 0; transition: opacity 0.2s; z-index: 999; font-weight: bold; box-shadow: 0 2px 5px rgba(0,0,0,0.5); }
         .slot:hover::after { opacity: 1; }
@@ -97,6 +95,9 @@
         .card-back { transform: rotateY(180deg); background: linear-gradient(135deg, #8b1515, #5c0a0a); border: 2px solid #fff; box-sizing: border-box; display: flex; justify-content: center; align-items: center; color: white; font-weight: bold; font-size: var(--font-size-base); text-align: center; line-height: 1.2; }
         .ap-card .card-back { background: linear-gradient(135deg, #2c3e50, #1a252f); border-color: #f39c12; }
         
+        /* 🔒 絕對防走光結界：對手的手牌區，強制覆蓋為翻面背面狀態！ */
+        #opp-hand-area .card-inner { transform: rotateY(180deg) !important; }
+
         .card.dragging { transform: scale(1.15) rotate(5deg) !important; z-index: 9999 !important; transition: none; box-shadow: 0 15px 30px rgba(0,0,0,0.9); }
         .card.stack-glowing { box-shadow: 0 0 15px 5px #f1c40f !important; }
         .card.rest { transform: rotate(90deg); }
@@ -113,7 +114,7 @@
 
         #mulligan-modal { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(0,0,0,0.95); border: 3px solid #f39c12; padding: 30px; border-radius: 15px; z-index: 10005; text-align: center; box-shadow: 0 0 30px rgba(243, 156, 18, 0.5); width: 90%; max-width: 400px;}
 
-        /* 🔍 全局放大鏡：固定在左下角，絕不擋視線 */
+        /* 🔍 全局放大鏡 */
         #card-magnifier { position: fixed; left: 2vw; bottom: 2vh; width: calc(var(--card-w) * 2.5); height: calc(var(--card-h) * 2.5); background: #111; border: 3px solid #f39c12; border-radius: 10px; display: none; z-index: 10010; pointer-events: none; box-shadow: 0 10px 30px rgba(0,0,0,0.9); overflow: hidden; }
         #card-magnifier img { width: 100%; height: 100%; object-fit: cover; }
     </style>
@@ -416,6 +417,7 @@
             updateDeckSelector(); initSeriesFilter(); renderBuilder(); renderDeck(); 
         };
 
+        // ================= 網路連線引擎 =================
         let peer = new Peer({ config: { 'iceServers': [ { urls: 'stun:stun.l.google.com:19302' }, { urls: 'stun:stun1.l.google.com:19302' }, { urls: 'stun:stun2.l.google.com:19302' }, { urls: 'turn:openrelay.metered.ca:80', username: 'openrelayproject', credential: 'openrelayproject' }, { urls: 'turn:openrelay.metered.ca:443', username: 'openrelayproject', credential: 'openrelayproject' } ] } });
         let conn = null; let isConnected = false;
 
@@ -546,11 +548,17 @@
             recalcStacking(deckArea); recalcStacking(lifeArea); updateSlotCounts(); broadcastMyState(); showSysMsg("🎯 對戰開始！");
         }
 
+        // 🌟 生命區幾何重新計算，完美呈現階梯式堆疊
         function applyStackingStyle(card, slotBelow, myIndex) {
             if (!slotBelow) return;
             card.style.zIndex = myIndex;
             if (slotBelow.id.includes('deck') || slotBelow.id.includes('outside') || slotBelow.id.includes('remove') || slotBelow.id.includes('public') || slotBelow.id.includes('ap')) { card.style.left='0px'; card.style.top='0px'; }
-            else if (slotBelow.id.includes('life')) { card.style.left=(myIndex * (card.offsetWidth * 0.28))+'px'; card.style.top='0px'; card.classList.add('in-life'); card.classList.remove('rest');}
+            else if (slotBelow.id.includes('life')) { 
+                card.style.left = 'calc((var(--card-h) - var(--card-w)) / 2)'; 
+                card.style.top = `calc((var(--card-w) - var(--card-h)) / 2 + ${myIndex * 2.5}vh)`; 
+                card.classList.add('in-life'); 
+                card.classList.remove('rest');
+            }
             else if (slotBelow.classList.contains('slot')) { card.style.left=(myIndex*4)+'px'; card.style.top=(myIndex*12)+'px'; } 
         }
         function recalcStacking(areaElement) { if(!areaElement || areaElement.id.includes('hand') || areaElement.id.includes('look')) return; Array.from(areaElement.querySelectorAll('.card')).forEach((c, idx) => applyStackingStyle(c, areaElement, idx)); }
@@ -563,7 +571,6 @@
                 
                 clearTimeout(magnifyTimer); document.getElementById('card-magnifier').style.display = 'none';
 
-                // 🌟 長按堆疊：容錯率增加，0.3秒觸發
                 var longPressTimer = setTimeout(() => {
                     if(!isDragging && originalParent && originalParent.classList.contains('slot')) {
                         isStackDrag = true; originalParent.querySelectorAll('.card').forEach(c => c.classList.add('stack-glowing'));
@@ -581,7 +588,6 @@
                     let curPageX = event.type.includes('touch') ? event.touches[0].pageX : event.pageX;
                     let curPageY = event.type.includes('touch') ? event.touches[0].pageY : event.pageY;
 
-                    // 加大防手震判斷，超過 8 px 才算移動
                     if (!isDragging && (Math.abs(curPageX - startPageX) > 8 || Math.abs(curPageY - startPageY) > 8)) {
                         isDragging = true; if(typeof longPressTimer !== 'undefined') clearTimeout(longPressTimer);
                         if (isStackDrag) {
@@ -615,7 +621,6 @@
                     if (!isDragging) {
                         if(originalParent) originalParent.querySelectorAll('.card').forEach(c => c.classList.remove('stack-glowing'));
                         
-                        // 🌟 強制直立：這些區域不允許被橫置
                         let noRestZones = ['hand', 'look', 'outside', 'deck', 'remove', 'public'];
                         let canRest = !noRestZones.some(z => originalParent.id.includes(z));
                         if (!cardElement.classList.contains('in-life') && canRest) {
@@ -630,7 +635,6 @@
                         let elemBelow = document.elementFromPoint(endX, endY);
                         cardsToDrop.forEach(c => c.style.display = 'block'); 
                         
-                        // 🌟 支援丟入雙層 Modal
                         let dropZone = elemBelow ? elemBelow.closest('.slot, .hand-area, .look-area, #modal-cards-container, #modal-public-container') : null;
                         
                         if(dropZone && dropZone.id.includes('opp-')) dropZone = null;
@@ -666,7 +670,6 @@
                         if (dropZone.id.includes('deck')) { if (originalParent && originalParent.id.includes('public')) c.classList.remove('is-flipped'); else c.classList.add('is-flipped'); } 
                         else if (dropZone.id.includes('public') || dropZone.id.includes('modal-public')) c.classList.remove('is-flipped');
                         
-                        // 🌟 強制直立
                         if (dropZone.id.includes('outside') || dropZone.id.includes('remove') || dropZone.id.includes('deck') || dropZone.id.includes('public')) {
                             c.classList.remove('rest');
                         } else if (dropZone.closest('#my-front-line, #my-energy-line')) { let fromField = originalParent && originalParent.closest('#my-front-line, #my-energy-line'); if (!fromField) c.classList.add('rest'); }
@@ -691,16 +694,17 @@
 
         let hoveredCard = null, hoveredSlot = null, magnifyTimer = null;
         document.addEventListener('mouseover', e => {
-            // 🌟 移到對手卡片也能觸發
             let card = e.target.closest('.card'), slot = e.target.closest('.slot'); if(slot) hoveredSlot = slot;
             if(card) {
                 hoveredCard = card;
                 clearTimeout(magnifyTimer);
                 magnifyTimer = setTimeout(() => {
+                    // 對手手牌不給放大
+                    if(card.parentElement && card.parentElement.id.includes('opp-hand')) return;
                     if(card.classList.contains('is-flipped')) return;
                     let frontImg = card.querySelector('.card-front img'), magView = document.getElementById('card-magnifier'), magImg = document.getElementById('magnifier-img');
                     if(frontImg && magView && magImg) { magImg.src = frontImg.src; magView.style.display = 'block'; }
-                }, 1000); // 🌟 1秒放大
+                }, 1000); 
             }
         });
         document.addEventListener('mouseout', e => { 
@@ -742,7 +746,6 @@
         const modal = document.getElementById('search-modal'), modalContainer = document.getElementById('modal-cards-container'), modalTitle = document.getElementById('modal-title');
         let currentModalSourceSlot = null;
         
-        // 🌟 對手、公開區全解鎖
         document.querySelectorAll('#my-outside-area, #my-remove-area, #my-life-area, #my-public-area, #opp-outside-area, #opp-remove-area, #opp-life-area, #opp-public-area').forEach(zone => {
             zone.addEventListener('contextmenu', e => {
                 e.preventDefault(); 
@@ -750,7 +753,6 @@
                 if (cards.length === 0 && !zone.id.includes('outside') && !zone.id.includes('public')) return; 
                 currentModalSourceSlot = zone;
                 
-                // 🌟 雙開 Modal 特製：場外 ↔ 公開
                 if(zone.id.includes('outside')) {
                     modalTitle.innerText = `檢索中：場外 (${cards.length}張)`;
                     if(zone.id.includes('my-')) {
@@ -768,8 +770,8 @@
                 
                 cards.forEach(card => { 
                     modalContainer.appendChild(card); 
-                    if(!zone.id.includes('life')) card.classList.remove('is-flipped'); else card.classList.add('is-flipped'); 
-                    // 🌟 清除旋轉與重疊
+                    // 🌟 進入 Modal 時取消旋轉、重疊與倒置，乖乖排正
+                    if(!zone.id.includes('life')) card.classList.remove('is-flipped'); 
                     card.classList.remove('rest', 'in-life'); 
                     card.style.position = 'relative'; card.style.left = '0px'; card.style.top = '0px'; card.style.transform = 'none';
                 });
@@ -786,7 +788,6 @@
             }
         });
 
-        // 🌟 關閉 Modal：物歸原主
         document.getElementById('close-modal-btn').addEventListener('click', () => {
             Array.from(modalContainer.querySelectorAll('.card')).forEach((card, index) => { 
                 currentModalSourceSlot.appendChild(card); card.style.position = 'absolute'; applyStackingStyle(card, currentModalSourceSlot, index); 
