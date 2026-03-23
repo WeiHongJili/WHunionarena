@@ -50,7 +50,6 @@
         .import-section { background: rgba(155, 89, 182, 0.2); border: 2px dashed #9b59b6; padding: 10px; border-radius: 8px; margin-bottom: 15px; display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
         .import-textarea { flex: 1; min-width: 200px; height: 35px; background: #2c3e50; color: white; border: 1px solid #34495e; border-radius: 4px; padding: 8px; font-family: monospace; resize: none; outline: none; }
 
-        /* 📱 隱藏原本黃色捲軸，畫面更純淨 */
         .board-wrapper { width: 100%; overflow-x: auto; overflow-y: hidden; padding-bottom: 10px; scrollbar-width: none; }
         .board-wrapper::-webkit-scrollbar { display: none; }
 
@@ -70,7 +69,6 @@
 
         .slot { width: var(--card-w); height: var(--card-h); background-color: rgba(0,0,0,0.5); border: 2px dashed rgba(241, 196, 15, 0.5); border-radius: 6px; box-shadow: inset 0 0 15px rgba(0,0,0,0.8); position: relative; display: flex; justify-content: center; align-items: center; }
         
-        /* 🩸 生命區長方形特化：底座變成橫置形狀！ */
         .slot.life-slot { width: var(--card-h); height: var(--card-w); } 
         
         .slot::after { content: attr(data-count); position: absolute; top: -5px; right: -5px; background-color: #e74c3c; color: white; border-radius: 50%; width: min(2.5vh, 22px); height: min(2.5vh, 22px); display: flex; justify-content: center; align-items: center; font-size: var(--font-size-base); opacity: 0; transition: opacity 0.2s; z-index: 999; font-weight: bold; box-shadow: 0 2px 5px rgba(0,0,0,0.5); }
@@ -82,7 +80,6 @@
         .look-zone { flex: 3; background-color: rgba(0,50,100,0.6); border: 2px dashed #3498db; border-radius: 10px; padding: 1vh; display: flex; flex-direction: column;}
         .hand-area, .look-area { display: flex; flex-wrap: wrap; gap: var(--gap-size); width: 100%; min-height: var(--card-h); align-items: center; justify-content: center;}
 
-        /* 🃏 卡片懸浮立體感 */
         .card { width: var(--card-w); height: var(--card-h); border-radius: 6px; box-shadow: 0 4px 8px rgba(0,0,0,0.8); cursor: grab; transition: transform 0.2s ease-out; position: absolute; perspective: 1000px; touch-action: none;}
         .hand-area .card, .look-area .card { position: relative; left: 0 !important; top: 0 !important; margin-left: -20px;}
         .hand-area .card:first-child, .look-area .card:first-child { margin-left: 0; }
@@ -95,7 +92,7 @@
         .card-back { transform: rotateY(180deg); background: linear-gradient(135deg, #8b1515, #5c0a0a); border: 2px solid #fff; box-sizing: border-box; display: flex; justify-content: center; align-items: center; color: white; font-weight: bold; font-size: var(--font-size-base); text-align: center; line-height: 1.2; }
         .ap-card .card-back { background: linear-gradient(135deg, #2c3e50, #1a252f); border-color: #f39c12; }
         
-        /* 🔒 絕對防走光結界：對手的手牌區、檢索區，強制覆蓋為翻面背面狀態！ */
+        /* 🔒 絕對防走光結界 */
         #opp-hand-area .card-inner, #opp-look-area .card-inner { transform: rotateY(180deg) !important; }
 
         .card.dragging { transform: scale(1.15) rotate(5deg) !important; z-index: 9999 !important; transition: none; box-shadow: 0 15px 30px rgba(0,0,0,0.9); }
@@ -114,7 +111,6 @@
 
         #mulligan-modal { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(0,0,0,0.95); border: 3px solid #f39c12; padding: 30px; border-radius: 15px; z-index: 10005; text-align: center; box-shadow: 0 0 30px rgba(243, 156, 18, 0.5); width: 90%; max-width: 400px;}
 
-        /* 🔍 全局放大鏡 */
         #card-magnifier { position: fixed; left: 2vw; bottom: 2vh; width: calc(var(--card-w) * 2.5); height: calc(var(--card-h) * 2.5); background: #111; border: 3px solid #f39c12; border-radius: 10px; display: none; z-index: 10010; pointer-events: none; box-shadow: 0 10px 30px rgba(0,0,0,0.9); overflow: hidden; }
         #card-magnifier img { width: 100%; height: 100%; object-fit: cover; }
     </style>
@@ -380,7 +376,6 @@
                     let el = document.createElement('div'); el.className = 'preview-card';
                     el.innerHTML = `<img src="${card.imageUrl}" onerror="this.closest('.preview-card').style.display='none'; window.markCardInvalid('${card.id}');">`;
                     el.onclick = () => { 
-                        // 🌟 AP卡判斷修正：必須包含 -AP
                         if(card.series.includes("AP卡") || card.series.includes("Action Point") || card.id.includes("-AP")) {
                             if(myApData.length < 3) myApData.push({...card}); else alert("AP 卡最多只能配置 3 張！");
                         } else {
@@ -553,15 +548,13 @@
             if (!slotBelow) return;
             card.style.zIndex = myIndex;
             if (slotBelow.id.includes('deck') || slotBelow.id.includes('outside') || slotBelow.id.includes('remove') || slotBelow.id.includes('public') || slotBelow.id.includes('ap')) { card.style.left='0px'; card.style.top='0px'; }
-            
-            // 🌟 橫置生命區排版邏輯完美化：精準對齊左上角，垂直向下堆疊
             else if (slotBelow.id.includes('life')) { 
-                card.style.left = 'calc((var(--card-h) - var(--card-w)) / 2)'; 
+                // 🌟 精準將卡片起點設在長方形最上方，橫躺並垂直向下推疊
+                card.style.left = 'calc((var(--card-h) - var(--card-w)) / 2 * -1)'; 
                 card.style.top = `calc((var(--card-w) - var(--card-h)) / 2 + ${myIndex * 2.5}vh)`; 
                 card.classList.add('in-life'); 
                 card.classList.remove('rest');
             }
-            
             else if (slotBelow.classList.contains('slot')) { card.style.left=(myIndex*4)+'px'; card.style.top=(myIndex*12)+'px'; } 
         }
         function recalcStacking(areaElement) { if(!areaElement || areaElement.id.includes('hand') || areaElement.id.includes('look')) return; Array.from(areaElement.querySelectorAll('.card')).forEach((c, idx) => applyStackingStyle(c, areaElement, idx)); }
@@ -702,7 +695,7 @@
                 hoveredCard = card;
                 clearTimeout(magnifyTimer);
                 magnifyTimer = setTimeout(() => {
-                    // 🔒 放大鏡防偷看結界：絕對不允許放大對手的手牌與檢索區！
+                    // 🔒 防偷看結界：就算游標放上去，也不准放大對手的手牌區或檢索區！
                     if(card.parentElement && (card.parentElement.id.includes('opp-hand') || card.parentElement.id.includes('opp-look'))) return;
                     if(card.classList.contains('is-flipped')) return;
                     let frontImg = card.querySelector('.card-front img'), magView = document.getElementById('card-magnifier'), magImg = document.getElementById('magnifier-img');
@@ -753,23 +746,22 @@
             zone.addEventListener('contextmenu', e => {
                 e.preventDefault(); 
                 let cards = Array.from(zone.querySelectorAll('.card')); 
-                if (cards.length === 0 && !zone.id.includes('outside') && !zone.id.includes('public')) return; 
+                if (cards.length === 0 && !zone.id.includes('outside') && !zone.id.includes('public') && !zone.id.includes('life')) return; 
                 currentModalSourceSlot = zone;
                 
-                if(zone.id.includes('outside')) {
-                    modalTitle.innerText = `檢索中：場外 (${cards.length}張)`;
-                    if(zone.id.includes('my-')) {
-                        document.getElementById('secondary-modal-header').style.display = 'flex';
-                        document.getElementById('modal-public-container').style.display = 'flex';
-                        Array.from(document.getElementById('my-public-area').querySelectorAll('.card')).forEach(c => {
-                            document.getElementById('modal-public-container').appendChild(c);
-                            c.classList.remove('in-life', 'rest', 'is-flipped'); c.style.position = 'relative'; c.style.left = '0'; c.style.top = '0'; c.style.transform = 'none';
-                        });
-                    }
-                }
+                if(zone.id.includes('outside')) modalTitle.innerText = `檢索中：場外 (${cards.length}張)`;
                 else if(zone.id.includes('remove')) modalTitle.innerText = `檢索中：移除區 (${cards.length}張)`;
                 else if(zone.id.includes('public')) modalTitle.innerText = `檢索中：公開區 (${cards.length}張)`;
-                else if(zone.id.includes('life')) modalTitle.innerText = `檢索中：生命區 (點擊卡片翻開公開)`;
+                else if(zone.id.includes('life')) modalTitle.innerText = `檢索中：生命區 (${cards.length}張) (點擊可翻開)`;
+                
+                if(zone.id === 'my-outside-area' || zone.id === 'my-life-area') {
+                    document.getElementById('secondary-modal-header').style.display = 'flex';
+                    document.getElementById('modal-public-container').style.display = 'flex';
+                    Array.from(document.getElementById('my-public-area').querySelectorAll('.card')).forEach(c => {
+                        document.getElementById('modal-public-container').appendChild(c);
+                        c.classList.remove('in-life', 'rest', 'is-flipped'); c.style.position = 'relative'; c.style.left = '0'; c.style.top = '0'; c.style.transform = 'none';
+                    });
+                }
                 
                 cards.forEach(card => { 
                     modalContainer.appendChild(card); 
@@ -794,7 +786,7 @@
             Array.from(modalContainer.querySelectorAll('.card')).forEach((card, index) => { 
                 currentModalSourceSlot.appendChild(card); card.style.position = 'absolute'; applyStackingStyle(card, currentModalSourceSlot, index); 
             });
-            if (currentModalSourceSlot && currentModalSourceSlot.id === 'my-outside-area') {
+            if (currentModalSourceSlot && (currentModalSourceSlot.id === 'my-outside-area' || currentModalSourceSlot.id === 'my-life-area')) {
                 Array.from(document.getElementById('modal-public-container').querySelectorAll('.card')).forEach((card, index) => { 
                     document.getElementById('my-public-area').appendChild(card); card.style.position = 'absolute'; applyStackingStyle(card, document.getElementById('my-public-area'), index); 
                 });
