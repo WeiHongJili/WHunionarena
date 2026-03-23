@@ -1,0 +1,709 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>我的 UA 遠端對戰平台</title>
+    <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
+    <style>
+        /* 🛡️ 新增：user-select: none; 徹底消滅煩人的文字反白！ */
+        body { background-color: #1a0808; margin: 0; min-height: 100vh; font-family: '微軟正黑體', sans-serif; display: flex; flex-direction: column; align-items: center; padding: 20px; box-sizing: border-box; color: white; overflow-x: hidden; touch-action: manipulation; -webkit-user-select: none; -moz-user-select: none; -ms-user-select: none; user-select: none; }
+        
+        /* 讓輸入框維持可以輸入文字的狀態 */
+        input, textarea, select { -webkit-user-select: auto; -moz-user-select: auto; -ms-user-select: auto; user-select: auto; }
+
+        #sys-msg { position: fixed; top: 10px; left: 50%; transform: translateX(-50%); background: #e67e22; padding: 10px 20px; border-radius: 5px; font-weight: bold; display: none; z-index: 10000; box-shadow: 0 4px 10px rgba(0,0,0,0.5); }
+        #builder-scene { width: 100%; max-width: 1200px; display: flex; flex-direction: column; gap: 20px; }
+        #game-scene { display: none; width: 100%; max-width: 1400px; flex-direction: column; align-items: center; gap: 15px; }
+
+        .network-panel { background: rgba(41, 128, 185, 0.2); border: 2px solid #3498db; border-radius: 10px; padding: 15px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; }
+        .network-box { display: flex; gap: 10px; align-items: center; }
+        .network-input { padding: 8px; border-radius: 5px; border: none; font-size: 16px; outline: none; width: 200px; }
+        #my-peer-id { color: #f1c40f; font-weight: bold; font-size: 18px; cursor: pointer; background: rgba(0,0,0,0.5); padding: 5px 10px; border-radius: 5px; }
+
+        .builder-container { display: flex; gap: 20px; height: 68vh; flex-wrap: wrap; }
+        .catalog-panel { flex: 6; min-width: 300px; background: rgba(0,0,0,0.5); border-radius: 10px; padding: 15px; overflow-y: auto; display: flex; flex-direction: column; }
+        .deck-panel { flex: 4; min-width: 300px; background: rgba(139, 21, 21, 0.5); border-radius: 10px; padding: 15px; display: flex; flex-direction: column; border: 2px dashed #d32f2f; }
+        
+        .deck-controls { display: flex; gap: 10px; margin-bottom: 10px; align-items: center; background: rgba(0,0,0,0.3); padding: 10px; border-radius: 8px; flex-wrap: wrap; }
+        .deck-selector { flex: 1; padding: 5px; font-size: 16px; border-radius: 5px; background: #2c3e50; color: white; border: 1px solid #34495e; min-width: 120px; }
+        
+        .catalog-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; flex-wrap: wrap; gap: 10px;}
+        .series-filter { padding: 5px 10px; font-size: 16px; border-radius: 5px; background: #f39c12; color: #1a1a1a; font-weight: bold; border: none; cursor: pointer; outline: none; }
+        
+        .series-title { border-left: 5px solid #f39c12; padding-left: 10px; background: rgba(255,255,255,0.1); padding: 5px; margin: 15px 0 10px 0; font-size: 18px; }
+        .card-grid { display: flex; flex-wrap: wrap; gap: 10px; }
+        .preview-card { width: 80px; height: 112px; border-radius: 5px; cursor: pointer; transition: transform 0.1s; box-shadow: 0 2px 5px rgba(0,0,0,0.5); }
+        .preview-card:hover { transform: scale(1.05); }
+        .preview-card img { width: 100%; height: 100%; object-fit: cover; border-radius: 5px; pointer-events: none; }
+
+        .start-btn { background-color: #2ecc71; color: white; font-size: 20px; font-weight: bold; padding: 15px 30px; border: none; border-radius: 8px; cursor: pointer; }
+        .start-btn:disabled { background-color: #7f8c8d; cursor: not-allowed; }
+        .ctrl-btn { background: #3498db; color: white; border: none; padding: 8px 15px; border-radius: 5px; cursor: pointer; font-weight: bold; }
+        .ctrl-btn.danger { background: #e74c3c; }
+
+        .ap-deck-section { background: rgba(243, 156, 18, 0.2); border: 2px dashed #f39c12; padding: 10px; border-radius: 8px; margin-bottom: 15px; }
+
+        .import-section { background: rgba(155, 89, 182, 0.2); border: 2px dashed #9b59b6; padding: 10px; border-radius: 8px; margin-bottom: 15px; display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+        .import-textarea { flex: 1; min-width: 200px; height: 35px; background: #2c3e50; color: white; border: 1px solid #34495e; border-radius: 4px; padding: 8px; font-family: monospace; resize: none; outline: none; }
+
+        /* 📱 新增：防擠壓的滾動桌面容器 */
+        .board-wrapper { width: 100%; overflow-x: auto; overflow-y: hidden; padding-bottom: 10px; scrollbar-width: thin; scrollbar-color: #e74c3c #1a0808; }
+        .board-wrapper::-webkit-scrollbar { height: 8px; }
+        .board-wrapper::-webkit-scrollbar-track { background: #1a0808; border-radius: 4px; }
+        .board-wrapper::-webkit-scrollbar-thumb { background: #e74c3c; border-radius: 4px; }
+
+        /* 鎖定遊戲桌最小寬度，保證卡片絕對不變形 */
+        .game-table { min-width: 860px; width: 100%; display: flex; flex-direction: column; align-items: center; gap: 15px; margin: 0 auto; }
+
+        .player-board { display: flex; flex-direction: column; align-items: center; gap: 10px; width: 100%; position: relative; }
+        .playmat { background-color: #8b1515; border: 4px solid #d32f2f; border-radius: 15px; padding: 15px; display: grid; grid-template-columns: 110px auto 110px; gap: 15px; width: 100%; box-sizing: border-box; position: relative; }
+        #opp-board .playmat { background-color: #1c2833; border-color: #34495e; }
+        #opp-board { pointer-events: none; } 
+        #opp-board .hand-area .card-front { display: none !important; } 
+        #opp-board .look-zone { visibility: hidden; } 
+
+        .line-label { color: #fff; font-size: 13px; font-weight: bold; text-align: center; margin: 3px 0; text-shadow: 1px 1px 2px black; }
+        .center-zone { display: flex; flex-direction: column; align-items: center; }
+        .side-zone { display: flex; flex-direction: column; gap: 10px;}
+        .card-row { display: flex; gap: 10px; margin-bottom: 8px; }
+
+        .slot { width: 85px; height: 119px; background-color: rgba(255,255,255,0.1); border: 2px dashed rgba(255,255,255,0.5); border-radius: 6px; position: relative; display: flex; justify-content: center; align-items: center; }
+        .slot::after { content: attr(data-count); position: absolute; top: -8px; right: -8px; background-color: #e74c3c; color: white; border-radius: 50%; width: 20px; height: 20px; display: flex; justify-content: center; align-items: center; font-size: 12px; opacity: 0; transition: opacity 0.2s; z-index: 999; font-weight: bold; }
+        .slot:hover::after { opacity: 1; }
+        .slot[data-count="0"]::after, .slot[data-count="1"]::after, .slot:not([data-count])::after { display: none; }
+        
+        .bottom-container { width: 100%; display: flex; gap: 15px; flex-wrap: wrap;}
+        .hand-zone { flex: 7; min-width: 300px; min-height: 140px; background-color: rgba(0,0,0,0.6); border: 2px dashed #7f8c8d; border-radius: 10px; padding: 10px; }
+        .look-zone { flex: 3; min-width: 200px; min-height: 140px; background-color: rgba(0,50,100,0.6); border: 2px dashed #3498db; border-radius: 10px; padding: 10px; }
+        .hand-area, .look-area { display: flex; flex-wrap: wrap; gap: 10px; width: 100%; min-height: 119px; }
+
+        .card { width: 85px; height: 119px; border-radius: 6px; box-shadow: 0 3px 6px rgba(0,0,0,0.5); cursor: grab; transition: transform 0.4s ease-out; position: absolute; perspective: 1000px; touch-action: none;}
+        .hand-area .card, .look-area .card { position: relative; left: 0 !important; top: 0 !important; }
+        .card-inner { position: relative; width: 100%; height: 100%; transition: transform 0.4s; transform-style: preserve-3d; }
+        .card.is-flipped .card-inner { transform: rotateY(180deg); }
+        .card-front, .card-back { position: absolute; width: 100%; height: 100%; backface-visibility: hidden; border-radius: 6px; overflow: hidden; background-color: #2c3e50; }
+        .card-front img { width: 100%; height: 100%; object-fit: cover; pointer-events: none; }
+        .card-back { transform: rotateY(180deg); background-color: #8b1515; border: 3px solid #fff; box-sizing: border-box; display: flex; justify-content: center; align-items: center; color: white; font-weight: bold; font-size: 14px; text-align: center; line-height: 1.2; }
+        .ap-card .card-back { background-color: #2c3e50; border-color: #f39c12; }
+        
+        .card.dragging { transform: scale(1.1) rotate(4deg) !important; z-index: 9999 !important; transition: none; }
+        .card.stack-glowing { box-shadow: 0 0 10px 4px #f1c40f !important; }
+        .card.rest { transform: rotate(90deg); }
+        .card.in-life { transform: rotate(-90deg) !important; }
+        
+        .board-divider { width: 100%; text-align: center; font-size: 20px; font-weight: bold; color: #f39c12; border-top: 2px dashed rgba(255,255,255,0.2); padding-top: 10px; margin: 10px 0; }
+
+        #drop-menu { display: none; position: fixed; z-index: 10001; background: rgba(20,20,20,0.95); border: 2px solid #3498db; border-radius: 8px; padding: 10px; flex-direction: column; gap: 8px; box-shadow: 0 0 15px rgba(52,152,219,0.5); }
+        .menu-title { font-size: 12px; text-align: center; margin-bottom: 5px; font-weight: bold; }
+        .drop-btn { background: #2c3e50; color: white; border: 1px solid #7f8c8d; padding: 8px 15px; cursor: pointer; border-radius: 4px; font-weight: bold; }
+        .drop-btn:hover { background: #34495e; }
+        .drop-btn.cancel { background: #c0392b; border-color: #e74c3c; }
+
+        #search-modal { display: none; position: fixed; z-index: 10000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.85); justify-content: center; align-items: center; flex-direction: column; }
+        .modal-content { background-color: #1a1a1a; border: 4px solid #f39c12; border-radius: 15px; padding: 30px; width: 80%; max-height: 80vh; overflow-y: auto; display: flex; flex-wrap: wrap; gap: 15px; }
+        .modal-header { width: 80%; display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; font-size: 24px; font-weight: bold; flex-wrap: wrap;}
+        #close-modal-btn { background-color: #e74c3c; border: none; color: white; padding: 10px 20px; font-size: 16px; border-radius: 5px; cursor: pointer; }
+
+        #mulligan-modal { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(0,0,0,0.95); border: 3px solid #f39c12; padding: 30px; border-radius: 15px; z-index: 10005; text-align: center; box-shadow: 0 0 30px rgba(243, 156, 18, 0.5); width: 90%; max-width: 400px;}
+
+        #card-magnifier { position: absolute; left: 135px; top: 20px; width: 220px; height: 308px; background: #111; border: 3px solid #f39c12; border-radius: 10px; display: none; z-index: 10010; pointer-events: none; box-shadow: 0 10px 30px rgba(0,0,0,0.9); overflow: hidden; }
+        #card-magnifier img { width: 100%; height: 100%; object-fit: cover; }
+        
+        @media (max-width: 768px) {
+            #card-magnifier { display: none !important; }
+        }
+    </style>
+</head>
+<body>
+
+    <div id="sys-msg">系統訊息</div>
+
+    <div id="builder-scene">
+        <div class="network-panel">
+            <div class="network-box">
+                <span>🟢 你的連線 ID：</span>
+                <span id="my-peer-id">連線伺服器中...</span>
+                <span style="font-size: 12px; color: #bdc3c7;">(點擊複製)</span>
+            </div>
+            <div class="network-box">
+                <input type="text" id="target-id" class="network-input" placeholder="貼上朋友的 ID">
+                <button class="ctrl-btn" id="btn-connect" style="background: #e67e22;">連線加入</button>
+            </div>
+        </div>
+
+        <div class="builder-header">
+            <h2>🛠️ 牌組構築中心</h2>
+            <div style="display: flex; align-items: center; gap: 20px;">
+                <button class="start-btn" id="start-game-btn" disabled>等待連線成功後開始 ➔</button>
+            </div>
+        </div>
+        <div class="builder-container">
+            <div class="catalog-panel">
+                
+                <div class="import-section">
+                    <h4 style="margin: 0; color: #9b59b6; width: 100%;">✨ 魔法一鍵匯入 (可貼上整段牌表代碼，自動萃取)</h4>
+                    <input type="text" id="import-series-name" placeholder="作品名稱 (例: 咒術迴戰)" class="network-input" style="width: 150px;">
+                    <textarea id="import-raw-text" class="import-textarea" placeholder="貼上包含卡片編號的文字 (例: 1x UA43BT_SMD-1-046)"></textarea>
+                    <button class="ctrl-btn" style="background: #9b59b6; padding: 10px 20px;" onclick="executeBatchImport()">自動萃取匯入</button>
+                </div>
+
+                <div class="catalog-header">
+                    <h3 style="margin: 0;">卡片目錄 (點擊加入)</h3>
+                    <select id="series-filter" class="series-filter"><option value="ALL">全部作品 (All)</option></select>
+                </div>
+                <div id="catalog-grid" style="flex: 1; overflow-y: auto;"></div>
+            </div>
+            <div class="deck-panel">
+                <div class="deck-controls">
+                    <select id="deck-selector" class="deck-selector"></select>
+                    <button id="btn-new-deck" class="ctrl-btn">➕ 新增</button>
+                    <button class="ctrl-btn danger" onclick="clearDeck()">清空</button>
+                </div>
+                
+                <div class="ap-deck-section">
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+                        <h4 style="margin: 0; color: #f39c12;">🎯 我的 AP 卡</h4>
+                        <span id="ap-counter" style="font-weight: bold;">0 / 3</span>
+                    </div>
+                    <div class="card-grid" id="ap-deck-grid" style="min-height: 112px;"></div>
+                </div>
+
+                <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+                    <h4 style="margin: 0; color: #3498db;">🃏 主要牌組</h4>
+                    <span id="deck-counter" style="font-weight: bold;">0 / 50</span>
+                </div>
+                <div style="flex: 1; overflow-y: auto;"><div class="card-grid" id="deck-grid"></div></div>
+            </div>
+        </div>
+    </div>
+
+    <div id="game-scene">
+        
+        <div style="width: 100%; display: flex; justify-content: space-between; margin-bottom: 10px; background: rgba(0,0,0,0.6); padding: 10px; border-radius: 8px;">
+            <button id="btn-back-builder" class="ctrl-btn danger">🔙 返回構築區</button>
+            <button id="btn-end-turn" class="start-btn" style="padding: 10px 20px; font-size: 16px;">🔄 結束回合 (全部轉正)</button>
+        </div>
+
+        <div id="drop-menu">
+            <div class="menu-title">請選擇疊卡放置方式</div>
+            <button id="btn-top-faceup" class="drop-btn">正表放上 (突襲/直立)</button>
+            <button id="btn-bottom-facedown" class="drop-btn">背表放下 (墊底下)</button>
+            <button id="btn-bottom-faceup" class="drop-btn">正表放下 (墊底下)</button>
+            <button id="btn-cancel-drop" class="drop-btn cancel">取消放置</button>
+        </div>
+
+        <div class="board-wrapper">
+            <div class="game-table">
+                <div id="opp-board" class="player-board">
+                    <div style="width:100%; color: #e74c3c; font-size: 18px; font-weight: bold;">對手 (Opponent)</div>
+                    <div class="playmat">
+                        <div class="side-zone">
+                            <div><div class="line-label">卡組</div><div class="slot" id="opp-deck-area"></div></div>
+                            <div><div class="line-label">公開展示</div><div class="slot" id="opp-public-area"></div></div>
+                            <div><div class="line-label">場外</div><div class="slot" id="opp-outside-area"></div></div>
+                        </div>
+                        <div class="center-zone">
+                            <div class="line-label">ACTION POINT AREA</div>
+                            <div class="card-row" id="opp-ap-area"><div class="slot" id="opp-ap-3"></div><div class="slot" id="opp-ap-2"></div><div class="slot" id="opp-ap-1"></div></div>
+                            <div class="line-label">ENERGY LINE</div>
+                            <div class="card-row" id="opp-energy-line"><div class="slot" id="opp-en-4"></div><div class="slot" id="opp-en-3"></div><div class="slot" id="opp-en-2"></div><div class="slot" id="opp-en-1"></div></div>
+                            <div class="line-label">FRONT LINE</div>
+                            <div class="card-row" id="opp-front-line"><div class="slot" id="opp-fl-4"></div><div class="slot" id="opp-fl-3"></div><div class="slot" id="opp-fl-2"></div><div class="slot" id="opp-fl-1"></div></div>
+                        </div>
+                        <div class="side-zone">
+                            <div><div class="line-label">生命區</div><div class="slot" id="opp-life-area"></div></div>
+                            <div style="margin-top: 60px;"><div class="line-label">移除區</div><div class="slot" id="opp-remove-area"></div></div>
+                        </div>
+                    </div>
+                    <div class="bottom-container">
+                        <div class="look-zone" id="opp-look-zone">檢索區</div>
+                        <div class="hand-zone"><div class="line-label">對手手牌區</div><div class="hand-area" id="opp-hand-area"></div></div>
+                    </div>
+                </div>
+
+                <div class="board-divider">⚔️ 雙方交戰區 ⚔️</div>
+
+                <div id="my-board" class="player-board">
+                    <div class="playmat">
+                        <div id="card-magnifier"><img src="" id="magnifier-img"></div>
+
+                        <div class="side-zone">
+                            <div><div class="line-label">生命區</div><div class="slot" id="my-life-area"></div></div>
+                            <div style="margin-top: 60px;"><div class="line-label">移除區</div><div class="slot" id="my-remove-area"></div></div>
+                        </div>
+                        
+                        <div class="center-zone">
+                            <div class="line-label">FRONT LINE</div>
+                            <div class="card-row" id="my-front-line"><div class="slot" id="my-fl-1"></div><div class="slot" id="my-fl-2"></div><div class="slot" id="my-fl-3"></div><div class="slot" id="my-fl-4"></div></div>
+                            <div class="line-label">ENERGY LINE</div>
+                            <div class="card-row" id="my-energy-line"><div class="slot" id="my-en-1"></div><div class="slot" id="my-en-2"></div><div class="slot" id="my-en-3"></div><div class="slot" id="my-en-4"></div></div>
+                            <div class="line-label">ACTION POINT AREA</div>
+                            <div class="card-row" id="my-ap-area"><div class="slot" id="my-ap-1"></div><div class="slot" id="my-ap-2"></div><div class="slot" id="my-ap-3"></div></div>
+                        </div>
+                        
+                        <div class="side-zone">
+                            <div><div class="line-label">卡組</div><div class="slot" id="my-deck-area"></div></div>
+                            <div><div class="line-label">公開展示</div><div class="slot" id="my-public-area"></div></div>
+                            <div><div class="line-label">場外</div><div class="slot" id="my-outside-area"></div></div>
+                        </div>
+                    </div>
+                    <div class="bottom-container">
+                        <div class="hand-zone"><div class="line-label">YOUR HAND (手牌區)</div><div class="hand-area" id="my-hand-area"></div></div>
+                        <div class="look-zone">
+                            <div class="line-label" style="display: flex; justify-content: space-between;">
+                                <span>檢索確認區</span>
+                                <div><button class="look-btn" onclick="sendToDeck('my-look-area', 'my-deck-area', false)">置頂</button> <button class="look-btn" onclick="sendToDeck('my-look-area', 'my-deck-area', true)">置底</button></div>
+                            </div>
+                            <div class="look-area" id="my-look-area"></div>
+                        </div>
+                    </div>
+                    <div style="width:100%; color: #2ecc71; font-size: 18px; font-weight: bold; text-align: right;">我方 (You)</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="search-modal"><div class="modal-header"><span id="modal-title">檢索中...</span><button id="close-modal-btn">完成檢索 (關閉)</button></div><div class="modal-content" id="modal-cards-container"></div></div>
+    <div id="mulligan-modal">
+        <h2 style="color: #f39c12; margin-top: 0;">起始手牌確認</h2>
+        <p style="font-size: 18px; margin-bottom: 25px;">這7張是你的起手牌。要進行手牌調度嗎？</p>
+        <div style="display: flex; gap: 15px; justify-content: center; flex-wrap: wrap;">
+            <button class="start-btn" onclick="confirmHand()">保留手牌 (Keep)</button>
+            <button class="ctrl-btn danger" style="padding: 15px 30px; font-size: 18px;" onclick="executeMulligan()">調度手牌 (Mulligan)</button>
+        </div>
+    </div>
+
+    <script src="cards.js"></script>
+
+    <script>
+        let invalidCardsCache = JSON.parse(localStorage.getItem('ua_invalid_cards')) || [];
+        window.markCardInvalid = function(cardId, imgElement) {
+            imgElement.parentElement.remove();
+            if (!invalidCardsCache.includes(cardId)) {
+                invalidCardsCache.push(cardId);
+                localStorage.setItem('ua_invalid_cards', JSON.stringify(invalidCardsCache));
+            }
+        };
+
+        let allDecks = JSON.parse(localStorage.getItem('ua_all_decks')) || { "預設牌組": { main: [], ap: [] } };
+        let currentDeckName = localStorage.getItem('ua_current_deck_name') || "預設牌組";
+        if (!allDecks[currentDeckName]) currentDeckName = Object.keys(allDecks)[0]; 
+        if(Array.isArray(allDecks[currentDeckName])) allDecks[currentDeckName] = { main: allDecks[currentDeckName], ap: [] };
+        
+        let myDeckData = allDecks[currentDeckName].main;
+        let myApData = allDecks[currentDeckName].ap || [];
+
+        function saveAllDecks() {
+            allDecks[currentDeckName] = { main: myDeckData, ap: myApData };
+            localStorage.setItem('ua_all_decks', JSON.stringify(allDecks));
+            localStorage.setItem('ua_current_deck_name', currentDeckName);
+        }
+
+        const deckSelector = document.getElementById('deck-selector');
+        function updateDeckSelector() {
+            deckSelector.innerHTML = '';
+            for (let name in allDecks) {
+                let opt = document.createElement('option'); opt.value = name; opt.innerText = name;
+                if (name === currentDeckName) opt.selected = true;
+                deckSelector.appendChild(opt);
+            }
+        }
+
+        deckSelector.addEventListener('change', (e) => {
+            saveAllDecks(); currentDeckName = e.target.value; 
+            if(Array.isArray(allDecks[currentDeckName])) allDecks[currentDeckName] = { main: allDecks[currentDeckName], ap: [] };
+            myDeckData = allDecks[currentDeckName].main; myApData = allDecks[currentDeckName].ap;
+            renderDeck();
+        });
+
+        document.getElementById('btn-new-deck').addEventListener('click', () => {
+            let newName = prompt("請輸入新牌組的名稱：");
+            if (newName && !allDecks[newName]) {
+                saveAllDecks(); allDecks[newName] = { main: [], ap: [] }; currentDeckName = newName; 
+                myDeckData = allDecks[currentDeckName].main; myApData = allDecks[currentDeckName].ap;
+                updateDeckSelector(); renderDeck(); saveAllDecks();
+            }
+        });
+
+        window.executeBatchImport = function() {
+            let series = document.getElementById('import-series-name').value.trim() || "自訂匯入";
+            let rawText = document.getElementById('import-raw-text').value;
+            let ids = rawText.split(/[\s,\n]+/).filter(s => s.startsWith('UA') || s.startsWith('EX') && s.length > 5);
+            if(ids.length === 0) return alert("❌ 找不到任何有效的卡片編號！請確認貼上的文字。");
+            ids = [...new Set(ids)]; 
+            let newCards = ids.map(id => ({ id: id, name: id, series: series, imageUrl: `https://rugiacreation.com/ua/cardlist/small/${id.replace(/\//g, '_')}.jpg` }));
+            if(typeof masterCardCatalog !== 'undefined') masterCardCatalog.push(...newCards);
+            let savedCustom = JSON.parse(localStorage.getItem('ua_custom_cards')) || [];
+            savedCustom.push(...newCards); localStorage.setItem('ua_custom_cards', JSON.stringify(savedCustom));
+            initSeriesFilter(); renderBuilder(series); document.getElementById('series-filter').value = series; document.getElementById('import-raw-text').value = '';
+            alert(`✨ 成功萃取並匯入 ${ids.length} 種新卡片到「${series}」分類！`);
+        };
+
+        function initSeriesFilter() {
+            if(typeof masterCardCatalog === 'undefined') return;
+            const filterSelect = document.getElementById('series-filter');
+            let seriesSet = new Set(masterCardCatalog.map(c => c.series));
+            filterSelect.innerHTML = '<option value="ALL">全部作品 (All)</option>';
+            seriesSet.forEach(s => { filterSelect.innerHTML += `<option value="${s}">${s}</option>`; });
+            filterSelect.addEventListener('change', (e) => renderBuilder(e.target.value));
+        }
+
+        function renderBuilder(filterSeries = 'ALL') {
+            let catGrid = document.getElementById('catalog-grid');
+            catGrid.innerHTML = '';
+            if(typeof masterCardCatalog === 'undefined') return;
+            let groupedCards = {};
+            masterCardCatalog.forEach(c => { 
+                if (filterSeries !== 'ALL' && c.series !== filterSeries) return;
+                if(!groupedCards[c.series]) groupedCards[c.series] = []; 
+                groupedCards[c.series].push(c); 
+            });
+            for (let series in groupedCards) {
+                let title = document.createElement('div'); title.className = 'series-title'; title.innerText = series; catGrid.appendChild(title);
+                let grid = document.createElement('div'); grid.className = 'card-grid';
+                groupedCards[series].forEach(card => {
+                    if (invalidCardsCache.includes(card.id)) return;
+                    let el = document.createElement('div'); el.className = 'preview-card';
+                    el.innerHTML = `<img src="${card.imageUrl}" onerror="markCardInvalid('${card.id}', this)">`;
+                    el.onclick = () => { 
+                        if(card.series.includes("AP") || card.series.includes("Action Point") || card.id.includes("AP")) {
+                            if(myApData.length < 3) myApData.push({...card}); else alert("AP 卡最多只能配置 3 張！");
+                        } else {
+                            if(myDeckData.length < 50) myDeckData.push({...card}); else alert("主牌組最多 50 張！");
+                        }
+                        renderDeck(); 
+                    };
+                    grid.appendChild(el);
+                });
+                catGrid.appendChild(grid);
+            }
+        }
+
+        function renderDeck() {
+            let dGrid = document.getElementById('deck-grid'); dGrid.innerHTML = '';
+            let apGrid = document.getElementById('ap-deck-grid'); apGrid.innerHTML = '';
+            myDeckData.forEach((card, index) => {
+                let el = document.createElement('div'); el.className = 'preview-card'; el.innerHTML = `<img src="${card.imageUrl}">`;
+                el.onclick = () => { myDeckData.splice(index, 1); renderDeck(); }; dGrid.appendChild(el);
+            });
+            myApData.forEach((card, index) => {
+                let el = document.createElement('div'); el.className = 'preview-card'; el.innerHTML = `<img src="${card.imageUrl}">`;
+                el.onclick = () => { myApData.splice(index, 1); renderDeck(); }; apGrid.appendChild(el);
+            });
+            document.getElementById('deck-counter').innerText = `${myDeckData.length} / 50`;
+            document.getElementById('ap-counter').innerText = `${myApData.length} / 3`;
+            saveAllDecks();
+        }
+        
+        window.clearDeck = function() { if(confirm("清空當前牌組與AP卡？")) { myDeckData = []; myApData = []; renderDeck(); } };
+        
+        window.onload = () => { 
+            let savedCustom = JSON.parse(localStorage.getItem('ua_custom_cards')) || [];
+            if(typeof masterCardCatalog !== 'undefined') masterCardCatalog.push(...savedCustom);
+            updateDeckSelector(); initSeriesFilter(); renderBuilder(); renderDeck(); 
+        };
+
+        let peer = new Peer({ config: { 'iceServers': [ { urls: 'stun:stun.l.google.com:19302' }, { urls: 'stun:stun1.l.google.com:19302' }, { urls: 'stun:stun2.l.google.com:19302' }, { urls: 'turn:openrelay.metered.ca:80', username: 'openrelayproject', credential: 'openrelayproject' }, { urls: 'turn:openrelay.metered.ca:443', username: 'openrelayproject', credential: 'openrelayproject' } ] } });
+        let conn = null; let isConnected = false;
+
+        function showSysMsg(msg) { let box = document.getElementById('sys-msg'); box.innerText = msg; box.style.display = 'block'; setTimeout(() => { box.style.display = 'none'; }, 4000); }
+
+        peer.on('open', id => { document.getElementById('my-peer-id').innerText = id; document.getElementById('my-peer-id').onclick = () => { navigator.clipboard.writeText(id); showSysMsg("🔗 你的 ID 已複製！"); }; });
+        peer.on('connection', connection => { conn = connection; setupConnection(); });
+
+        document.getElementById('btn-connect').addEventListener('click', () => { let targetId = document.getElementById('target-id').value.trim(); if(targetId) { showSysMsg("正在連線..."); conn = peer.connect(targetId); setupConnection(); } });
+
+        function setupConnection() {
+            conn.on('open', () => {
+                isConnected = true; showSysMsg("✅ 連線成功！");
+                let btn = document.getElementById('start-game-btn'); btn.disabled = false; btn.innerText = "雙方就緒，進入對戰 ➔";
+                btn.onclick = () => {
+                    if(myDeckData.length === 0) { alert("請先建立主牌組！"); return; }
+                    if(myApData.length !== 3) { alert("請挑選剛好 3 張 AP 卡！"); return; }
+                    document.getElementById('builder-scene').style.display = 'none'; document.getElementById('game-scene').style.display = 'flex';
+                    initMyBoard(myDeckData, myApData); conn.send({ type: 'START_GAME', deck: myDeckData, ap: myApData });
+                };
+            });
+            conn.on('data', data => {
+                if(data.type === 'START_GAME') { showSysMsg("對手已進入盤面！"); initOpponentBoard(data.deck, data.ap); }
+                else if(data.type === 'SYNC_BOARD') applyOpponentSync(data.state);
+            });
+        }
+
+        let myCardsElements = []; let oppCardsElements = [];
+
+        function broadcastMyState() {
+            if(!conn || !isConnected) return;
+            let state = myCardsElements.map(el => ({ id: el.dataset.networkId, parent: el.parentElement ? el.parentElement.id : 'none', x: el.style.left, y: el.style.top, zIndex: el.style.zIndex, isFlipped: el.classList.contains('is-flipped'), isRest: el.classList.contains('rest'), inLife: el.classList.contains('in-life') }));
+            conn.send({ type: 'SYNC_BOARD', state: state });
+        }
+
+        function applyOpponentSync(stateData) {
+            stateData.forEach(data => {
+                let el = oppCardsElements.find(c => c.dataset.networkId === data.id);
+                if(el) {
+                    let targetParentId = data.parent ? data.parent.replace('my-', 'opp-') : '';
+                    let parentEl = document.getElementById(targetParentId) || document.getElementById('opp-board');
+                    if(el.parentElement !== parentEl) parentEl.appendChild(el);
+                    el.style.position = (targetParentId.includes('hand') || targetParentId.includes('look')) ? 'relative' : 'absolute';
+                    el.style.left = data.x; el.style.top = data.y; el.style.zIndex = data.zIndex;
+                    if(data.isFlipped) el.classList.add('is-flipped'); else el.classList.remove('is-flipped');
+                    if(data.isRest) el.classList.add('rest'); else el.classList.remove('rest');
+                    if(data.inLife) el.classList.add('in-life'); else el.classList.remove('in-life');
+                }
+            });
+            updateSlotCounts();
+        }
+
+        function shuffleArray(array) { for (let i = array.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [array[i], array[j]] = [array[j], array[i]]; } return array; }
+        function shuffleDOMDeck(deckArea) { let cards = Array.from(deckArea.querySelectorAll('.card')); shuffleArray(cards).forEach(c => deckArea.appendChild(c)); recalcStacking(deckArea); }
+
+        function createCardDOM(cardData, networkId, isMine) {
+            let el = document.createElement("div"); el.className = "card is-flipped"; el.dataset.networkId = networkId;
+            el.innerHTML = `<div class="card-inner"><div class="card-front"><img src="${cardData.imageUrl}"></div><div class="card-back">UNION<br>ARENA</div></div>`;
+            if(isMine) attachMyDragEvents(el); return el;
+        }
+
+        function initMyBoard(deck, apDeck) {
+            myCardsElements = []; document.getElementById('my-deck-area').innerHTML = ''; 
+            shuffleArray([...deck]).forEach((card, i) => {
+                let el = createCardDOM(card, `p_card_${i}`, true); myCardsElements.push(el); document.getElementById('my-deck-area').appendChild(el); el.style.left = '0px'; el.style.top = '0px';
+            });
+            let apSlots = document.querySelectorAll('#my-ap-area .slot');
+            apSlots.forEach((slot, i) => {
+                slot.innerHTML = ''; let apData = apDeck[i] || apDeck[0] || {imageUrl: "https://rugiacreation.com/ua/cardlist/small/UA44BT_EVA-1-AP03.jpg"};
+                let apEl = createCardDOM(apData, `p_ap_${i}`, true); apEl.querySelector('.card-back').innerHTML = "ACTION<br>POINT"; apEl.classList.add('ap-card');
+                apEl.ondblclick = () => { apEl.classList.toggle('is-flipped'); broadcastMyState(); }; myCardsElements.push(apEl); slot.appendChild(apEl); apEl.style.left = '0px'; apEl.style.top = '0px';
+            });
+            updateSlotCounts(); broadcastMyState(); showSysMsg("洗牌完成，發放起手牌..."); setTimeout(drawInitialHand, 800);
+        }
+
+        function initOpponentBoard(deck, apDeck) {
+            oppCardsElements = []; document.getElementById('opp-deck-area').innerHTML = '';
+            deck.forEach((card, i) => { let el = createCardDOM(card, `p_card_${i}`, false); oppCardsElements.push(el); document.getElementById('opp-deck-area').appendChild(el); });
+            let apSlots = document.querySelectorAll('#opp-ap-area .slot');
+            apSlots.forEach((slot, i) => { slot.innerHTML = ''; let apData = apDeck[i] || apDeck[0]; let apEl = createCardDOM(apData, `p_ap_${i}`, false); apEl.querySelector('.card-back').innerHTML = "ACTION<br>POINT"; apEl.classList.add('ap-card'); oppCardsElements.push(apEl); slot.appendChild(apEl); });
+            updateSlotCounts();
+        }
+
+        function drawInitialHand() {
+            let deckArea = document.getElementById('my-deck-area'), handArea = document.getElementById('my-hand-area'); let cards = Array.from(deckArea.querySelectorAll('.card'));
+            for(let i=0; i<7; i++) { if(cards.length > 0) { let c = cards.pop(); handArea.appendChild(c); c.style.position = 'relative'; c.style.left = '0'; c.style.top = '0'; c.classList.remove('is-flipped', 'rest'); } }
+            recalcStacking(deckArea); updateSlotCounts(); broadcastMyState(); document.getElementById('mulligan-modal').style.display = 'block';
+        }
+
+        window.confirmHand = function() { document.getElementById('mulligan-modal').style.display = 'none'; setupLifeArea(); };
+        window.executeMulligan = function() {
+            document.getElementById('mulligan-modal').style.display = 'none'; let deckArea = document.getElementById('my-deck-area'), handArea = document.getElementById('my-hand-area');
+            Array.from(handArea.querySelectorAll('.card')).forEach(c => { deckArea.appendChild(c); c.style.position = 'absolute'; c.classList.add('is-flipped'); });
+            shuffleDOMDeck(deckArea); updateSlotCounts(); broadcastMyState(); showSysMsg("重新洗牌中...");
+            setTimeout(() => {
+                let cards = Array.from(deckArea.querySelectorAll('.card'));
+                for(let i=0; i<7; i++) { if(cards.length > 0) { let c = cards.pop(); handArea.appendChild(c); c.style.position = 'relative'; c.style.left = '0'; c.style.top = '0'; c.classList.remove('is-flipped', 'rest'); } }
+                recalcStacking(deckArea); updateSlotCounts(); broadcastMyState(); setTimeout(setupLifeArea, 800);
+            }, 600);
+        };
+
+        function setupLifeArea() {
+            let deckArea = document.getElementById('my-deck-area'), lifeArea = document.getElementById('my-life-area'); let cards = Array.from(deckArea.querySelectorAll('.card'));
+            for(let i=0; i<7; i++) { if(cards.length > 0) { let c = cards.pop(); lifeArea.appendChild(c); c.style.position = 'absolute'; c.classList.add('is-flipped'); } }
+            recalcStacking(deckArea); recalcStacking(lifeArea); updateSlotCounts(); broadcastMyState(); showSysMsg("🎯 對戰開始！");
+        }
+
+        function applyStackingStyle(card, slotBelow, myIndex) {
+            if (!slotBelow) return;
+            if (slotBelow.id.includes('deck') || slotBelow.id.includes('outside') || slotBelow.id.includes('remove') || slotBelow.id.includes('public')) { card.style.left='0px'; card.style.top='0px'; }
+            else if (slotBelow.id.includes('life')) { card.style.left='0px'; card.style.top=(myIndex*20)+'px'; card.classList.add('in-life'); }
+            else if (slotBelow.classList.contains('slot')) { card.style.left=(myIndex*3)+'px'; card.style.top=(myIndex*12)+'px'; } 
+        }
+        function recalcStacking(areaElement) { if(!areaElement || areaElement.id.includes('hand') || areaElement.id.includes('look')) return; Array.from(areaElement.querySelectorAll('.card')).forEach((c, idx) => applyStackingStyle(c, areaElement, idx)); }
+
+        function attachMyDragEvents(cardElement) {
+            function dragStart(event) {
+                if (event.type === 'mousedown' && event.button !== 0) return; 
+                let isDragging = false, isStackDrag = false, stackCardsData = [];
+                let startX = event.type.includes('touch') ? event.touches[0].clientX : event.clientX;
+                let startY = event.type.includes('touch') ? event.touches[0].clientY : event.clientY;
+                let originalParent = cardElement.parentElement;
+                
+                clearTimeout(magnifyTimer); document.getElementById('card-magnifier').style.display = 'none';
+
+                let isFieldSlot = originalParent && originalParent.closest('#my-front-line, #my-energy-line');
+                if (isFieldSlot) isStackDrag = true;
+                else {
+                    var longPressTimer = setTimeout(() => {
+                        if(!isDragging && originalParent && originalParent.classList.contains('slot')) {
+                            isStackDrag = true; originalParent.querySelectorAll('.card').forEach(c => c.classList.add('stack-glowing'));
+                            if (navigator.vibrate) navigator.vibrate(50); 
+                        }
+                    }, 400);
+                }
+
+                let rect = cardElement.getBoundingClientRect();
+                let shiftX = startX - rect.left, shiftY = startY - rect.top;
+
+                function onMove(event) {
+                    let clientX = event.type.includes('touch') ? event.touches[0].clientX : event.clientX;
+                    let clientY = event.type.includes('touch') ? event.touches[0].clientY : event.clientY;
+
+                    if (!isDragging && (Math.abs(clientX - startX) > 3 || Math.abs(clientY - startY) > 3)) {
+                        isDragging = true; if(typeof longPressTimer !== 'undefined') clearTimeout(longPressTimer);
+                        if (isStackDrag) {
+                            if (stackCardsData.length === 0) {
+                                Array.from(originalParent.querySelectorAll('.card')).forEach(c => {
+                                    let r = c.getBoundingClientRect(); stackCardsData.push({ el: c, shiftX: clientX - r.left, shiftY: clientY - r.top });
+                                    document.body.appendChild(c); c.style.position = 'absolute'; c.classList.add('dragging'); c.classList.remove('in-life', 'stack-glowing'); 
+                                });
+                            }
+                        } else {
+                            document.body.appendChild(cardElement); cardElement.style.position = 'absolute';
+                            cardElement.classList.add('dragging'); cardElement.classList.remove('in-life'); 
+                        }
+                    }
+                    if (isDragging) {
+                        if (event.type.includes('touch') && event.cancelable) event.preventDefault(); 
+                        if (isStackDrag) stackCardsData.forEach(item => { item.el.style.left = (clientX - item.shiftX) + 'px'; item.el.style.top = (clientY - item.shiftY) + 'px'; });
+                        else { cardElement.style.left = (clientX - shiftX) + 'px'; cardElement.style.top = (clientY - shiftY) + 'px'; }
+                        broadcastMyState(); 
+                    }
+                }
+
+                function onEnd(event) {
+                    document.removeEventListener('mousemove', onMove); document.removeEventListener('mouseup', onEnd);
+                    document.removeEventListener('touchmove', onMove); document.removeEventListener('touchend', onEnd);
+                    if(typeof longPressTimer !== 'undefined') clearTimeout(longPressTimer);
+
+                    if (!isDragging) {
+                        if(originalParent) originalParent.querySelectorAll('.card').forEach(c => c.classList.remove('stack-glowing'));
+                        if (!cardElement.classList.contains('in-life') && !originalParent.id.includes('hand') && !originalParent.id.includes('look')) {
+                            cardElement.classList.toggle("rest"); broadcastMyState();
+                        }
+                    } else {
+                        let endX = event.type.includes('touch') ? event.changedTouches[0].clientX : event.clientX;
+                        let endY = event.type.includes('touch') ? event.changedTouches[0].clientY : event.clientY;
+                        
+                        let cardsToDrop = isStackDrag ? stackCardsData.map(item => item.el) : [cardElement];
+                        cardsToDrop.forEach(c => c.style.display = 'none');
+                        let elemBelow = document.elementFromPoint(endX, endY);
+                        cardsToDrop.forEach(c => c.style.display = 'block'); 
+                        let dropZone = elemBelow ? elemBelow.closest('#my-board .slot, #my-hand-area, #my-look-area') : null;
+                        
+                        if (!dropZone) { finalizeDrop(cardsToDrop, null, 'cancel', originalParent); return; }
+
+                        let isDropFieldSlot = dropZone && dropZone.closest('#my-front-line, #my-energy-line');
+                        let hasExistingCards = isDropFieldSlot && dropZone.querySelectorAll('.card').length > 0;
+                        let isSameSlot = originalParent === dropZone;
+
+                        if (isDropFieldSlot && hasExistingCards && !isSameSlot) {
+                            let menu = document.getElementById('drop-menu');
+                            menu.style.left = (endX + 10) + 'px'; menu.style.top = (endY + 10) + 'px';
+                            menu.style.display = 'flex'; window.pendingDrop = { cards: cardsToDrop, dropZone: dropZone, originalParent: originalParent };
+                        } else finalizeDrop(cardsToDrop, dropZone, 'default', originalParent);
+                    }
+                }
+                document.addEventListener('mousemove', onMove); document.addEventListener('mouseup', onEnd);
+                document.addEventListener('touchmove', onMove, {passive: false}); document.addEventListener('touchend', onEnd);
+            }
+            cardElement.onmousedown = dragStart; cardElement.ontouchstart = dragStart; cardElement.ondragstart = function() { return false; };
+        }
+
+        function finalizeDrop(cards, dropZone, action, originalParent) {
+            let processCards = (action.startsWith('bottom')) ? [...cards].reverse() : cards;
+            processCards.forEach(c => {
+                c.classList.remove('dragging', 'stack-glowing');
+                if (dropZone && action !== 'cancel') {
+                    if (action === 'top-faceup') { dropZone.appendChild(c); c.classList.remove('is-flipped', 'rest'); dropZone.querySelectorAll('.card').forEach(cardInSlot => cardInSlot.classList.remove('rest')); } 
+                    else if (action === 'bottom-facedown') { dropZone.insertBefore(c, dropZone.firstChild); c.classList.add('is-flipped'); c.classList.remove('rest'); } 
+                    else if (action === 'bottom-faceup') { dropZone.insertBefore(c, dropZone.firstChild); c.classList.remove('is-flipped', 'rest'); } 
+                    else {
+                        dropZone.appendChild(c);
+                        if (dropZone.id.includes('deck')) { if (originalParent && originalParent.id.includes('public')) c.classList.remove('is-flipped'); else c.classList.add('is-flipped'); } 
+                        else if (dropZone.id.includes('public')) c.classList.remove('is-flipped');
+                        if (dropZone.closest('#my-front-line, #my-energy-line')) { let fromField = originalParent && originalParent.closest('#my-front-line, #my-energy-line'); if (!fromField) c.classList.add('rest'); }
+                    }
+                    if(dropZone.id.includes('hand') || dropZone.id.includes('look')) { c.style.position = 'relative'; c.style.left = '0'; c.style.top = '0'; c.classList.remove('is-flipped', 'rest'); } 
+                    else c.style.position = 'absolute'; 
+                } else if (originalParent) {
+                    originalParent.appendChild(c);
+                    if(originalParent.id.includes('hand') || originalParent.id.includes('look')) { c.style.position = 'relative'; c.style.left = '0'; c.style.top = '0'; } 
+                    else c.style.position = 'absolute';
+                }
+            });
+            if (dropZone && action !== 'cancel') recalcStacking(dropZone); else if (originalParent) recalcStacking(originalParent);
+            updateSlotCounts(); broadcastMyState();
+        }
+
+        function updateSlotCounts() { document.querySelectorAll('.slot').forEach(slot => { slot.setAttribute('data-count', slot.querySelectorAll('.card').length); }); }
+
+        document.getElementById('btn-back-builder').addEventListener('click', () => { document.querySelectorAll('.card').forEach(c => c.remove()); document.getElementById('game-scene').style.display = 'none'; document.getElementById('builder-scene').style.display = 'flex'; });
+        document.getElementById('btn-end-turn').addEventListener('click', () => { document.querySelectorAll('#my-board .card.rest').forEach(c => c.classList.remove('rest')); broadcastMyState(); });
+
+        let hoveredCard = null, hoveredSlot = null, magnifyTimer = null;
+        document.addEventListener('mouseover', e => {
+            let card = e.target.closest('.card'), slot = e.target.closest('.slot'); if(slot) hoveredSlot = slot;
+            if(card) {
+                if(card.parentElement && card.parentElement.id.startsWith('my-')) hoveredCard = card;
+                clearTimeout(magnifyTimer);
+                magnifyTimer = setTimeout(() => {
+                    if(card.classList.contains('is-flipped')) return;
+                    let frontImg = card.querySelector('.card-front img'), magView = document.getElementById('card-magnifier'), magImg = document.getElementById('magnifier-img');
+                    if(frontImg && magView && magImg) { magImg.src = frontImg.src; magView.style.display = 'block'; }
+                }, 2000);
+            }
+        });
+        document.addEventListener('mouseout', e => { 
+            let card = e.target.closest('.card'); 
+            if(card) { if(card === hoveredCard) hoveredCard = null; clearTimeout(magnifyTimer); let magView = document.getElementById('card-magnifier'); if(magView) magView.style.display = 'none'; }
+            let slot = e.target.closest('.slot'); if(slot === hoveredSlot) hoveredSlot = null; 
+        });
+
+        document.addEventListener('keydown', e => {
+            if(document.getElementById('game-scene').style.display === 'none') return;
+            if(e.key.toLowerCase() === 'f' && hoveredCard) { hoveredCard.classList.toggle('is-flipped'); broadcastMyState(); }
+            if(e.key.toLowerCase() === 'c' || e.key.toLowerCase() === 'v') {
+                let targetCard = hoveredCard || (hoveredSlot ? hoveredSlot.querySelectorAll('.card')[hoveredSlot.querySelectorAll('.card').length-1] : null);
+                if(targetCard) {
+                    let dest = document.getElementById(e.key.toLowerCase() === 'c' ? 'my-hand-area' : 'my-outside-area');
+                    dest.appendChild(targetCard); targetCard.classList.remove('in-life', 'rest', 'is-flipped');
+                    if(dest.id.includes('hand')) targetCard.style.position = 'relative';
+                    else { targetCard.style.position = 'absolute'; applyStackingStyle(targetCard, dest, Array.from(dest.querySelectorAll('.card')).indexOf(targetCard)); }
+                    updateSlotCounts(); broadcastMyState();
+                }
+            }
+        });
+
+        document.getElementById('btn-top-faceup').addEventListener('click', () => { if(window.pendingDrop) finalizeDrop(window.pendingDrop.cards, window.pendingDrop.dropZone, 'top-faceup', window.pendingDrop.originalParent); document.getElementById('drop-menu').style.display = 'none'; window.pendingDrop = null; });
+        document.getElementById('btn-bottom-facedown').addEventListener('click', () => { if(window.pendingDrop) finalizeDrop(window.pendingDrop.cards, window.pendingDrop.dropZone, 'bottom-facedown', window.pendingDrop.originalParent); document.getElementById('drop-menu').style.display = 'none'; window.pendingDrop = null; });
+        document.getElementById('btn-bottom-faceup').addEventListener('click', () => { if(window.pendingDrop) finalizeDrop(window.pendingDrop.cards, window.pendingDrop.dropZone, 'bottom-faceup', window.pendingDrop.originalParent); document.getElementById('drop-menu').style.display = 'none'; window.pendingDrop = null; });
+        document.getElementById('btn-cancel-drop').addEventListener('click', () => { if(window.pendingDrop) finalizeDrop(window.pendingDrop.cards, null, 'cancel', window.pendingDrop.originalParent); document.getElementById('drop-menu').style.display = 'none'; window.pendingDrop = null; });
+
+        window.sendToDeck = function(sourceId, destId, toBottom) {
+            let source = document.getElementById(sourceId), dest = document.getElementById(destId); let cards = Array.from(source.querySelectorAll('.card'));
+            if(toBottom) cards.reverse().forEach(c => { dest.insertBefore(c, dest.firstChild); c.classList.add('is-flipped'); c.classList.remove('in-life', 'rest'); c.style.position = 'absolute'; });
+            else cards.forEach(c => { dest.appendChild(c); c.classList.add('is-flipped'); c.classList.remove('in-life', 'rest'); c.style.position = 'absolute'; });
+            recalcStacking(dest); updateSlotCounts(); broadcastMyState();
+        };
+
+        const modal = document.getElementById('search-modal'), modalContainer = document.getElementById('modal-cards-container'), modalTitle = document.getElementById('modal-title');
+        let currentModalSourceSlot = null;
+        
+        document.querySelectorAll('#my-outside-area, #my-remove-area').forEach(zone => {
+            zone.addEventListener('contextmenu', e => {
+                e.preventDefault(); let cards = Array.from(zone.querySelectorAll('.card')); if (cards.length === 0) return; 
+                currentModalSourceSlot = zone;
+                if(zone.id.includes('outside')) modalTitle.innerText = `檢索中：場外 (${cards.length}張)`;
+                if(zone.id.includes('remove')) modalTitle.innerText = `檢索中：移除區 (${cards.length}張)`;
+                cards.forEach(card => { modalContainer.appendChild(card); card.classList.remove('is-flipped', 'in-life', 'rest'); card.style.position = 'relative'; });
+                modal.style.display = 'flex';
+            });
+        });
+
+        document.getElementById('close-modal-btn').addEventListener('click', () => {
+            Array.from(modalContainer.querySelectorAll('.card')).forEach((card, index) => { currentModalSourceSlot.appendChild(card); card.style.position = 'absolute'; card.style.setProperty('--stack-index', index); applyStackingStyle(card, currentModalSourceSlot, index); });
+            modal.style.display = 'none'; currentModalSourceSlot = null; updateSlotCounts(); broadcastMyState();
+        });
+
+    </script>
+</body>
+</html>
