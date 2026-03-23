@@ -24,7 +24,8 @@ const masterCardCatalog = [
         "UA02BT_JJK-1-AP01", // 咒術迴戰
         "UA03BT_HTR-1-AP01", // 獵人
         "UA08BT_BCH-1-AP01", // 死神
-        "UA06BT_TOA-1-AP01"  // 破曉傳奇
+        "UA06BT_TOA-1-AP01", // 破曉傳奇
+        "UA01BT_CGH-1-AP01", "UA01BT_CGH-1-AP02", "UA01BT_CGH-1-AP03", "UA01BT_CGH-1-AP04", "UA01BT_CGH-1-AP05", "UA01BT_CGH-1-AP06" // 魯路修
     ]),
 
     // ==========================================
@@ -445,8 +446,8 @@ const masterCardCatalog = [
         "UA44ST_EVA-1-101", "UA44ST_EVA-1-102", "UA44ST_EVA-1-103", "UA44ST_EVA-1-104",
         "UA44ST_EVA-1-105", "UA44ST_EVA-1-106", "UA44ST_EVA-1-107", "UA44ST_EVA-1-108",
         "UA44ST_EVA-1-109", "UA44ST_EVA-1-110"
-    ])
-    // === Code Geass 反叛的魯路修 ===
+    ]), // <--- 修復了這裡的逗號！
+
     // === Code Geass 反叛的魯路修 ===
     ...autoImport("Code Geass 反叛的魯路修", [
         // === 起始牌組 (UA01ST_CGH-1) 001 ~ 109 ===
