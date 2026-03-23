@@ -419,7 +419,11 @@
                     if(myDeckData.length === 0) { alert("請先建立主牌組！"); return; }
                     if(myApData.length !== 3) { alert("請挑選剛好 3 張 AP 卡！"); return; }
                     document.getElementById('builder-scene').style.display = 'none'; document.getElementById('game-scene').style.display = 'flex';
-                    initMyBoard(myDeckData, myApData); conn.send({ type: 'START_GAME', deck: myDeckData, ap: myApData });
+                    
+                    // ✨ 關鍵修正 1：在這裡「先洗牌」，確保雙方拿到完全一樣順序的牌組
+                    let shuffledDeck = shuffleArray([...myDeckData]);
+                    initMyBoard(shuffledDeck, myApData); 
+                    conn.send({ type: 'START_GAME', deck: shuffledDeck, ap: myApData });
                 };
             });
             conn.on('data', data => {
@@ -464,9 +468,12 @@
 
         function initMyBoard(deck, apDeck) {
             myCardsElements = []; document.getElementById('my-deck-area').innerHTML = ''; 
-            shuffleArray([...deck]).forEach((card, i) => {
+            
+            // ✨ 關鍵修正 2：拔掉這裡的 shuffleArray，直接用上面傳進來「已經洗好的 deck」發編號
+            deck.forEach((card, i) => {
                 let el = createCardDOM(card, `p_card_${i}`, true); myCardsElements.push(el); document.getElementById('my-deck-area').appendChild(el); el.style.left = '0px'; el.style.top = '0px';
             });
+            
             let apSlots = document.querySelectorAll('#my-ap-area .slot');
             apSlots.forEach((slot, i) => {
                 slot.innerHTML = ''; let apData = apDeck[i] || apDeck[0] || {imageUrl: "https://rugiacreation.com/ua/cardlist/small/UA44BT_EVA-1-AP03.jpg"};
@@ -475,7 +482,6 @@
             });
             updateSlotCounts(); broadcastMyState(); showSysMsg("洗牌完成，發放起手牌..."); setTimeout(drawInitialHand, 800);
         }
-
         function initOpponentBoard(deck, apDeck) {
             oppCardsElements = []; document.getElementById('opp-deck-area').innerHTML = '';
             deck.forEach((card, i) => { let el = createCardDOM(card, `p_card_${i}`, false); oppCardsElements.push(el); document.getElementById('opp-deck-area').appendChild(el); });
