@@ -6,21 +6,31 @@
     <title>我的 UA 遠端對戰平台</title>
     <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
     <style>
-        body { background-color: #1a0808; margin: 0; min-height: 100vh; font-family: '微軟正黑體', sans-serif; display: flex; flex-direction: column; align-items: center; padding: 20px; box-sizing: border-box; color: white; overflow-x: hidden; touch-action: manipulation; -webkit-user-select: none; -moz-user-select: none; -ms-user-select: none; user-select: none; }
-        input, textarea, select { -webkit-user-select: auto; -moz-user-select: auto; -ms-user-select: auto; user-select: auto; }
+        /* 📐 核心魔法：使用 vh (螢幕高度比例) 來定義所有尺寸，保證不跑版、不需捲動！ */
+        :root {
+            --card-h: min(10.5vh, 120px); /* 卡片高度最大不超過 120px，且會根據螢幕高度自動縮小 */
+            --card-w: calc(var(--card-h) * 0.714); /* 完美的 UA 實體卡片長寬比 */
+            --gap-size: min(1vh, 8px);
+            --font-size-base: min(1.5vh, 14px);
+        }
+
+        /* 🛡️ 徹底消滅煩人的文字反白，並鎖定 100vh 高度防止螢幕滾動 */
+        body { background-color: #0a0a0a; margin: 0; height: 100vh; overflow: hidden; font-family: '微軟正黑體', sans-serif; display: flex; flex-direction: column; align-items: center; padding: 1vh 2vw; box-sizing: border-box; color: white; touch-action: manipulation; -webkit-user-select: none; user-select: none; }
+        input, textarea, select { -webkit-user-select: auto; user-select: auto; }
 
         #sys-msg { position: fixed; top: 10px; left: 50%; transform: translateX(-50%); background: #e67e22; padding: 10px 20px; border-radius: 5px; font-weight: bold; display: none; z-index: 10000; box-shadow: 0 4px 10px rgba(0,0,0,0.5); }
-        #builder-scene { width: 100%; max-width: 1200px; display: flex; flex-direction: column; gap: 20px; }
-        #game-scene { display: none; width: 100%; max-width: 1400px; flex-direction: column; align-items: center; gap: 15px; }
+        
+        #builder-scene { width: 100%; max-width: 1200px; height: 100%; display: flex; flex-direction: column; gap: 10px; }
+        #game-scene { display: none; width: 100%; max-width: 1600px; height: 100%; flex-direction: column; align-items: center; justify-content: space-evenly; gap: var(--gap-size); }
 
-        .network-panel { background: rgba(41, 128, 185, 0.2); border: 2px solid #3498db; border-radius: 10px; padding: 15px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; }
+        .network-panel { background: rgba(41, 128, 185, 0.2); border: 2px solid #3498db; border-radius: 10px; padding: 10px 15px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; }
         .network-box { display: flex; gap: 10px; align-items: center; }
         .network-input { padding: 8px; border-radius: 5px; border: none; font-size: 16px; outline: none; width: 200px; }
         #my-peer-id { color: #f1c40f; font-weight: bold; font-size: 18px; cursor: pointer; background: rgba(0,0,0,0.5); padding: 5px 10px; border-radius: 5px; }
 
-        .builder-container { display: flex; gap: 20px; height: 68vh; flex-wrap: wrap; }
+        .builder-container { display: flex; gap: 20px; flex: 1; flex-wrap: wrap; min-height: 0; }
         .catalog-panel { flex: 6; min-width: 300px; background: rgba(0,0,0,0.5); border-radius: 10px; padding: 15px; overflow-y: auto; display: flex; flex-direction: column; }
-        .deck-panel { flex: 4; min-width: 300px; background: rgba(139, 21, 21, 0.5); border-radius: 10px; padding: 15px; display: flex; flex-direction: column; border: 2px dashed #d32f2f; }
+        .deck-panel { flex: 4; min-width: 300px; background: rgba(139, 21, 21, 0.5); border-radius: 10px; padding: 15px; display: flex; flex-direction: column; border: 2px dashed #d32f2f; overflow-y: auto; }
         
         .deck-controls { display: flex; gap: 10px; margin-bottom: 10px; align-items: center; background: rgba(0,0,0,0.3); padding: 10px; border-radius: 8px; flex-wrap: wrap; }
         .deck-selector { flex: 1; padding: 5px; font-size: 16px; border-radius: 5px; background: #2c3e50; color: white; border: 1px solid #34495e; min-width: 120px; }
@@ -30,11 +40,11 @@
         
         .series-title { border-left: 5px solid #f39c12; padding-left: 10px; background: rgba(255,255,255,0.1); padding: 5px; margin: 15px 0 10px 0; font-size: 18px; }
         .card-grid { display: flex; flex-wrap: wrap; gap: 10px; }
-        .preview-card { width: 80px; height: 112px; border-radius: 5px; cursor: pointer; transition: transform 0.1s; box-shadow: 0 2px 5px rgba(0,0,0,0.5); }
+        .preview-card { width: var(--card-w); height: var(--card-h); border-radius: 5px; cursor: pointer; transition: transform 0.1s; box-shadow: 0 2px 5px rgba(0,0,0,0.5); }
         .preview-card:hover { transform: scale(1.05); }
         .preview-card img { width: 100%; height: 100%; object-fit: cover; border-radius: 5px; pointer-events: none; }
 
-        .start-btn { background-color: #2ecc71; color: white; font-size: 20px; font-weight: bold; padding: 15px 30px; border: none; border-radius: 8px; cursor: pointer; }
+        .start-btn { background-color: #2ecc71; color: white; font-size: 16px; font-weight: bold; padding: 10px 20px; border: none; border-radius: 8px; cursor: pointer; }
         .start-btn:disabled { background-color: #7f8c8d; cursor: not-allowed; }
         .ctrl-btn { background: #3498db; color: white; border: none; padding: 8px 15px; border-radius: 5px; cursor: pointer; font-weight: bold; }
         .ctrl-btn.danger { background: #e74c3c; }
@@ -44,72 +54,73 @@
         .import-section { background: rgba(155, 89, 182, 0.2); border: 2px dashed #9b59b6; padding: 10px; border-radius: 8px; margin-bottom: 15px; display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
         .import-textarea { flex: 1; min-width: 200px; height: 35px; background: #2c3e50; color: white; border: 1px solid #34495e; border-radius: 4px; padding: 8px; font-family: monospace; resize: none; outline: none; }
 
-        /* 📱 修正桌面滾動框 */
-        .board-wrapper { width: 100%; overflow-x: auto; overflow-y: hidden; padding-bottom: 10px; scrollbar-width: thin; scrollbar-color: #e74c3c #1a0808; }
-        .board-wrapper::-webkit-scrollbar { height: 8px; }
-        .board-wrapper::-webkit-scrollbar-track { background: #1a0808; border-radius: 4px; }
-        .board-wrapper::-webkit-scrollbar-thumb { background: #e74c3c; border-radius: 4px; }
-
-        /* 鎖定遊戲桌寬度 */
-        .game-table { min-width: 860px; width: 100%; display: flex; flex-direction: column; align-items: center; gap: 15px; margin: 0 auto; }
-
-        .player-board { display: flex; flex-direction: column; align-items: center; gap: 10px; width: 100%; position: relative; }
-        .playmat { background-color: #8b1515; border: 4px solid #d32f2f; border-radius: 15px; padding: 15px; display: grid; grid-template-columns: 110px auto 110px; gap: 15px; width: 100%; box-sizing: border-box; position: relative; }
-        #opp-board .playmat { background-color: #1c2833; border-color: #34495e; }
+        /* === 🌌 2.5D 全息對戰桌墊設計 === */
+        .player-board { display: flex; flex-direction: column; align-items: center; gap: var(--gap-size); width: 100%; position: relative; }
+        
+        .playmat { 
+            background: linear-gradient(145deg, #3a0d0d, #1a0202); /* 立體漸層光影 */
+            border: 2px solid #d32f2f; 
+            box-shadow: inset 0 0 30px rgba(0,0,0,0.8), 0 10px 20px rgba(0,0,0,0.6); /* 內凹與立體陰影 */
+            border-radius: 12px; 
+            padding: 1vh 2vw; 
+            display: grid; 
+            grid-template-columns: calc(var(--card-w) + 1vw) auto calc(var(--card-w) + 1vw); 
+            gap: 2vw; 
+            width: 100%; 
+            box-sizing: border-box; 
+        }
+        #opp-board .playmat { background: linear-gradient(145deg, #1c2833, #0a1118); border-color: #34495e; }
         #opp-board { pointer-events: none; } 
         #opp-board .hand-area .card-front { display: none !important; } 
         #opp-board .look-zone { visibility: hidden; } 
 
-        .line-label { color: #fff; font-size: 13px; font-weight: bold; text-align: center; margin: 3px 0; text-shadow: 1px 1px 2px black; }
-        .center-zone { display: flex; flex-direction: column; align-items: center; }
-        .side-zone { display: flex; flex-direction: column; gap: 10px; height: 100%; } /* 加入 height:100% 確保上下對齊 */
-        .card-row { display: flex; gap: 10px; margin-bottom: 8px; }
+        .line-label { color: rgba(255,255,255,0.6); font-size: var(--font-size-base); font-weight: bold; text-align: center; margin: 0.2vh 0; letter-spacing: 1px; text-transform: uppercase; }
+        .center-zone { display: flex; flex-direction: column; align-items: center; justify-content: center; }
+        .side-zone { display: flex; flex-direction: column; gap: var(--gap-size); height: 100%; } 
+        .card-row { display: flex; gap: calc(var(--gap-size) * 1.5); margin-bottom: var(--gap-size); }
 
-        .slot { width: 85px; height: 119px; background-color: rgba(255,255,255,0.1); border: 2px dashed rgba(255,255,255,0.5); border-radius: 6px; position: relative; display: flex; justify-content: center; align-items: center; }
-        .slot::after { content: attr(data-count); position: absolute; top: -8px; right: -8px; background-color: #e74c3c; color: white; border-radius: 50%; width: 20px; height: 20px; display: flex; justify-content: center; align-items: center; font-size: 12px; opacity: 0; transition: opacity 0.2s; z-index: 999; font-weight: bold; }
+        .slot { width: var(--card-w); height: var(--card-h); background-color: rgba(0,0,0,0.4); border: 2px dashed rgba(255,255,255,0.2); border-radius: 6px; box-shadow: inset 0 0 10px rgba(0,0,0,0.6); position: relative; display: flex; justify-content: center; align-items: center; }
+        .slot::after { content: attr(data-count); position: absolute; top: -5px; right: -5px; background-color: #e74c3c; color: white; border-radius: 50%; width: min(2vh, 20px); height: min(2vh, 20px); display: flex; justify-content: center; align-items: center; font-size: var(--font-size-base); opacity: 0; transition: opacity 0.2s; z-index: 999; font-weight: bold; box-shadow: 0 2px 5px rgba(0,0,0,0.5); }
         .slot:hover::after { opacity: 1; }
         .slot[data-count="0"]::after, .slot[data-count="1"]::after, .slot:not([data-count])::after { display: none; }
         
-        .bottom-container { width: 100%; display: flex; gap: 15px; flex-wrap: wrap;}
-        .hand-zone { flex: 7; min-width: 300px; min-height: 140px; background-color: rgba(0,0,0,0.6); border: 2px dashed #7f8c8d; border-radius: 10px; padding: 10px; }
-        .look-zone { flex: 3; min-width: 200px; min-height: 140px; background-color: rgba(0,50,100,0.6); border: 2px dashed #3498db; border-radius: 10px; padding: 10px; }
-        .hand-area, .look-area { display: flex; flex-wrap: wrap; gap: 10px; width: 100%; min-height: 119px; }
+        .bottom-container { width: 100%; display: flex; gap: 15px; flex-wrap: wrap; justify-content: center;}
+        .hand-zone { flex: 7; background-color: rgba(0,0,0,0.6); border: 2px dashed #7f8c8d; border-radius: 10px; padding: 1vh; display: flex; flex-direction: column;}
+        .look-zone { flex: 3; background-color: rgba(0,50,100,0.6); border: 2px dashed #3498db; border-radius: 10px; padding: 1vh; display: flex; flex-direction: column;}
+        .hand-area, .look-area { display: flex; flex-wrap: wrap; gap: var(--gap-size); width: 100%; min-height: var(--card-h); align-items: center; justify-content: center;}
 
-        .card { width: 85px; height: 119px; border-radius: 6px; box-shadow: 0 3px 6px rgba(0,0,0,0.5); cursor: grab; transition: transform 0.4s ease-out; position: absolute; perspective: 1000px; touch-action: none;}
+        /* 🃏 卡片懸浮立體感 */
+        .card { width: var(--card-w); height: var(--card-h); border-radius: 6px; box-shadow: 0 6px 12px rgba(0,0,0,0.8); cursor: grab; transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); position: absolute; perspective: 1000px; touch-action: none;}
         .hand-area .card, .look-area .card { position: relative; left: 0 !important; top: 0 !important; }
+        .card:hover { transform: translateY(-5px) scale(1.02); z-index: 10 !important; }
+        
         .card-inner { position: relative; width: 100%; height: 100%; transition: transform 0.4s; transform-style: preserve-3d; }
         .card.is-flipped .card-inner { transform: rotateY(180deg); }
         .card-front, .card-back { position: absolute; width: 100%; height: 100%; backface-visibility: hidden; border-radius: 6px; overflow: hidden; background-color: #2c3e50; }
         .card-front img { width: 100%; height: 100%; object-fit: cover; pointer-events: none; }
-        .card-back { transform: rotateY(180deg); background-color: #8b1515; border: 3px solid #fff; box-sizing: border-box; display: flex; justify-content: center; align-items: center; color: white; font-weight: bold; font-size: 14px; text-align: center; line-height: 1.2; }
-        .ap-card .card-back { background-color: #2c3e50; border-color: #f39c12; }
+        .card-back { transform: rotateY(180deg); background: linear-gradient(135deg, #8b1515, #5c0a0a); border: 2px solid #aaa; box-sizing: border-box; display: flex; justify-content: center; align-items: center; color: white; font-weight: bold; font-size: var(--font-size-base); text-align: center; line-height: 1.2; }
+        .ap-card .card-back { background: linear-gradient(135deg, #2c3e50, #1a252f); border-color: #f39c12; }
         
-        .card.dragging { transform: scale(1.1) rotate(4deg) !important; z-index: 9999 !important; transition: none; }
-        .card.stack-glowing { box-shadow: 0 0 10px 4px #f1c40f !important; }
+        .card.dragging { transform: scale(1.15) rotate(5deg) !important; z-index: 9999 !important; transition: none; box-shadow: 0 15px 30px rgba(0,0,0,0.9); }
+        .card.stack-glowing { box-shadow: 0 0 15px 5px #f1c40f !important; }
         .card.rest { transform: rotate(90deg); }
         .card.in-life { transform: rotate(-90deg) !important; }
         
-        .board-divider { width: 100%; text-align: center; font-size: 20px; font-weight: bold; color: #f39c12; border-top: 2px dashed rgba(255,255,255,0.2); padding-top: 10px; margin: 10px 0; }
+        .board-divider { width: 100%; text-align: center; font-size: calc(var(--font-size-base) * 1.2); font-weight: bold; color: #f39c12; letter-spacing: 5px; opacity: 0.7; }
 
         #drop-menu { display: none; position: fixed; z-index: 10001; background: rgba(20,20,20,0.95); border: 2px solid #3498db; border-radius: 8px; padding: 10px; flex-direction: column; gap: 8px; box-shadow: 0 0 15px rgba(52,152,219,0.5); }
-        .menu-title { font-size: 12px; text-align: center; margin-bottom: 5px; font-weight: bold; }
         .drop-btn { background: #2c3e50; color: white; border: 1px solid #7f8c8d; padding: 8px 15px; cursor: pointer; border-radius: 4px; font-weight: bold; }
         .drop-btn:hover { background: #34495e; }
         .drop-btn.cancel { background: #c0392b; border-color: #e74c3c; }
 
         #search-modal { display: none; position: fixed; z-index: 10000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.85); justify-content: center; align-items: center; flex-direction: column; }
-        .modal-content { background-color: #1a1a1a; border: 4px solid #f39c12; border-radius: 15px; padding: 30px; width: 80%; max-height: 80vh; overflow-y: auto; display: flex; flex-wrap: wrap; gap: 15px; }
+        .modal-content { background-color: #1a1a1a; border: 4px solid #f39c12; border-radius: 15px; padding: 30px; width: 80%; max-height: 80vh; overflow-y: auto; display: flex; flex-wrap: wrap; gap: 15px; justify-content: center;}
         .modal-header { width: 80%; display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; font-size: 24px; font-weight: bold; flex-wrap: wrap;}
-        #close-modal-btn { background-color: #e74c3c; border: none; color: white; padding: 10px 20px; font-size: 16px; border-radius: 5px; cursor: pointer; }
 
         #mulligan-modal { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(0,0,0,0.95); border: 3px solid #f39c12; padding: 30px; border-radius: 15px; z-index: 10005; text-align: center; box-shadow: 0 0 30px rgba(243, 156, 18, 0.5); width: 90%; max-width: 400px;}
 
-        #card-magnifier { position: absolute; left: 135px; top: 20px; width: 220px; height: 308px; background: #111; border: 3px solid #f39c12; border-radius: 10px; display: none; z-index: 10010; pointer-events: none; box-shadow: 0 10px 30px rgba(0,0,0,0.9); overflow: hidden; }
+        #card-magnifier { position: absolute; left: calc(var(--card-w) + 3vw); top: 1vh; width: calc(var(--card-w) * 2.5); height: calc(var(--card-h) * 2.5); background: #111; border: 3px solid #f39c12; border-radius: 10px; display: none; z-index: 10010; pointer-events: none; box-shadow: 0 10px 30px rgba(0,0,0,0.9); overflow: hidden; }
         #card-magnifier img { width: 100%; height: 100%; object-fit: cover; }
-        
-        @media (max-width: 768px) {
-            #card-magnifier { display: none !important; }
-        }
     </style>
 </head>
 <body>
@@ -130,7 +141,7 @@
         </div>
 
         <div class="builder-header">
-            <h2>🛠️ 牌組構築中心</h2>
+            <h2 style="margin: 0 0 10px 0;">🛠️ 牌組構築中心</h2>
             <div style="display: flex; align-items: center; gap: 20px;">
                 <button class="start-btn" id="start-game-btn" disabled>等待連線成功後開始 ➔</button>
             </div>
@@ -139,10 +150,10 @@
             <div class="catalog-panel">
                 
                 <div class="import-section">
-                    <h4 style="margin: 0; color: #9b59b6; width: 100%;">✨ 魔法一鍵匯入 (可貼上整段牌表代碼，自動萃取)</h4>
-                    <input type="text" id="import-series-name" placeholder="作品名稱 (例: 咒術迴戰)" class="network-input" style="width: 150px;">
-                    <textarea id="import-raw-text" class="import-textarea" placeholder="貼上包含卡片編號的文字 (例: 1x UA43BT_SMD-1-046)"></textarea>
-                    <button class="ctrl-btn" style="background: #9b59b6; padding: 10px 20px;" onclick="executeBatchImport()">自動萃取匯入</button>
+                    <h4 style="margin: 0; color: #9b59b6; width: 100%;">✨ 魔法一鍵匯入</h4>
+                    <input type="text" id="import-series-name" placeholder="作品名稱" class="network-input" style="width: 150px;">
+                    <textarea id="import-raw-text" class="import-textarea" placeholder="貼上包含卡片編號的文字"></textarea>
+                    <button class="ctrl-btn" style="background: #9b59b6;" onclick="executeBatchImport()">萃取匯入</button>
                 </div>
 
                 <div class="catalog-header">
@@ -163,7 +174,7 @@
                         <h4 style="margin: 0; color: #f39c12;">🎯 我的 AP 卡</h4>
                         <span id="ap-counter" style="font-weight: bold;">0 / 3</span>
                     </div>
-                    <div class="card-grid" id="ap-deck-grid" style="min-height: 112px;"></div>
+                    <div class="card-grid" id="ap-deck-grid" style="min-height: var(--card-h);"></div>
                 </div>
 
                 <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
@@ -177,85 +188,79 @@
 
     <div id="game-scene">
         
-        <div style="width: 100%; display: flex; justify-content: space-between; margin-bottom: 10px; background: rgba(0,0,0,0.6); padding: 10px; border-radius: 8px;">
-            <button id="btn-back-builder" class="ctrl-btn danger">🔙 返回構築區</button>
-            <button id="btn-end-turn" class="start-btn" style="padding: 10px 20px; font-size: 16px;">🔄 結束回合 (全部轉正)</button>
+        <div style="width: 100%; display: flex; justify-content: space-between; background: rgba(0,0,0,0.8); padding: 1vh 2vw; border-radius: 8px; box-sizing: border-box;">
+            <button id="btn-back-builder" class="ctrl-btn danger">🔙 投降並返回構築區</button>
+            <button id="btn-end-turn" class="start-btn">🔄 結束回合 (全部轉正)</button>
         </div>
 
         <div id="drop-menu">
-            <div class="menu-title">請選擇疊卡放置方式</div>
+            <div style="font-size: 12px; text-align: center; margin-bottom: 5px; font-weight: bold;">請選擇放置方式</div>
             <button id="btn-top-faceup" class="drop-btn">正表放上 (突襲/直立)</button>
             <button id="btn-bottom-facedown" class="drop-btn">背表放下 (墊底下)</button>
             <button id="btn-bottom-faceup" class="drop-btn">正表放下 (墊底下)</button>
             <button id="btn-cancel-drop" class="drop-btn cancel">取消放置</button>
         </div>
 
-        <div class="board-wrapper">
-            <div class="game-table">
-                <div id="opp-board" class="player-board">
-                    <div style="width:100%; color: #e74c3c; font-size: 18px; font-weight: bold;">對手 (Opponent)</div>
-                    <div class="bottom-container">
-                        <div class="look-zone" id="opp-look-zone">檢索區</div>
-                        <div class="hand-zone"><div class="line-label">對手手牌區</div><div class="hand-area" id="opp-hand-area"></div></div>
-                    </div>
-                    <div class="playmat">
-                        <div class="side-zone">
-                            <div><div class="line-label">卡組</div><div class="slot" id="opp-deck-area"></div></div>
-                            <div><div class="line-label">公開展示</div><div class="slot" id="opp-public-area"></div></div>
-                            <div style="margin-top: auto;"><div class="line-label">場外</div><div class="slot" id="opp-outside-area"></div></div>
-                        </div>
-                        <div class="center-zone">
-                            <div class="line-label">ACTION POINT AREA</div>
-                            <div class="card-row" id="opp-ap-area"><div class="slot" id="opp-ap-3"></div><div class="slot" id="opp-ap-2"></div><div class="slot" id="opp-ap-1"></div></div>
-                            <div class="line-label">ENERGY LINE</div>
-                            <div class="card-row" id="opp-energy-line"><div class="slot" id="opp-en-4"></div><div class="slot" id="opp-en-3"></div><div class="slot" id="opp-en-2"></div><div class="slot" id="opp-en-1"></div></div>
-                            <div class="line-label">FRONT LINE</div>
-                            <div class="card-row" id="opp-front-line"><div class="slot" id="opp-fl-4"></div><div class="slot" id="opp-fl-3"></div><div class="slot" id="opp-fl-2"></div><div class="slot" id="opp-fl-1"></div></div>
-                        </div>
-                        <div class="side-zone">
-                            <div><div class="line-label">生命區</div><div class="slot" id="opp-life-area"></div></div>
-                            <div style="margin-top: auto;"><div class="line-label">移除區</div><div class="slot" id="opp-remove-area"></div></div>
-                        </div>
-                    </div>
+        <div id="opp-board" class="player-board">
+            <div class="bottom-container">
+                <div class="look-zone" id="opp-look-zone"><div class="line-label">檢索區</div></div>
+                <div class="hand-zone"><div class="line-label" style="color:#e74c3c;">對手手牌區</div><div class="hand-area" id="opp-hand-area"></div></div>
+            </div>
+            <div class="playmat">
+                <div class="side-zone">
+                    <div><div class="line-label">卡組</div><div class="slot" id="opp-deck-area"></div></div>
+                    <div><div class="line-label">公開</div><div class="slot" id="opp-public-area"></div></div>
+                    <div style="margin-top: auto;"><div class="line-label">場外</div><div class="slot" id="opp-outside-area"></div></div>
                 </div>
+                <div class="center-zone">
+                    <div class="line-label">ACTION POINT AREA</div>
+                    <div class="card-row" id="opp-ap-area"><div class="slot" id="opp-ap-3"></div><div class="slot" id="opp-ap-2"></div><div class="slot" id="opp-ap-1"></div></div>
+                    <div class="line-label">ENERGY LINE</div>
+                    <div class="card-row" id="opp-energy-line"><div class="slot" id="opp-en-4"></div><div class="slot" id="opp-en-3"></div><div class="slot" id="opp-en-2"></div><div class="slot" id="opp-en-1"></div></div>
+                    <div class="line-label">FRONT LINE</div>
+                    <div class="card-row" id="opp-front-line"><div class="slot" id="opp-fl-4"></div><div class="slot" id="opp-fl-3"></div><div class="slot" id="opp-fl-2"></div><div class="slot" id="opp-fl-1"></div></div>
+                </div>
+                <div class="side-zone">
+                    <div><div class="line-label">生命區</div><div class="slot" id="opp-life-area"></div></div>
+                    <div style="margin-top: auto;"><div class="line-label">移除區</div><div class="slot" id="opp-remove-area"></div></div>
+                </div>
+            </div>
+        </div>
 
-                <div class="board-divider">⚔️ 雙方交戰區 ⚔️</div>
+        <div class="board-divider">⚔️ BATTLE AREA ⚔️</div>
 
-                <div id="my-board" class="player-board">
-                    <div class="playmat">
-                        <div id="card-magnifier"><img src="" id="magnifier-img"></div>
+        <div id="my-board" class="player-board">
+            <div class="playmat">
+                <div id="card-magnifier"><img src="" id="magnifier-img"></div>
 
-                        <div class="side-zone">
-                            <div><div class="line-label">生命區</div><div class="slot" id="my-life-area"></div></div>
-                            <div style="margin-top: auto;"><div class="line-label">移除區</div><div class="slot" id="my-remove-area"></div></div>
-                        </div>
-                        
-                        <div class="center-zone">
-                            <div class="line-label">FRONT LINE</div>
-                            <div class="card-row" id="my-front-line"><div class="slot" id="my-fl-1"></div><div class="slot" id="my-fl-2"></div><div class="slot" id="my-fl-3"></div><div class="slot" id="my-fl-4"></div></div>
-                            <div class="line-label">ENERGY LINE</div>
-                            <div class="card-row" id="my-energy-line"><div class="slot" id="my-en-1"></div><div class="slot" id="my-en-2"></div><div class="slot" id="my-en-3"></div><div class="slot" id="my-en-4"></div></div>
-                            <div class="line-label">ACTION POINT AREA</div>
-                            <div class="card-row" id="my-ap-area"><div class="slot" id="my-ap-1"></div><div class="slot" id="my-ap-2"></div><div class="slot" id="my-ap-3"></div></div>
-                        </div>
-                        
-                        <div class="side-zone">
-                            <div><div class="line-label">卡組</div><div class="slot" id="my-deck-area"></div></div>
-                            <div><div class="line-label">公開展示</div><div class="slot" id="my-public-area"></div></div>
-                            <div style="margin-top: auto;"><div class="line-label">場外</div><div class="slot" id="my-outside-area"></div></div>
-                        </div>
+                <div class="side-zone">
+                    <div><div class="line-label">生命區</div><div class="slot" id="my-life-area"></div></div>
+                    <div style="margin-top: auto;"><div class="line-label">移除區</div><div class="slot" id="my-remove-area"></div></div>
+                </div>
+                
+                <div class="center-zone">
+                    <div class="line-label">FRONT LINE</div>
+                    <div class="card-row" id="my-front-line"><div class="slot" id="my-fl-1"></div><div class="slot" id="my-fl-2"></div><div class="slot" id="my-fl-3"></div><div class="slot" id="my-fl-4"></div></div>
+                    <div class="line-label">ENERGY LINE</div>
+                    <div class="card-row" id="my-energy-line"><div class="slot" id="my-en-1"></div><div class="slot" id="my-en-2"></div><div class="slot" id="my-en-3"></div><div class="slot" id="my-en-4"></div></div>
+                    <div class="line-label">ACTION POINT AREA</div>
+                    <div class="card-row" id="my-ap-area"><div class="slot" id="my-ap-1"></div><div class="slot" id="my-ap-2"></div><div class="slot" id="my-ap-3"></div></div>
+                </div>
+                
+                <div class="side-zone">
+                    <div><div class="line-label">卡組</div><div class="slot" id="my-deck-area"></div></div>
+                    <div><div class="line-label">公開</div><div class="slot" id="my-public-area"></div></div>
+                    <div style="margin-top: auto;"><div class="line-label">場外</div><div class="slot" id="my-outside-area"></div></div>
+                </div>
+            </div>
+            <div class="bottom-container">
+                <div class="hand-zone"><div class="line-label" style="color:#2ecc71;">YOUR HAND (我方手牌)</div><div class="hand-area" id="my-hand-area"></div></div>
+                <div class="look-zone">
+                    <div class="line-label" style="display: flex; justify-content: space-between; align-items: center;">
+                        <span>檢索確認區</span>
+                        <div><button class="ctrl-btn" style="padding: 2px 5px;" onclick="sendToDeck('my-look-area', 'my-deck-area', false)">置頂</button> <button class="ctrl-btn" style="padding: 2px 5px;" onclick="sendToDeck('my-look-area', 'my-deck-area', true)">置底</button></div>
                     </div>
-                    <div class="bottom-container">
-                        <div class="hand-zone"><div class="line-label">YOUR HAND (手牌區)</div><div class="hand-area" id="my-hand-area"></div></div>
-                        <div class="look-zone">
-                            <div class="line-label" style="display: flex; justify-content: space-between;">
-                                <span>檢索確認區</span>
-                                <div><button class="look-btn" onclick="sendToDeck('my-look-area', 'my-deck-area', false)">置頂</button> <button class="look-btn" onclick="sendToDeck('my-look-area', 'my-deck-area', true)">置底</button></div>
-                            </div>
-                            <div class="look-area" id="my-look-area"></div>
-                        </div>
-                    </div>
-                    <div style="width:100%; color: #2ecc71; font-size: 18px; font-weight: bold; text-align: right;">我方 (You)</div>
+                    <div class="look-area" id="my-look-area"></div>
                 </div>
             </div>
         </div>
@@ -264,25 +269,27 @@
     <div id="search-modal"><div class="modal-header"><span id="modal-title">檢索中...</span><button id="close-modal-btn">完成檢索 (關閉)</button></div><div class="modal-content" id="modal-cards-container"></div></div>
     <div id="mulligan-modal">
         <h2 style="color: #f39c12; margin-top: 0;">起始手牌確認</h2>
-        <p style="font-size: 18px; margin-bottom: 25px;">這7張是你的起手牌。要進行手牌調度嗎？</p>
+        <p style="font-size: 18px; margin-bottom: 25px;">這 7 張是你的起手牌。要進行調度嗎？</p>
         <div style="display: flex; gap: 15px; justify-content: center; flex-wrap: wrap;">
-            <button class="start-btn" onclick="confirmHand()">保留手牌 (Keep)</button>
-            <button class="ctrl-btn danger" style="padding: 15px 30px; font-size: 18px;" onclick="executeMulligan()">調度手牌 (Mulligan)</button>
+            <button class="start-btn" onclick="confirmHand()">保留 (Keep)</button>
+            <button class="ctrl-btn danger" style="padding: 10px 20px; font-size: 16px;" onclick="executeMulligan()">調度 (Mulligan)</button>
         </div>
     </div>
 
     <script src="cards.js"></script>
 
     <script>
+        // === 🛡️ 升級版破圖自動隱藏防禦系統 ===
         let invalidCardsCache = JSON.parse(localStorage.getItem('ua_invalid_cards')) || [];
-        window.markCardInvalid = function(cardId, imgElement) {
-            imgElement.parentElement.remove();
+        
+        window.markCardInvalid = function(cardId) {
             if (!invalidCardsCache.includes(cardId)) {
                 invalidCardsCache.push(cardId);
                 localStorage.setItem('ua_invalid_cards', JSON.stringify(invalidCardsCache));
             }
         };
 
+        // ... 以下為存檔與牌組邏輯 ...
         let allDecks = JSON.parse(localStorage.getItem('ua_all_decks')) || { "預設牌組": { main: [], ap: [] } };
         let currentDeckName = localStorage.getItem('ua_current_deck_name') || "預設牌組";
         if (!allDecks[currentDeckName]) currentDeckName = Object.keys(allDecks)[0]; 
@@ -362,7 +369,8 @@
                 groupedCards[series].forEach(card => {
                     if (invalidCardsCache.includes(card.id)) return;
                     let el = document.createElement('div'); el.className = 'preview-card';
-                    el.innerHTML = `<img src="${card.imageUrl}" onerror="markCardInvalid('${card.id}', this)">`;
+                    // 🛡️ 新增雙層隱藏保險：直接從 this 找到最近的 preview-card 隱藏，不依賴 remove
+                    el.innerHTML = `<img src="${card.imageUrl}" onerror="this.closest('.preview-card').style.display='none'; window.markCardInvalid('${card.id}');">`;
                     el.onclick = () => { 
                         if(card.series.includes("AP") || card.series.includes("Action Point") || card.id.includes("AP")) {
                             if(myApData.length < 3) myApData.push({...card}); else alert("AP 卡最多只能配置 3 張！");
@@ -401,6 +409,7 @@
             updateDeckSelector(); initSeriesFilter(); renderBuilder(); renderDeck(); 
         };
 
+        // ================= 網路連線引擎 =================
         let peer = new Peer({ config: { 'iceServers': [ { urls: 'stun:stun.l.google.com:19302' }, { urls: 'stun:stun1.l.google.com:19302' }, { urls: 'stun:stun2.l.google.com:19302' }, { urls: 'turn:openrelay.metered.ca:80', username: 'openrelayproject', credential: 'openrelayproject' }, { urls: 'turn:openrelay.metered.ca:443', username: 'openrelayproject', credential: 'openrelayproject' } ] } });
         let conn = null; let isConnected = false;
 
@@ -420,10 +429,8 @@
                     if(myApData.length !== 3) { alert("請挑選剛好 3 張 AP 卡！"); return; }
                     document.getElementById('builder-scene').style.display = 'none'; document.getElementById('game-scene').style.display = 'flex';
                     
-                    // ✨ 關鍵修正 1：在這裡「先洗牌」，確保雙方拿到完全一樣順序的牌組
                     let shuffledDeck = shuffleArray([...myDeckData]);
-                    initMyBoard(shuffledDeck, myApData); 
-                    conn.send({ type: 'START_GAME', deck: shuffledDeck, ap: myApData });
+                    initMyBoard(shuffledDeck, myApData); conn.send({ type: 'START_GAME', deck: shuffledDeck, ap: myApData });
                 };
             });
             conn.on('data', data => {
@@ -468,20 +475,18 @@
 
         function initMyBoard(deck, apDeck) {
             myCardsElements = []; document.getElementById('my-deck-area').innerHTML = ''; 
-            
-            // ✨ 關鍵修正 2：拔掉這裡的 shuffleArray，直接用上面傳進來「已經洗好的 deck」發編號
             deck.forEach((card, i) => {
                 let el = createCardDOM(card, `p_card_${i}`, true); myCardsElements.push(el); document.getElementById('my-deck-area').appendChild(el); el.style.left = '0px'; el.style.top = '0px';
             });
-            
             let apSlots = document.querySelectorAll('#my-ap-area .slot');
             apSlots.forEach((slot, i) => {
                 slot.innerHTML = ''; let apData = apDeck[i] || apDeck[0] || {imageUrl: "https://rugiacreation.com/ua/cardlist/small/UA44BT_EVA-1-AP03.jpg"};
                 let apEl = createCardDOM(apData, `p_ap_${i}`, true); apEl.querySelector('.card-back').innerHTML = "ACTION<br>POINT"; apEl.classList.add('ap-card');
                 apEl.ondblclick = () => { apEl.classList.toggle('is-flipped'); broadcastMyState(); }; myCardsElements.push(apEl); slot.appendChild(apEl); apEl.style.left = '0px'; apEl.style.top = '0px';
             });
-            updateSlotCounts(); broadcastMyState(); showSysMsg("洗牌完成，發放起手牌..."); setTimeout(drawInitialHand, 800);
+            updateSlotCounts(); broadcastMyState(); showSysMsg("發放起手牌..."); setTimeout(drawInitialHand, 800);
         }
+
         function initOpponentBoard(deck, apDeck) {
             oppCardsElements = []; document.getElementById('opp-deck-area').innerHTML = '';
             deck.forEach((card, i) => { let el = createCardDOM(card, `p_card_${i}`, false); oppCardsElements.push(el); document.getElementById('opp-deck-area').appendChild(el); });
@@ -517,20 +522,15 @@
         function applyStackingStyle(card, slotBelow, myIndex) {
             if (!slotBelow) return;
             if (slotBelow.id.includes('deck') || slotBelow.id.includes('outside') || slotBelow.id.includes('remove') || slotBelow.id.includes('public')) { card.style.left='0px'; card.style.top='0px'; }
-            else if (slotBelow.id.includes('life')) { card.style.left='0px'; card.style.top=(myIndex*20)+'px'; card.classList.add('in-life'); }
-            else if (slotBelow.classList.contains('slot')) { card.style.left=(myIndex*3)+'px'; card.style.top=(myIndex*12)+'px'; } 
+            else if (slotBelow.id.includes('life')) { card.style.left='0px'; card.style.top=(myIndex*15)+'px'; card.classList.add('in-life'); }
+            else if (slotBelow.classList.contains('slot')) { card.style.left=(myIndex*4)+'px'; card.style.top=(myIndex*12)+'px'; } 
         }
         function recalcStacking(areaElement) { if(!areaElement || areaElement.id.includes('hand') || areaElement.id.includes('look')) return; Array.from(areaElement.querySelectorAll('.card')).forEach((c, idx) => applyStackingStyle(c, areaElement, idx)); }
 
-        // 🌟 修正版完美拖曳引擎 (防順移修正)
         function attachMyDragEvents(cardElement) {
             function dragStart(event) {
                 if (event.type === 'mousedown' && event.button !== 0) return; 
                 let isDragging = false, isStackDrag = false, stackCardsData = [];
-                
-                let clientX = event.type.includes('touch') ? event.touches[0].clientX : event.clientX;
-                let clientY = event.type.includes('touch') ? event.touches[0].clientY : event.clientY;
-                
                 let originalParent = cardElement.parentElement;
                 
                 clearTimeout(magnifyTimer); document.getElementById('card-magnifier').style.display = 'none';
@@ -546,24 +546,27 @@
                     }, 400);
                 }
 
+                let startPageX = event.type.includes('touch') ? event.touches[0].pageX : event.pageX;
+                let startPageY = event.type.includes('touch') ? event.touches[0].pageY : event.pageY;
                 let rect = cardElement.getBoundingClientRect();
-                // 使用 clientX (視窗座標) 減去 rect.left (也是視窗座標) 算出最精確的偏移量
-                let shiftX = clientX - rect.left;
-                let shiftY = clientY - rect.top;
+                
+                // 絕對防順移定位法：抓取滑鼠與卡片左上角的差距
+                let shiftX = startPageX - (rect.left + window.scrollX);
+                let shiftY = startPageY - (rect.top + window.scrollY);
 
                 function onMove(event) {
-                    let curClientX = event.type.includes('touch') ? event.touches[0].clientX : event.clientX;
-                    let curClientY = event.type.includes('touch') ? event.touches[0].clientY : event.clientY;
-                    // 使用 pageX 來給絕對定位賦值，才不會因為卷軸滑動而產生偏移
                     let curPageX = event.type.includes('touch') ? event.touches[0].pageX : event.pageX;
                     let curPageY = event.type.includes('touch') ? event.touches[0].pageY : event.pageY;
 
-                    if (!isDragging && (Math.abs(curClientX - clientX) > 3 || Math.abs(curClientY - clientY) > 3)) {
+                    if (!isDragging && (Math.abs(curPageX - startPageX) > 3 || Math.abs(curPageY - startPageY) > 3)) {
                         isDragging = true; if(typeof longPressTimer !== 'undefined') clearTimeout(longPressTimer);
                         if (isStackDrag) {
                             if (stackCardsData.length === 0) {
                                 Array.from(originalParent.querySelectorAll('.card')).forEach(c => {
-                                    let r = c.getBoundingClientRect(); stackCardsData.push({ el: c, shiftX: clientX - r.left, shiftY: clientY - r.top });
+                                    let r = c.getBoundingClientRect(); 
+                                    let sX = startPageX - (r.left + window.scrollX);
+                                    let sY = startPageY - (r.top + window.scrollY);
+                                    stackCardsData.push({ el: c, shiftX: sX, shiftY: sY });
                                     document.body.appendChild(c); c.style.position = 'absolute'; c.classList.add('dragging'); c.classList.remove('in-life', 'stack-glowing'); 
                                 });
                             }
