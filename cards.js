@@ -529,6 +529,5 @@ const masterCardCatalog = [
         "EX02BT_CGH-2-065", "EX02BT_CGH-2-066", "EX02BT_CGH-2-067", "EX02BT_CGH-2-068",
         "EX02BT_CGH-2-069", "EX02BT_CGH-2-070", "EX02BT_CGH-2-071", "EX02BT_CGH-2-072",
         "EX02BT_CGH-2-073"
-    ]).
-
+    ])
 ];
