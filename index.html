@@ -6,10 +6,7 @@
     <title>我的 UA 遠端對戰平台</title>
     <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
     <style>
-        /* 🛡️ 新增：user-select: none; 徹底消滅煩人的文字反白！ */
         body { background-color: #1a0808; margin: 0; min-height: 100vh; font-family: '微軟正黑體', sans-serif; display: flex; flex-direction: column; align-items: center; padding: 20px; box-sizing: border-box; color: white; overflow-x: hidden; touch-action: manipulation; -webkit-user-select: none; -moz-user-select: none; -ms-user-select: none; user-select: none; }
-        
-        /* 讓輸入框維持可以輸入文字的狀態 */
         input, textarea, select { -webkit-user-select: auto; -moz-user-select: auto; -ms-user-select: auto; user-select: auto; }
 
         #sys-msg { position: fixed; top: 10px; left: 50%; transform: translateX(-50%); background: #e67e22; padding: 10px 20px; border-radius: 5px; font-weight: bold; display: none; z-index: 10000; box-shadow: 0 4px 10px rgba(0,0,0,0.5); }
@@ -47,13 +44,13 @@
         .import-section { background: rgba(155, 89, 182, 0.2); border: 2px dashed #9b59b6; padding: 10px; border-radius: 8px; margin-bottom: 15px; display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
         .import-textarea { flex: 1; min-width: 200px; height: 35px; background: #2c3e50; color: white; border: 1px solid #34495e; border-radius: 4px; padding: 8px; font-family: monospace; resize: none; outline: none; }
 
-        /* 📱 新增：防擠壓的滾動桌面容器 */
+        /* 📱 修正桌面滾動框 */
         .board-wrapper { width: 100%; overflow-x: auto; overflow-y: hidden; padding-bottom: 10px; scrollbar-width: thin; scrollbar-color: #e74c3c #1a0808; }
         .board-wrapper::-webkit-scrollbar { height: 8px; }
         .board-wrapper::-webkit-scrollbar-track { background: #1a0808; border-radius: 4px; }
         .board-wrapper::-webkit-scrollbar-thumb { background: #e74c3c; border-radius: 4px; }
 
-        /* 鎖定遊戲桌最小寬度，保證卡片絕對不變形 */
+        /* 鎖定遊戲桌寬度 */
         .game-table { min-width: 860px; width: 100%; display: flex; flex-direction: column; align-items: center; gap: 15px; margin: 0 auto; }
 
         .player-board { display: flex; flex-direction: column; align-items: center; gap: 10px; width: 100%; position: relative; }
@@ -65,7 +62,7 @@
 
         .line-label { color: #fff; font-size: 13px; font-weight: bold; text-align: center; margin: 3px 0; text-shadow: 1px 1px 2px black; }
         .center-zone { display: flex; flex-direction: column; align-items: center; }
-        .side-zone { display: flex; flex-direction: column; gap: 10px;}
+        .side-zone { display: flex; flex-direction: column; gap: 10px; height: 100%; } /* 加入 height:100% 確保上下對齊 */
         .card-row { display: flex; gap: 10px; margin-bottom: 8px; }
 
         .slot { width: 85px; height: 119px; background-color: rgba(255,255,255,0.1); border: 2px dashed rgba(255,255,255,0.5); border-radius: 6px; position: relative; display: flex; justify-content: center; align-items: center; }
@@ -197,11 +194,15 @@
             <div class="game-table">
                 <div id="opp-board" class="player-board">
                     <div style="width:100%; color: #e74c3c; font-size: 18px; font-weight: bold;">對手 (Opponent)</div>
+                    <div class="bottom-container">
+                        <div class="look-zone" id="opp-look-zone">檢索區</div>
+                        <div class="hand-zone"><div class="line-label">對手手牌區</div><div class="hand-area" id="opp-hand-area"></div></div>
+                    </div>
                     <div class="playmat">
                         <div class="side-zone">
                             <div><div class="line-label">卡組</div><div class="slot" id="opp-deck-area"></div></div>
                             <div><div class="line-label">公開展示</div><div class="slot" id="opp-public-area"></div></div>
-                            <div><div class="line-label">場外</div><div class="slot" id="opp-outside-area"></div></div>
+                            <div style="margin-top: auto;"><div class="line-label">場外</div><div class="slot" id="opp-outside-area"></div></div>
                         </div>
                         <div class="center-zone">
                             <div class="line-label">ACTION POINT AREA</div>
@@ -213,12 +214,8 @@
                         </div>
                         <div class="side-zone">
                             <div><div class="line-label">生命區</div><div class="slot" id="opp-life-area"></div></div>
-                            <div style="margin-top: 60px;"><div class="line-label">移除區</div><div class="slot" id="opp-remove-area"></div></div>
+                            <div style="margin-top: auto;"><div class="line-label">移除區</div><div class="slot" id="opp-remove-area"></div></div>
                         </div>
-                    </div>
-                    <div class="bottom-container">
-                        <div class="look-zone" id="opp-look-zone">檢索區</div>
-                        <div class="hand-zone"><div class="line-label">對手手牌區</div><div class="hand-area" id="opp-hand-area"></div></div>
                     </div>
                 </div>
 
@@ -230,7 +227,7 @@
 
                         <div class="side-zone">
                             <div><div class="line-label">生命區</div><div class="slot" id="my-life-area"></div></div>
-                            <div style="margin-top: 60px;"><div class="line-label">移除區</div><div class="slot" id="my-remove-area"></div></div>
+                            <div style="margin-top: auto;"><div class="line-label">移除區</div><div class="slot" id="my-remove-area"></div></div>
                         </div>
                         
                         <div class="center-zone">
@@ -245,7 +242,7 @@
                         <div class="side-zone">
                             <div><div class="line-label">卡組</div><div class="slot" id="my-deck-area"></div></div>
                             <div><div class="line-label">公開展示</div><div class="slot" id="my-public-area"></div></div>
-                            <div><div class="line-label">場外</div><div class="slot" id="my-outside-area"></div></div>
+                            <div style="margin-top: auto;"><div class="line-label">場外</div><div class="slot" id="my-outside-area"></div></div>
                         </div>
                     </div>
                     <div class="bottom-container">
@@ -519,12 +516,15 @@
         }
         function recalcStacking(areaElement) { if(!areaElement || areaElement.id.includes('hand') || areaElement.id.includes('look')) return; Array.from(areaElement.querySelectorAll('.card')).forEach((c, idx) => applyStackingStyle(c, areaElement, idx)); }
 
+        // 🌟 修正版完美拖曳引擎 (防順移修正)
         function attachMyDragEvents(cardElement) {
             function dragStart(event) {
                 if (event.type === 'mousedown' && event.button !== 0) return; 
                 let isDragging = false, isStackDrag = false, stackCardsData = [];
-                let startX = event.type.includes('touch') ? event.touches[0].clientX : event.clientX;
-                let startY = event.type.includes('touch') ? event.touches[0].clientY : event.clientY;
+                
+                let clientX = event.type.includes('touch') ? event.touches[0].clientX : event.clientX;
+                let clientY = event.type.includes('touch') ? event.touches[0].clientY : event.clientY;
+                
                 let originalParent = cardElement.parentElement;
                 
                 clearTimeout(magnifyTimer); document.getElementById('card-magnifier').style.display = 'none';
@@ -541,13 +541,18 @@
                 }
 
                 let rect = cardElement.getBoundingClientRect();
-                let shiftX = startX - rect.left, shiftY = startY - rect.top;
+                // 使用 clientX (視窗座標) 減去 rect.left (也是視窗座標) 算出最精確的偏移量
+                let shiftX = clientX - rect.left;
+                let shiftY = clientY - rect.top;
 
                 function onMove(event) {
-                    let clientX = event.type.includes('touch') ? event.touches[0].clientX : event.clientX;
-                    let clientY = event.type.includes('touch') ? event.touches[0].clientY : event.clientY;
+                    let curClientX = event.type.includes('touch') ? event.touches[0].clientX : event.clientX;
+                    let curClientY = event.type.includes('touch') ? event.touches[0].clientY : event.clientY;
+                    // 使用 pageX 來給絕對定位賦值，才不會因為卷軸滑動而產生偏移
+                    let curPageX = event.type.includes('touch') ? event.touches[0].pageX : event.pageX;
+                    let curPageY = event.type.includes('touch') ? event.touches[0].pageY : event.pageY;
 
-                    if (!isDragging && (Math.abs(clientX - startX) > 3 || Math.abs(clientY - startY) > 3)) {
+                    if (!isDragging && (Math.abs(curClientX - clientX) > 3 || Math.abs(curClientY - clientY) > 3)) {
                         isDragging = true; if(typeof longPressTimer !== 'undefined') clearTimeout(longPressTimer);
                         if (isStackDrag) {
                             if (stackCardsData.length === 0) {
@@ -563,8 +568,8 @@
                     }
                     if (isDragging) {
                         if (event.type.includes('touch') && event.cancelable) event.preventDefault(); 
-                        if (isStackDrag) stackCardsData.forEach(item => { item.el.style.left = (clientX - item.shiftX) + 'px'; item.el.style.top = (clientY - item.shiftY) + 'px'; });
-                        else { cardElement.style.left = (clientX - shiftX) + 'px'; cardElement.style.top = (clientY - shiftY) + 'px'; }
+                        if (isStackDrag) stackCardsData.forEach(item => { item.el.style.left = (curPageX - item.shiftX) + 'px'; item.el.style.top = (curPageY - item.shiftY) + 'px'; });
+                        else { cardElement.style.left = (curPageX - shiftX) + 'px'; cardElement.style.top = (curPageY - shiftY) + 'px'; }
                         broadcastMyState(); 
                     }
                 }
