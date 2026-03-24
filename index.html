@@ -7,11 +7,11 @@
     <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
     <style>
         :root {
-            /* 🌟 已經修復這裡的語法錯誤！ */
-            --card-h: min(10.5vh, 110px); 
+            /* 🌟 放棄動態縮放，改用絕對完美尺寸，配合虛擬攝影機！ */
+            --card-h: 110px; 
             --card-w: calc(var(--card-h) * 0.714); 
-            --gap-size: min(1vh, 6px);
-            --font-size-base: min(1.5vh, 14px);
+            --gap-size: 8px;
+            --font-size-base: 13px;
         }
 
         body { background-color: #0a0a0a; margin: 0; min-height: 100vh; overflow-x: hidden; overflow-y: auto; font-family: '微軟正黑體', sans-serif; display: flex; flex-direction: column; align-items: center; padding: 1.5vh 2vw; box-sizing: border-box; color: white; touch-action: manipulation; -webkit-user-select: none; user-select: none; }
@@ -20,7 +20,7 @@
         #sys-msg { position: fixed; top: 10px; left: 50%; transform: translateX(-50%); background: #e67e22; padding: 10px 20px; border-radius: 5px; font-weight: bold; display: none; z-index: 10000; box-shadow: 0 4px 10px rgba(0,0,0,0.5); }
         
         #builder-scene { width: 100%; max-width: 1200px; display: flex; flex-direction: column; gap: 15px; margin-bottom: 30px; }
-        #game-scene { display: none; width: 100%; max-width: 1600px; flex-direction: column; align-items: center; gap: var(--gap-size); margin-bottom: 20px; }
+        #game-scene { display: none; width: 100%; flex-direction: column; align-items: center; gap: 10px; margin-bottom: 10px; }
 
         .network-panel { background: rgba(41, 128, 185, 0.2); border: 2px solid #3498db; border-radius: 10px; padding: 10px 15px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; }
         .network-box { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
@@ -52,29 +52,48 @@
         .import-textarea { flex: 1 1 150px; height: 35px; background: #2c3e50; color: white; border: 1px solid #34495e; border-radius: 4px; padding: 8px; font-family: monospace; resize: none; outline: none; }
         #import-series-name { flex: 0 1 120px; }
 
-        .board-wrapper { width: 100%; overflow-x: auto; overflow-y: hidden; padding-bottom: 10px; scrollbar-width: none; }
-        .board-wrapper::-webkit-scrollbar { display: none; }
+        /* 🎥 虛擬攝影機觀景窗 (Viewport) */
+        .board-wrapper { 
+            width: 100%; height: 80vh; 
+            overflow: hidden; position: relative; background: #151515; 
+            border: 3px solid #333; border-radius: 10px; box-shadow: inset 0 0 50px black;
+            cursor: grab; touch-action: none; 
+        }
+        .board-wrapper:active { cursor: grabbing; }
 
-        .game-table { min-width: 820px; width: 100%; display: flex; flex-direction: column; align-items: center; gap: 0; margin: 0 auto; }
+        /* 🕹️ 浮動視角控制器 */
+        .cam-ctrl-box {
+            position: absolute; right: 15px; bottom: 15px; display: flex; flex-direction: column; gap: 10px; z-index: 10005;
+        }
+        .cam-btn {
+            width: 45px; height: 45px; border-radius: 50%; background: rgba(0,0,0,0.8); border: 2px solid #f39c12; color: white;
+            font-size: 20px; font-weight: bold; cursor: pointer; display: flex; justify-content: center; align-items: center; box-shadow: 0 4px 10px rgba(0,0,0,0.5); transition: 0.2s;
+        }
+        .cam-btn:hover { background: #f39c12; color: black; }
 
-        .battlefield { display: flex; flex-direction: column; width: 100%; background: linear-gradient(145deg, #1c2833, #2c0e0e); border: 3px solid #d32f2f; border-radius: 15px; box-shadow: inset 0 0 40px rgba(0,0,0,0.9), 0 15px 30px rgba(0,0,0,0.9); position: relative; overflow: hidden; }
+        /* 📐 絕對完美的實體戰鬥桌面 */
+        .game-table { 
+            width: 1250px; height: 950px; 
+            position: absolute; left: 0; top: 0; transform-origin: top left;
+            display: flex; flex-direction: column; align-items: center; gap: 10px; padding: 20px; box-sizing: border-box;
+        }
+
+        .battlefield { display: flex; flex-direction: column; width: 100%; background: linear-gradient(145deg, #1c2833, #2c0e0e); border: 3px solid #d32f2f; border-radius: 15px; box-shadow: inset 0 0 40px rgba(0,0,0,0.9), 0 15px 30px rgba(0,0,0,0.9); position: relative; }
         
-        .playmat { display: flex; justify-content: space-between; align-items: stretch; gap: 1vw; padding: 1.5vh 2vw; width: 100%; box-sizing: border-box; }
-        
+        .playmat { display: flex; justify-content: space-between; align-items: stretch; gap: 15px; padding: 15px; width: 100%; box-sizing: border-box; }
         .board-divider { width: 100%; height: 2px; background: rgba(241, 196, 15, 0.3); box-shadow: 0 0 10px rgba(241, 196, 15, 0.6); }
 
-        .line-label { color: rgba(255,255,255,0.8); font-size: var(--font-size-base); font-weight: bold; text-align: center; margin: 0.3vh 0; letter-spacing: 1px; text-shadow: 1px 1px 3px black; z-index: 1; white-space: nowrap; }
+        .line-label { color: rgba(255,255,255,0.8); font-size: var(--font-size-base); font-weight: bold; text-align: center; margin: 4px 0; letter-spacing: 1px; text-shadow: 1px 1px 3px black; z-index: 1; white-space: nowrap; pointer-events: none; }
         
-        .center-zone { display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 1; gap: 6px; flex-grow: 1; }
-        .side-zone { display: flex; flex-direction: column; gap: var(--gap-size); height: 100%; z-index: 1; justify-content: space-between; align-items: center; flex-shrink: 0; width: calc(var(--card-h) + 1vw); } 
+        .center-zone { display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 1; gap: 8px; flex-grow: 1; }
+        .side-zone { display: flex; flex-direction: column; gap: 10px; height: 100%; z-index: 1; justify-content: space-between; align-items: center; flex-shrink: 0; width: calc(var(--card-h) + 10px); } 
         
-        .card-row { display: flex; gap: calc(var(--gap-size) * 1.2); }
+        .card-row { display: flex; gap: 10px; }
 
         .slot { width: var(--card-w); height: var(--card-h); background-color: rgba(0,0,0,0.5); border: 2px dashed rgba(241, 196, 15, 0.5); border-radius: 6px; box-shadow: inset 0 0 15px rgba(0,0,0,0.8); position: relative; display: flex; justify-content: center; align-items: center; }
+        .slot.life-slot { width: var(--card-h); height: calc(var(--card-w) + 120px); justify-content: flex-start; align-items: flex-start; } 
         
-        .slot.life-slot { width: var(--card-h); height: calc(var(--card-w) + 15vh); justify-content: flex-start; align-items: flex-start; } 
-        
-        .slot::after { content: attr(data-count); position: absolute; top: -5px; right: -5px; background-color: #e74c3c; color: white; border-radius: 50%; width: min(2.5vh, 22px); height: min(2.5vh, 22px); display: flex; justify-content: center; align-items: center; font-size: var(--font-size-base); opacity: 0; transition: opacity 0.2s; z-index: 999; font-weight: bold; box-shadow: 0 2px 5px rgba(0,0,0,0.5); }
+        .slot::after { content: attr(data-count); position: absolute; top: -5px; right: -5px; background-color: #e74c3c; color: white; border-radius: 50%; width: 22px; height: 22px; display: flex; justify-content: center; align-items: center; font-size: var(--font-size-base); opacity: 0; transition: opacity 0.2s; z-index: 999; font-weight: bold; box-shadow: 0 2px 5px rgba(0,0,0,0.5); }
         .slot:hover::after { opacity: 1; }
         .slot[data-count="0"]::after, .slot[data-count="1"]::after, .slot:not([data-count])::after { display: none; }
 
@@ -86,11 +105,12 @@
         .phase-step { padding: 4px; border-radius: 4px; background: #2c3e50; cursor: pointer; font-weight: bold; font-size: 11px; transition: 0.3s; color: #bdc3c7; text-align: center; }
         .phase-step.active { background: #f39c12; color: #000; box-shadow: 0 0 8px #f39c12; }
 
-        .bottom-container { width: 100%; display: flex; gap: 15px; flex-wrap: wrap; justify-content: center; margin-top: 15px;}
-        .hand-zone { flex: 7; background-color: rgba(0,0,0,0.6); border: 2px dashed #7f8c8d; border-radius: 10px; padding: 1vh; display: flex; flex-direction: column;}
-        .look-zone { flex: 3; background-color: rgba(0,50,100,0.6); border: 2px dashed #3498db; border-radius: 10px; padding: 1vh; display: flex; flex-direction: column;}
-        .hand-area, .look-area { display: flex; flex-wrap: wrap; gap: var(--gap-size); width: 100%; min-height: var(--card-h); align-items: center; justify-content: center;}
+        .bottom-container { width: 100%; display: flex; gap: 15px; justify-content: center; align-items: stretch; }
+        .hand-zone { flex: 7; background-color: rgba(0,0,0,0.6); border: 2px dashed #7f8c8d; border-radius: 10px; padding: 10px; display: flex; flex-direction: column;}
+        .look-zone { flex: 3; background-color: rgba(0,50,100,0.6); border: 2px dashed #3498db; border-radius: 10px; padding: 10px; display: flex; flex-direction: column;}
+        .hand-area, .look-area { display: flex; flex-wrap: wrap; gap: 10px; width: 100%; min-height: var(--card-h); align-items: center; justify-content: center;}
 
+        /* 🃏 卡片屬性 */
         .card { width: var(--card-w); height: var(--card-h); border-radius: 6px; box-shadow: 0 4px 8px rgba(0,0,0,0.8); cursor: grab; transition: transform 0.2s ease-out; position: absolute; perspective: 1000px; touch-action: none;}
         .hand-area .card, .look-area .card { position: relative; left: 0 !important; top: 0 !important; margin-left: -15px;}
         .hand-area .card:first-child, .look-area .card:first-child { margin-left: 0; }
@@ -141,7 +161,7 @@
     <div id="portrait-warning">
         <div style="font-size: 50px; margin-bottom: 20px;">📱🔄</div>
         <div>請將手機轉為「橫向」<br>以獲得最佳對戰體驗！</div>
-        <div style="font-size: 14px; color: #aaa; margin-top: 10px;">(卡牌對戰需要較寬的畫面空間)</div>
+        <div style="font-size: 14px; color: #aaa; margin-top: 10px;">(使用兩指或右鍵來平移縮放)</div>
     </div>
 
     <div id="center-overlay">
@@ -212,7 +232,8 @@
     <div id="game-scene">
         <div style="width: 100%; display: flex; justify-content: space-between; align-items: center; background: rgba(0,0,0,0.8); padding: 1vh 2vw; border-radius: 8px; box-sizing: border-box; margin-bottom: 10px;">
             <div style="color: #f1c40f; font-weight: bold; font-size: 16px;">UA 遠端對戰平台</div>
-            <div style="display: flex; gap: 10px;">
+            <div style="display: flex; gap: 10px; align-items: center;">
+                <span style="font-size: 12px; color: #aaa;">(拖曳底板平移，滾輪縮放)</span>
                 <button onclick="rollDice()" class="ctrl-btn" style="background: #9b59b6;">🎲 擲骰子</button>
                 <button id="btn-back-builder" class="ctrl-btn danger">🔙 投降並返回</button>
             </div>
@@ -225,14 +246,22 @@
             <button id="btn-bottom-faceup" class="drop-btn">正表放下 (墊底下)</button>
             <button id="btn-cancel-drop" class="drop-btn cancel">取消放置</button>
         </div>
-
-        <div style="width: 100%; max-width: 900px; display: flex; gap: 15px; margin-bottom: 10px;">
-            <div class="look-zone" id="opp-look-zone"><div class="line-label">檢索區</div><div class="look-area" id="opp-look-area"></div></div>
-            <div class="hand-zone" style="flex:7;"><div class="line-label" style="color:#e74c3c;">對手手牌區</div><div class="hand-area" id="opp-hand-area"></div></div>
-        </div>
             
-        <div class="board-wrapper">
-            <div class="game-table">
+        <div class="board-wrapper" id="board-viewport">
+            
+            <div class="cam-ctrl-box">
+                <button class="cam-btn" onclick="zoomCam(0.15)">➕</button>
+                <button class="cam-btn" onclick="resetCam()">🎯</button>
+                <button class="cam-btn" onclick="zoomCam(-0.15)">➖</button>
+            </div>
+
+            <div class="game-table" id="game-table-inner">
+
+                <div style="width: 100%; max-width: 900px; display: flex; gap: 15px;">
+                    <div class="look-zone" id="opp-look-zone"><div class="line-label">檢索區</div><div class="look-area" id="opp-look-area"></div></div>
+                    <div class="hand-zone" style="flex:7;"><div class="line-label" style="color:#e74c3c;">對手手牌區</div><div class="hand-area" id="opp-hand-area"></div></div>
+                </div>
+
                 <div class="battlefield">
                     
                     <div id="opp-board" class="playmat">
@@ -294,17 +323,18 @@
                         </div>
                     </div>
                 </div>
-            </div>
-        </div>
 
-        <div class="bottom-container" style="max-width: 900px;">
-            <div class="hand-zone"><div class="line-label" style="color:#2ecc71;">YOUR HAND (我方手牌)</div><div class="hand-area" id="my-hand-area"></div></div>
-            <div class="look-zone">
-                <div class="line-label" style="display: flex; justify-content: space-between; align-items: center;">
-                    <span>檢索確認區</span>
-                    <div><button class="ctrl-btn" style="padding: 2px 5px;" onclick="sendToDeck('my-look-area', 'my-deck-area', false)">置頂</button> <button class="ctrl-btn" style="padding: 2px 5px;" onclick="sendToDeck('my-look-area', 'my-deck-area', true)">置底</button></div>
+                <div class="bottom-container" style="max-width: 900px;">
+                    <div class="hand-zone"><div class="line-label" style="color:#2ecc71;">YOUR HAND (我方手牌)</div><div class="hand-area" id="my-hand-area"></div></div>
+                    <div class="look-zone">
+                        <div class="line-label" style="display: flex; justify-content: space-between; align-items: center;">
+                            <span>檢索確認區</span>
+                            <div><button class="ctrl-btn" style="padding: 2px 5px;" onclick="sendToDeck('my-look-area', 'my-deck-area', false)">置頂</button> <button class="ctrl-btn" style="padding: 2px 5px;" onclick="sendToDeck('my-look-area', 'my-deck-area', true)">置底</button></div>
+                        </div>
+                        <div class="look-area" id="my-look-area"></div>
+                    </div>
                 </div>
-                <div class="look-area" id="my-look-area"></div>
+
             </div>
         </div>
     </div>
@@ -319,7 +349,7 @@
         <div class="modal-header" id="secondary-modal-header" style="display:none; margin-top:20px; font-size: 18px;">
             <span style="color: #3498db;">⬇️ 公開區 (可從上方拖曳加入)</span>
         </div>
-        <div class="modal-content" id="modal-public-container" style="display:none; border-color: #3498db; min-height: var(--card-h);"></div>
+        <div class="modal-content" id="modal-public-container" style="display:none; border-color: #3498db; min-height: 120px;"></div>
     </div>
 
     <div id="mulligan-modal">
@@ -335,7 +365,6 @@
 
     <script>
         let invalidCardsCache = JSON.parse(localStorage.getItem('ua_invalid_cards')) || [];
-        
         window.markCardInvalid = function(cardId) {
             if (!invalidCardsCache.includes(cardId)) {
                 invalidCardsCache.push(cardId);
@@ -478,6 +507,59 @@
             setTimeout(() => { overlay.style.display = 'none'; }, 2500);
         }
 
+        // ================= 🎥 虛擬攝影機引擎核心 =================
+        window.camScale = 1;
+        window.camX = 0; window.camY = 0;
+        let isCamDragging = false;
+        let camStartX = 0, camStartY = 0;
+
+        function updateCamera() {
+            let gameTable = document.getElementById('game-table-inner');
+            if(gameTable) gameTable.style.transform = `translate(${window.camX}px, ${window.camY}px) scale(${window.camScale})`;
+        }
+
+        window.zoomCam = function(delta) {
+            window.camScale += delta;
+            if(window.camScale < 0.4) window.camScale = 0.4;
+            if(window.camScale > 2) window.camScale = 2;
+            updateCamera();
+        };
+
+        window.resetCam = function() {
+            let wrapper = document.getElementById('board-viewport');
+            if(!wrapper) return;
+            let w = wrapper.clientWidth;
+            let h = wrapper.clientHeight;
+            // 完美的自動適應比例
+            window.camScale = Math.min(w / 1250, h / 950) * 0.95; 
+            if(window.camScale > 1) window.camScale = 1;
+            
+            window.camX = (w - (1250 * window.camScale)) / 2;
+            window.camY = (h - (950 * window.camScale)) / 2;
+            updateCamera();
+        };
+
+        function startPan(e) {
+            if(e.target.closest('.card') || e.target.closest('.cam-btn') || e.target.closest('.marker') || e.target.closest('.phase-step') || e.target.closest('.start-btn')) return;
+            isCamDragging = true;
+            let clientX = e.type.includes('touch') ? e.touches[0].clientX : e.clientX;
+            let clientY = e.type.includes('touch') ? e.touches[0].clientY : e.clientY;
+            camStartX = clientX - window.camX;
+            camStartY = clientY - window.camY;
+        }
+
+        function doPan(e) {
+            if(!isCamDragging) return;
+            e.preventDefault();
+            let clientX = e.type.includes('touch') ? e.touches[0].clientX : e.clientX;
+            let clientY = e.type.includes('touch') ? e.touches[0].clientY : e.clientY;
+            window.camX = clientX - camStartX;
+            window.camY = clientY - camStartY;
+            updateCamera();
+        }
+
+        function endPan() { isCamDragging = false; }
+
         window.onload = () => { 
             let savedCustom = JSON.parse(localStorage.getItem('ua_custom_cards')) || [];
             if(typeof masterCardCatalog !== 'undefined') masterCardCatalog.push(...savedCustom);
@@ -494,8 +576,27 @@
                 };
                 slot.appendChild(marker);
             });
+
+            // 綁定攝影機滑鼠/觸控事件
+            let wrapper = document.getElementById('board-viewport');
+            wrapper.addEventListener('mousedown', startPan);
+            wrapper.addEventListener('touchstart', startPan, {passive: false});
+            window.addEventListener('mousemove', doPan);
+            window.addEventListener('touchmove', doPan, {passive: false});
+            window.addEventListener('mouseup', endPan);
+            window.addEventListener('touchend', endPan);
+
+            // 滾輪縮放
+            wrapper.addEventListener('wheel', e => {
+                if (e.target.closest('.modal-content')) return;
+                e.preventDefault();
+                zoomCam(e.deltaY < 0 ? 0.08 : -0.08);
+            }, {passive: false});
+
+            window.addEventListener('resize', resetCam);
         };
 
+        // ================= 網路連線引擎 =================
         let peer = new Peer({ config: { 'iceServers': [ { urls: 'stun:stun.l.google.com:19302' }, { urls: 'stun:stun1.l.google.com:19302' }, { urls: 'stun:stun2.l.google.com:19302' }, { urls: 'turn:openrelay.metered.ca:80', username: 'openrelayproject', credential: 'openrelayproject' }, { urls: 'turn:openrelay.metered.ca:443', username: 'openrelayproject', credential: 'openrelayproject' } ] } });
         let conn = null; let isConnected = false;
 
@@ -511,7 +612,9 @@
                 btn.onclick = () => {
                     if(myDeckData.length === 0) { alert("請先建立主牌組！"); return; }
                     if(myApData.length !== 3) { alert("請挑選剛好 3 張 AP 卡！"); return; }
-                    document.getElementById('builder-scene').style.display = 'none'; document.getElementById('game-scene').style.display = 'flex';
+                    document.getElementById('builder-scene').style.display = 'none'; 
+                    document.getElementById('game-scene').style.display = 'flex';
+                    resetCam(); // 開啟畫面時自動校正鏡頭
                     
                     let shuffledDeck = shuffleArray([...myDeckData]);
                     initMyBoard(shuffledDeck, myApData); conn.send({ type: 'START_GAME', deck: shuffledDeck, ap: myApData });
@@ -524,11 +627,8 @@
                 else if(data.type === 'DICE_ROLL') showCenterAlert('🎲', '對手擲出了：', data.value, '#e74c3c');
                 else if(data.type === 'SHUFFLE_DECK') showCenterAlert('🔀', '對手洗牌中', 'Shuffling...', '#9b59b6');
                 else if(data.type === 'PHASE_BROADCAST') { 
-                    if (data.phase === '結束') {
-                        showCenterAlert('⚠️', '對手回合結束', '輪到你了！', '#2ecc71');
-                    } else {
-                        showCenterAlert('⚠️', '對手進入了', data.phase + '階段', '#f39c12');
-                    }
+                    if (data.phase === '結束') showCenterAlert('⚠️', '對手回合結束', '輪到你了！', '#2ecc71');
+                    else showCenterAlert('⚠️', '對手進入了', data.phase + '階段', '#f39c12');
                 }
                 else if(data.type === 'SURRENDER') {
                     alert("對手已投降並返回構築區！\n點擊確定後將同步返回大廳。");
@@ -615,6 +715,7 @@
                     let parentEl = document.getElementById(targetParentId);
                     if(parentEl && el.parentElement !== parentEl) parentEl.appendChild(el);
                     
+                    // 🌟 因為虛擬攝影機改變了架構，絕對定位依然完美有效
                     el.style.position = (targetParentId.includes('hand') || targetParentId.includes('look')) ? 'relative' : 'absolute';
                     el.style.left = d.x; el.style.top = d.y; el.style.zIndex = d.zIndex; 
                     
@@ -712,8 +813,10 @@
         }
         function recalcStacking(areaElement) { if(!areaElement || areaElement.id.includes('hand') || areaElement.id.includes('look')) return; Array.from(areaElement.querySelectorAll('.card')).forEach((c, idx) => applyStackingStyle(c, areaElement, idx)); }
 
+        // 🌟 轉換矩陣加持的完美拖曳引擎
         function attachMyDragEvents(cardElement) {
             cardElement.clickTimeout = null;
+            let gameTableInner = document.getElementById('game-table-inner');
 
             function dragStart(event) {
                 if (event.type === 'mousedown' && window.isTouchDevice) return;
@@ -733,39 +836,54 @@
                 }, 300);
 
                 let isTouch = event.type.includes('touch');
-                let startPageX = isTouch ? event.touches[0].pageX : event.pageX;
-                let startPageY = isTouch ? event.touches[0].pageY : event.pageY;
+                let clientX = isTouch ? event.touches[0].clientX : event.clientX;
+                let clientY = isTouch ? event.touches[0].clientY : event.clientY;
+                
+                // 🌟 核心：消除螢幕放大縮小的偏移誤差
                 let rect = cardElement.getBoundingClientRect();
-                let shiftX = startPageX - (rect.left + window.scrollX);
-                let shiftY = startPageY - (rect.top + window.scrollY);
+                let shiftX = (clientX - rect.left) / window.camScale;
+                let shiftY = (clientY - rect.top) / window.camScale;
+                let dragThreshold = isTouch ? 15 : 6;
+                let startClientX = clientX;
+                let startClientY = clientY;
 
                 function onMove(event) {
-                    let curPageX = isTouch ? event.touches[0].pageX : event.pageX;
-                    let curPageY = isTouch ? event.touches[0].pageY : event.pageY;
+                    let curClientX = isTouch ? event.touches[0].clientX : event.clientX;
+                    let curClientY = isTouch ? event.touches[0].clientY : event.clientY;
 
-                    let dragThreshold = isTouch ? 15 : 6;
-
-                    if (!isDragging && (Math.abs(curPageX - startPageX) > dragThreshold || Math.abs(curPageY - startPageY) > dragThreshold)) {
+                    if (!isDragging && (Math.abs(curClientX - startClientX) > dragThreshold || Math.abs(curClientY - startClientY) > dragThreshold)) {
                         isDragging = true; if(typeof longPressTimer !== 'undefined') clearTimeout(longPressTimer);
                         if (isStackDrag) {
                             if (stackCardsData.length === 0) {
                                 Array.from(originalParent.querySelectorAll('.card')).forEach(c => {
                                     let r = c.getBoundingClientRect(); 
-                                    let sX = startPageX - (r.left + window.scrollX);
-                                    let sY = startPageY - (r.top + window.scrollY);
+                                    let sX = (startClientX - r.left) / window.camScale;
+                                    let sY = (startClientY - r.top) / window.camScale;
                                     stackCardsData.push({ el: c, shiftX: sX, shiftY: sY });
-                                    document.body.appendChild(c); c.style.position = 'absolute'; c.classList.add('dragging'); c.classList.remove('in-life', 'stack-glowing'); 
+                                    gameTableInner.appendChild(c); c.style.position = 'absolute'; c.classList.add('dragging'); c.classList.remove('in-life', 'stack-glowing'); 
                                 });
                             }
                         } else {
-                            document.body.appendChild(cardElement); cardElement.style.position = 'absolute';
+                            gameTableInner.appendChild(cardElement); cardElement.style.position = 'absolute';
                             cardElement.classList.add('dragging'); cardElement.classList.remove('in-life'); 
                         }
                     }
                     if (isDragging) {
                         if (event.type.includes('touch') && event.cancelable) event.preventDefault(); 
-                        if (isStackDrag) stackCardsData.forEach(item => { item.el.style.left = (curPageX - item.shiftX) + 'px'; item.el.style.top = (curPageY - item.shiftY) + 'px'; });
-                        else { cardElement.style.left = (curPageX - shiftX) + 'px'; cardElement.style.top = (curPageY - shiftY) + 'px'; }
+                        
+                        let tableRect = gameTableInner.getBoundingClientRect();
+                        
+                        if (isStackDrag) {
+                            stackCardsData.forEach(item => { 
+                                let localX = (curClientX - tableRect.left) / window.camScale - item.shiftX;
+                                let localY = (curClientY - tableRect.top) / window.camScale - item.shiftY;
+                                item.el.style.left = localX + 'px'; item.el.style.top = localY + 'px'; 
+                            });
+                        } else { 
+                            let localX = (curClientX - tableRect.left) / window.camScale - shiftX;
+                            let localY = (curClientY - tableRect.top) / window.camScale - shiftY;
+                            cardElement.style.left = localX + 'px'; cardElement.style.top = localY + 'px'; 
+                        }
                         broadcastMyState(); 
                     }
                 }
@@ -911,13 +1029,15 @@
             let slot = e.target.closest('.slot'); if(slot === hoveredSlot) hoveredSlot = null; 
         });
 
+        // ⌨️ 全面快捷鍵系統
         document.addEventListener('keydown', e => {
             if(document.getElementById('game-scene').style.display === 'none') return;
             if(e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
 
             let key = e.key.toLowerCase();
             
-            if (key === 'r') {
+            // 🔀 R 鍵：全局洗牌動畫
+            if (key === 'r' && !hoveredCard) {
                 let deckArea = document.getElementById('my-deck-area');
                 let cards = Array.from(deckArea.querySelectorAll('.card'));
                 if(cards.length > 1) {
@@ -943,6 +1063,13 @@
             if(hoveredCard && !hoveredCard.parentElement.id.includes('opp-')) {
                 if(key === 'f') { hoveredCard.classList.toggle('is-flipped'); broadcastMyState(); }
                 
+                // R：轉置卡片
+                if(key === 'r') { 
+                    if (!hoveredCard.classList.contains('in-life')) {
+                        hoveredCard.classList.toggle('rest'); broadcastMyState(); 
+                    }
+                }
+
                 if(key === 'b' || key === 't') {
                     let dest = document.getElementById('my-deck-area');
                     if (key === 'b') dest.insertBefore(hoveredCard, dest.firstChild); 
