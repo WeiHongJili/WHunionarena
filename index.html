@@ -565,7 +565,12 @@
             cardElement.clickTimeout = null;
 
             function dragStart(event) {
+                // 🛡️ 阻擋觸控設備產生的幽靈滑鼠事件
+                if (event.type === 'mousedown' && window.isTouchDevice) return;
+                if (event.type === 'touchstart') window.isTouchDevice = true;
+
                 if (event.type === 'mousedown' && event.button !== 0) return; 
+                
                 let isDragging = false, isStackDrag = false, stackCardsData = [];
                 let originalParent = cardElement.parentElement;
                 
@@ -622,28 +627,41 @@
                     document.removeEventListener('touchmove', onMove); document.removeEventListener('touchend', onEnd);
                     if(typeof longPressTimer !== 'undefined') clearTimeout(longPressTimer);
 
-                    // 🌟 單點旋轉 / 雙點翻面 的終極判定
+                    // 🌟 強制阻擋幽靈點擊
+                    if (isTouch && event.cancelable) event.preventDefault();
+
                     if (!isDragging) {
                         if(originalParent) originalParent.querySelectorAll('.card').forEach(c => c.classList.remove('stack-glowing'));
                         
                         let noRestZones = ['hand', 'look', 'outside', 'deck', 'remove', 'public'];
                         let canRest = !noRestZones.some(z => originalParent.id.includes(z));
                         
-                        if (cardElement.clickTimeout) {
-                            // 第二次點擊 -> 觸發翻面！
-                            clearTimeout(cardElement.clickTimeout);
-                            cardElement.clickTimeout = null;
-                            cardElement.classList.toggle('is-flipped');
-                            broadcastMyState();
+                        if (isTouch) {
+                            // 📱 手機版：雙擊翻面，單擊轉置
+                            let currentTime = new Date().getTime();
+                            let tapLength = currentTime - (cardElement.lastTapTime || 0);
+                            cardElement.lastTapTime = currentTime;
+
+                            if (tapLength < 300 && tapLength > 0) {
+                                // 雙擊成功
+                                clearTimeout(cardElement.singleTapTimeout);
+                                cardElement.classList.toggle('is-flipped');
+                                broadcastMyState();
+                            } else {
+                                // 單擊等待
+                                cardElement.singleTapTimeout = setTimeout(() => {
+                                    if (!cardElement.classList.contains('in-life') && canRest) {
+                                        cardElement.classList.toggle("rest");
+                                        broadcastMyState();
+                                    }
+                                }, 250);
+                            }
                         } else {
-                            // 第一次點擊 -> 等待 250 毫秒，沒等到第二次就轉置！
-                            cardElement.clickTimeout = setTimeout(() => {
-                                cardElement.clickTimeout = null;
-                                if (!cardElement.classList.contains('in-life') && canRest) {
-                                    cardElement.classList.toggle("rest");
-                                    broadcastMyState();
-                                }
-                            }, 250);
+                            // 💻 電腦版：單擊立即轉置 (翻面由 F 鍵控制)
+                            if (!cardElement.classList.contains('in-life') && canRest) {
+                                cardElement.classList.toggle("rest");
+                                broadcastMyState();
+                            }
                         }
                     } else {
                         let endX = event.type.includes('touch') ? event.changedTouches[0].clientX : event.clientX;
@@ -657,7 +675,8 @@
                         let dropZone = elemBelow ? elemBelow.closest('.slot, .hand-area, .look-area, #modal-cards-container, #modal-public-container') : null;
                         
                         if(dropZone && dropZone.id.includes('opp-')) dropZone = null;
-                        // 🌟 把 X 座標傳進去，為了後面的「檢索區動態安插排序」
+                        
+                        // 🌟 把放開時的 X 座標傳進去，提供「檢索區動態安插」使用
                         if (!dropZone) { finalizeDrop(cardsToDrop, null, 'cancel', originalParent, endX); return; }
 
                         let isDropFieldSlot = dropZone && dropZone.closest('#my-front-line, #my-energy-line');
