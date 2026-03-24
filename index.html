@@ -69,7 +69,7 @@
 
         .slot { width: var(--card-w); height: var(--card-h); background-color: rgba(0,0,0,0.5); border: 2px dashed rgba(241, 196, 15, 0.5); border-radius: 6px; box-shadow: inset 0 0 15px rgba(0,0,0,0.8); position: relative; display: flex; justify-content: center; align-items: center; }
         
-        .slot.life-slot { width: var(--card-h); height: var(--card-w); } 
+        .slot.life-slot { width: var(--card-h); height: var(--card-w); justify-content: flex-start; align-items: flex-start; } 
         
         .slot::after { content: attr(data-count); position: absolute; top: -5px; right: -5px; background-color: #e74c3c; color: white; border-radius: 50%; width: min(2.5vh, 22px); height: min(2.5vh, 22px); display: flex; justify-content: center; align-items: center; font-size: var(--font-size-base); opacity: 0; transition: opacity 0.2s; z-index: 999; font-weight: bold; box-shadow: 0 2px 5px rgba(0,0,0,0.5); }
         .slot:hover::after { opacity: 1; }
@@ -80,6 +80,7 @@
         .look-zone { flex: 3; background-color: rgba(0,50,100,0.6); border: 2px dashed #3498db; border-radius: 10px; padding: 1vh; display: flex; flex-direction: column;}
         .hand-area, .look-area { display: flex; flex-wrap: wrap; gap: var(--gap-size); width: 100%; min-height: var(--card-h); align-items: center; justify-content: center;}
 
+        /* 🃏 卡片懸浮立體感 */
         .card { width: var(--card-w); height: var(--card-h); border-radius: 6px; box-shadow: 0 4px 8px rgba(0,0,0,0.8); cursor: grab; transition: transform 0.2s ease-out; position: absolute; perspective: 1000px; touch-action: none;}
         .hand-area .card, .look-area .card { position: relative; left: 0 !important; top: 0 !important; margin-left: -20px;}
         .hand-area .card:first-child, .look-area .card:first-child { margin-left: 0; }
@@ -111,6 +112,7 @@
 
         #mulligan-modal { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(0,0,0,0.95); border: 3px solid #f39c12; padding: 30px; border-radius: 15px; z-index: 10005; text-align: center; box-shadow: 0 0 30px rgba(243, 156, 18, 0.5); width: 90%; max-width: 400px;}
 
+        /* 🔍 全局放大鏡 */
         #card-magnifier { position: fixed; left: 2vw; bottom: 2vh; width: calc(var(--card-w) * 2.5); height: calc(var(--card-h) * 2.5); background: #111; border: 3px solid #f39c12; border-radius: 10px; display: none; z-index: 10010; pointer-events: none; box-shadow: 0 10px 30px rgba(0,0,0,0.9); overflow: hidden; }
         #card-magnifier img { width: 100%; height: 100%; object-fit: cover; }
     </style>
@@ -507,7 +509,7 @@
             apSlots.forEach((slot, i) => {
                 slot.innerHTML = ''; let apData = apDeck[i] || apDeck[0] || {imageUrl: "https://rugiacreation.com/ua/cardlist/small/UA44BT_EVA-1-AP03.jpg"};
                 let apEl = createCardDOM(apData, `p_ap_${i}`, true); apEl.querySelector('.card-back').innerHTML = "ACTION<br>POINT"; apEl.classList.add('ap-card');
-                apEl.ondblclick = () => { apEl.classList.toggle('is-flipped'); broadcastMyState(); }; myCardsElements.push(apEl); slot.appendChild(apEl); apEl.style.left = '0px'; apEl.style.top = '0px';
+                myCardsElements.push(apEl); slot.appendChild(apEl); apEl.style.left = '0px'; apEl.style.top = '0px';
             });
             updateSlotCounts(); broadcastMyState(); showSysMsg("發放起手牌..."); setTimeout(drawInitialHand, 800);
         }
@@ -549,7 +551,6 @@
             card.style.zIndex = myIndex;
             if (slotBelow.id.includes('deck') || slotBelow.id.includes('outside') || slotBelow.id.includes('remove') || slotBelow.id.includes('public') || slotBelow.id.includes('ap')) { card.style.left='0px'; card.style.top='0px'; }
             else if (slotBelow.id.includes('life')) { 
-                // 🌟 精準將卡片起點設在長方形最上方，橫躺並垂直向下推疊
                 card.style.left = 'calc((var(--card-h) - var(--card-w)) / 2 * -1)'; 
                 card.style.top = `calc((var(--card-w) - var(--card-h)) / 2 + ${myIndex * 2.5}vh)`; 
                 card.classList.add('in-life'); 
@@ -559,7 +560,10 @@
         }
         function recalcStacking(areaElement) { if(!areaElement || areaElement.id.includes('hand') || areaElement.id.includes('look')) return; Array.from(areaElement.querySelectorAll('.card')).forEach((c, idx) => applyStackingStyle(c, areaElement, idx)); }
 
+        // 🌟 智慧觸控引擎大升級
         function attachMyDragEvents(cardElement) {
+            cardElement.clickTimeout = null;
+
             function dragStart(event) {
                 if (event.type === 'mousedown' && event.button !== 0) return; 
                 let isDragging = false, isStackDrag = false, stackCardsData = [];
@@ -574,17 +578,21 @@
                     }
                 }, 300);
 
-                let startPageX = event.type.includes('touch') ? event.touches[0].pageX : event.pageX;
-                let startPageY = event.type.includes('touch') ? event.touches[0].pageY : event.pageY;
+                let isTouch = event.type.includes('touch');
+                let startPageX = isTouch ? event.touches[0].pageX : event.pageX;
+                let startPageY = isTouch ? event.touches[0].pageY : event.pageY;
                 let rect = cardElement.getBoundingClientRect();
                 let shiftX = startPageX - (rect.left + window.scrollX);
                 let shiftY = startPageY - (rect.top + window.scrollY);
 
                 function onMove(event) {
-                    let curPageX = event.type.includes('touch') ? event.touches[0].pageX : event.pageX;
-                    let curPageY = event.type.includes('touch') ? event.touches[0].pageY : event.pageY;
+                    let curPageX = isTouch ? event.touches[0].pageX : event.pageX;
+                    let curPageY = isTouch ? event.touches[0].pageY : event.pageY;
 
-                    if (!isDragging && (Math.abs(curPageX - startPageX) > 8 || Math.abs(curPageY - startPageY) > 8)) {
+                    // 🌟 觸控防手震：手機需要移動 15px 才會判定為拖曳，避免不小心滑到
+                    let dragThreshold = isTouch ? 15 : 6;
+
+                    if (!isDragging && (Math.abs(curPageX - startPageX) > dragThreshold || Math.abs(curPageY - startPageY) > dragThreshold)) {
                         isDragging = true; if(typeof longPressTimer !== 'undefined') clearTimeout(longPressTimer);
                         if (isStackDrag) {
                             if (stackCardsData.length === 0) {
@@ -614,13 +622,28 @@
                     document.removeEventListener('touchmove', onMove); document.removeEventListener('touchend', onEnd);
                     if(typeof longPressTimer !== 'undefined') clearTimeout(longPressTimer);
 
+                    // 🌟 單點旋轉 / 雙點翻面 的終極判定
                     if (!isDragging) {
                         if(originalParent) originalParent.querySelectorAll('.card').forEach(c => c.classList.remove('stack-glowing'));
                         
                         let noRestZones = ['hand', 'look', 'outside', 'deck', 'remove', 'public'];
                         let canRest = !noRestZones.some(z => originalParent.id.includes(z));
-                        if (!cardElement.classList.contains('in-life') && canRest) {
-                            cardElement.classList.toggle("rest"); broadcastMyState();
+                        
+                        if (cardElement.clickTimeout) {
+                            // 第二次點擊 -> 觸發翻面！
+                            clearTimeout(cardElement.clickTimeout);
+                            cardElement.clickTimeout = null;
+                            cardElement.classList.toggle('is-flipped');
+                            broadcastMyState();
+                        } else {
+                            // 第一次點擊 -> 等待 250 毫秒，沒等到第二次就轉置！
+                            cardElement.clickTimeout = setTimeout(() => {
+                                cardElement.clickTimeout = null;
+                                if (!cardElement.classList.contains('in-life') && canRest) {
+                                    cardElement.classList.toggle("rest");
+                                    broadcastMyState();
+                                }
+                            }, 250);
                         }
                     } else {
                         let endX = event.type.includes('touch') ? event.changedTouches[0].clientX : event.clientX;
@@ -634,7 +657,8 @@
                         let dropZone = elemBelow ? elemBelow.closest('.slot, .hand-area, .look-area, #modal-cards-container, #modal-public-container') : null;
                         
                         if(dropZone && dropZone.id.includes('opp-')) dropZone = null;
-                        if (!dropZone) { finalizeDrop(cardsToDrop, null, 'cancel', originalParent); return; }
+                        // 🌟 把 X 座標傳進去，為了後面的「檢索區動態安插排序」
+                        if (!dropZone) { finalizeDrop(cardsToDrop, null, 'cancel', originalParent, endX); return; }
 
                         let isDropFieldSlot = dropZone && dropZone.closest('#my-front-line, #my-energy-line');
                         let hasExistingCards = isDropFieldSlot && dropZone.querySelectorAll('.card').length > 0;
@@ -643,8 +667,8 @@
                         if (isDropFieldSlot && hasExistingCards && !isSameSlot) {
                             let menu = document.getElementById('drop-menu');
                             menu.style.left = (endX + 10) + 'px'; menu.style.top = (endY + 10) + 'px';
-                            menu.style.display = 'flex'; window.pendingDrop = { cards: cardsToDrop, dropZone: dropZone, originalParent: originalParent };
-                        } else finalizeDrop(cardsToDrop, dropZone, 'default', originalParent);
+                            menu.style.display = 'flex'; window.pendingDrop = { cards: cardsToDrop, dropZone: dropZone, originalParent: originalParent, endX: endX };
+                        } else finalizeDrop(cardsToDrop, dropZone, 'default', originalParent, endX);
                     }
                 }
                 document.addEventListener('mousemove', onMove); document.addEventListener('mouseup', onEnd);
@@ -653,7 +677,8 @@
             cardElement.onmousedown = dragStart; cardElement.ontouchstart = dragStart; cardElement.ondragstart = function() { return false; };
         }
 
-        function finalizeDrop(cards, dropZone, action, originalParent) {
+        // 🌟 新增 endX 參數，用來計算卡片應該插在哪個位置
+        function finalizeDrop(cards, dropZone, action, originalParent, endX) {
             let processCards = (action.startsWith('bottom')) ? [...cards].reverse() : cards;
             processCards.forEach(c => {
                 c.classList.remove('dragging', 'stack-glowing');
@@ -662,7 +687,27 @@
                     else if (action === 'bottom-facedown') { dropZone.insertBefore(c, dropZone.firstChild); c.classList.add('is-flipped'); c.classList.remove('rest'); } 
                     else if (action === 'bottom-faceup') { dropZone.insertBefore(c, dropZone.firstChild); c.classList.remove('is-flipped', 'rest'); } 
                     else {
-                        dropZone.appendChild(c);
+                        // 🌟 檢索區、手牌區「動態安插排序」邏輯！
+                        if (dropZone.id.includes('hand') || dropZone.id.includes('look') || dropZone.id.includes('modal-')) {
+                            let siblings = Array.from(dropZone.querySelectorAll('.card:not(.dragging)'));
+                            let inserted = false;
+                            if (endX !== undefined) {
+                                for (let sibling of siblings) {
+                                    if (sibling === c) continue;
+                                    let rect = sibling.getBoundingClientRect();
+                                    // 如果手指放開的位置，比這張牌的「中心點」還要左邊，就插在它前面！
+                                    if (endX < rect.left + rect.width / 2) {
+                                        dropZone.insertBefore(c, sibling);
+                                        inserted = true;
+                                        break;
+                                    }
+                                }
+                            }
+                            if (!inserted) dropZone.appendChild(c); // 如果沒找到比它右邊的，就乖乖排在最後面
+                        } else {
+                            dropZone.appendChild(c);
+                        }
+
                         if (dropZone.id.includes('deck')) { if (originalParent && originalParent.id.includes('public')) c.classList.remove('is-flipped'); else c.classList.add('is-flipped'); } 
                         else if (dropZone.id.includes('public') || dropZone.id.includes('modal-public')) c.classList.remove('is-flipped');
                         
@@ -670,7 +715,11 @@
                             c.classList.remove('rest');
                         } else if (dropZone.closest('#my-front-line, #my-energy-line')) { let fromField = originalParent && originalParent.closest('#my-front-line, #my-energy-line'); if (!fromField) c.classList.add('rest'); }
                     }
-                    if(dropZone.id.includes('hand') || dropZone.id.includes('look') || dropZone.id.includes('modal-')) { c.style.position = 'relative'; c.style.left = '0'; c.style.top = '0'; c.classList.remove('is-flipped', 'rest'); } 
+                    if(dropZone.id.includes('hand') || dropZone.id.includes('look') || dropZone.id.includes('modal-')) { 
+                        c.style.position = 'relative'; c.style.left = '0'; c.style.top = '0'; 
+                        if(!dropZone.id.includes('look')) c.classList.remove('is-flipped'); 
+                        c.classList.remove('rest'); 
+                    } 
                     else c.style.position = 'absolute'; 
                 } else if (originalParent) {
                     originalParent.appendChild(c);
@@ -695,7 +744,6 @@
                 hoveredCard = card;
                 clearTimeout(magnifyTimer);
                 magnifyTimer = setTimeout(() => {
-                    // 🔒 防偷看結界：就算游標放上去，也不准放大對手的手牌區或檢索區！
                     if(card.parentElement && (card.parentElement.id.includes('opp-hand') || card.parentElement.id.includes('opp-look'))) return;
                     if(card.classList.contains('is-flipped')) return;
                     let frontImg = card.querySelector('.card-front img'), magView = document.getElementById('card-magnifier'), magImg = document.getElementById('magnifier-img');
@@ -726,10 +774,10 @@
             }
         });
 
-        document.getElementById('btn-top-faceup').addEventListener('click', () => { if(window.pendingDrop) finalizeDrop(window.pendingDrop.cards, window.pendingDrop.dropZone, 'top-faceup', window.pendingDrop.originalParent); document.getElementById('drop-menu').style.display = 'none'; window.pendingDrop = null; });
-        document.getElementById('btn-bottom-facedown').addEventListener('click', () => { if(window.pendingDrop) finalizeDrop(window.pendingDrop.cards, window.pendingDrop.dropZone, 'bottom-facedown', window.pendingDrop.originalParent); document.getElementById('drop-menu').style.display = 'none'; window.pendingDrop = null; });
-        document.getElementById('btn-bottom-faceup').addEventListener('click', () => { if(window.pendingDrop) finalizeDrop(window.pendingDrop.cards, window.pendingDrop.dropZone, 'bottom-faceup', window.pendingDrop.originalParent); document.getElementById('drop-menu').style.display = 'none'; window.pendingDrop = null; });
-        document.getElementById('btn-cancel-drop').addEventListener('click', () => { if(window.pendingDrop) finalizeDrop(window.pendingDrop.cards, null, 'cancel', window.pendingDrop.originalParent); document.getElementById('drop-menu').style.display = 'none'; window.pendingDrop = null; });
+        document.getElementById('btn-top-faceup').addEventListener('click', () => { if(window.pendingDrop) finalizeDrop(window.pendingDrop.cards, window.pendingDrop.dropZone, 'top-faceup', window.pendingDrop.originalParent, window.pendingDrop.endX); document.getElementById('drop-menu').style.display = 'none'; window.pendingDrop = null; });
+        document.getElementById('btn-bottom-facedown').addEventListener('click', () => { if(window.pendingDrop) finalizeDrop(window.pendingDrop.cards, window.pendingDrop.dropZone, 'bottom-facedown', window.pendingDrop.originalParent, window.pendingDrop.endX); document.getElementById('drop-menu').style.display = 'none'; window.pendingDrop = null; });
+        document.getElementById('btn-bottom-faceup').addEventListener('click', () => { if(window.pendingDrop) finalizeDrop(window.pendingDrop.cards, window.pendingDrop.dropZone, 'bottom-faceup', window.pendingDrop.originalParent, window.pendingDrop.endX); document.getElementById('drop-menu').style.display = 'none'; window.pendingDrop = null; });
+        document.getElementById('btn-cancel-drop').addEventListener('click', () => { if(window.pendingDrop) finalizeDrop(window.pendingDrop.cards, null, 'cancel', window.pendingDrop.originalParent, window.pendingDrop.endX); document.getElementById('drop-menu').style.display = 'none'; window.pendingDrop = null; });
 
         window.sendToDeck = function(sourceId, destId, toBottom) {
             let source = document.getElementById(sourceId), dest = document.getElementById(destId); 
