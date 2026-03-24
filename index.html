@@ -7,8 +7,8 @@
     <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
     <style>
         :root {
-            /* 🌟 卡片極致放大：提升至 145px */
-            --card-h: 145px; 
+            /* 🌟 卡片終極巨型化：175px！ */
+            --card-h: 175px; 
             --card-w: calc(var(--card-h) * 0.714); 
             --gap-size: 8px;
             --font-size-base: 14px;
@@ -39,7 +39,7 @@
         
         .series-title { border-left: 5px solid #f39c12; padding-left: 10px; background: rgba(255,255,255,0.1); padding: 5px; margin: 15px 0 10px 0; font-size: 16px; font-weight: bold;}
         .card-grid { display: flex; flex-wrap: wrap; gap: 10px; }
-        .preview-card { width: var(--card-w); height: var(--card-h); border-radius: 5px; cursor: pointer; transition: transform 0.1s; box-shadow: 0 2px 5px rgba(0,0,0,0.5); }
+        .preview-card { width: 120px; height: calc(120px / 0.714); border-radius: 5px; cursor: pointer; transition: transform 0.1s; box-shadow: 0 2px 5px rgba(0,0,0,0.5); }
         .preview-card:hover { transform: scale(1.05); }
         .preview-card img { width: 100%; height: 100%; object-fit: cover; border-radius: 5px; pointer-events: none; }
 
@@ -52,7 +52,6 @@
         .import-textarea { flex: 1 1 150px; height: 35px; background: #2c3e50; color: white; border: 1px solid #34495e; border-radius: 4px; padding: 8px; font-family: monospace; resize: none; outline: none; }
         #import-series-name { flex: 0 1 120px; }
 
-        /* 🎥 觀景窗擴展至 92vh，減少不必要的留白 */
         .board-wrapper { 
             width: 100%; height: 92vh; 
             overflow: hidden; position: relative; background: #111; 
@@ -70,27 +69,28 @@
         }
         .cam-btn:hover { background: #f39c12; color: black; }
 
-        /* 📐 配合放大的卡片尺寸，調整桌面為 1350x1050 */
+        /* 📐 場地大小根據 175px 重新分配，寬度設定 1150px，高度 1300px，並保留右側放階段按鈕 */
         .game-table { 
-            width: 1350px; height: 1050px; 
+            width: 1150px; height: 1300px; 
             position: absolute; left: 0; top: 0; transform-origin: top left;
             display: flex; flex-direction: column; align-items: center; gap: 15px; padding: 20px; box-sizing: border-box;
         }
 
-        .battlefield { display: flex; flex-direction: column; width: 100%; background: linear-gradient(145deg, #1c2833, #2c0e0e); border: 3px solid #d32f2f; border-radius: 15px; box-shadow: inset 0 0 40px rgba(0,0,0,0.9), 0 15px 30px rgba(0,0,0,0.9); position: relative; }
+        /* 🗜️ 紅框場地極致內縮：寬度改為 max-content 緊貼內部元素 */
+        .battlefield { display: flex; flex-direction: column; width: max-content; background: linear-gradient(145deg, #1c2833, #2c0e0e); border: 3px solid #d32f2f; border-radius: 15px; box-shadow: inset 0 0 40px rgba(0,0,0,0.9), 0 15px 30px rgba(0,0,0,0.9); position: relative; margin: 0 auto; }
         
-        .playmat { display: flex; justify-content: space-between; align-items: stretch; gap: 20px; padding: 20px; width: 100%; box-sizing: border-box; }
+        .playmat { display: flex; justify-content: center; align-items: stretch; gap: 25px; padding: 20px; width: 100%; box-sizing: border-box; }
         .board-divider { width: 100%; height: 2px; background: rgba(241, 196, 15, 0.3); box-shadow: 0 0 10px rgba(241, 196, 15, 0.6); }
 
         .line-label { color: rgba(255,255,255,0.8); font-size: var(--font-size-base); font-weight: bold; text-align: center; margin: 4px 0; letter-spacing: 1px; text-shadow: 1px 1px 3px black; z-index: 1; white-space: nowrap; pointer-events: none; }
         
-        .center-zone { display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 1; gap: 10px; flex-grow: 1; }
-        .side-zone { display: flex; flex-direction: column; gap: 12px; height: 100%; z-index: 1; justify-content: space-between; align-items: center; flex-shrink: 0; width: calc(var(--card-h) + 10px); } 
+        .center-zone { display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 1; gap: 10px; }
+        .side-zone { display: flex; flex-direction: column; gap: 12px; height: 100%; z-index: 1; justify-content: space-between; align-items: center; } 
         
         .card-row { display: flex; gap: 12px; }
 
         .slot { width: var(--card-w); height: var(--card-h); background-color: rgba(0,0,0,0.5); border: 2px dashed rgba(241, 196, 15, 0.5); border-radius: 6px; box-shadow: inset 0 0 15px rgba(0,0,0,0.8); position: relative; display: flex; justify-content: center; align-items: center; }
-        .slot.life-slot { width: var(--card-h); height: calc(var(--card-w) + 120px); justify-content: flex-start; align-items: flex-start; } 
+        .slot.life-slot { width: var(--card-h); height: calc(var(--card-w) + 160px); justify-content: flex-start; align-items: flex-start; } 
         
         .slot::after { content: attr(data-count); position: absolute; top: -5px; right: -5px; background-color: #e74c3c; color: white; border-radius: 50%; width: 22px; height: 22px; display: flex; justify-content: center; align-items: center; font-size: var(--font-size-base); opacity: 0; transition: opacity 0.2s; z-index: 999; font-weight: bold; box-shadow: 0 2px 5px rgba(0,0,0,0.5); }
         .slot:hover::after { opacity: 1; }
@@ -101,16 +101,19 @@
         .slot.marked .marker { opacity: 1 !important; border-color: #e74c3c; box-shadow: 0 0 10px #e74c3c; filter: drop-shadow(0 0 5px red); transform: scale(1.2); }
         .slot.marked { box-shadow: inset 0 0 25px rgba(231, 76, 60, 0.7) !important; border-color: #e74c3c !important; }
 
-        .phase-step { padding: 4px; border-radius: 4px; background: #2c3e50; cursor: pointer; font-weight: bold; font-size: 12px; transition: 0.3s; color: #bdc3c7; text-align: center; }
-        .phase-step.active { background: #f39c12; color: #000; box-shadow: 0 0 8px #f39c12; }
+        /* 🕹️ 獨立移出的階段面板設計 */
+        .right-sidebar { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); display: flex; flex-direction: column; gap: 15px; background: rgba(0,0,0,0.85); padding: 20px; border-radius: 12px; border: 2px solid #f39c12; width: 140px; box-sizing: border-box; box-shadow: 0 0 30px rgba(0,0,0,0.8); z-index: 1000; }
+        .phase-step { padding: 10px; border-radius: 6px; background: #2c3e50; cursor: pointer; font-weight: bold; font-size: 14px; transition: 0.3s; color: #bdc3c7; text-align: center; }
+        .phase-step.active { background: #f39c12; color: #000; box-shadow: 0 0 12px #f39c12; }
 
-        .bottom-container { width: 100%; display: flex; gap: 15px; justify-content: center; align-items: stretch; }
-        .hand-zone { flex: 7; background-color: rgba(0,0,0,0.6); border: 2px dashed #7f8c8d; border-radius: 10px; padding: 12px; display: flex; flex-direction: column;}
-        .look-zone { flex: 3; background-color: rgba(0,50,100,0.6); border: 2px dashed #3498db; border-radius: 10px; padding: 12px; display: flex; flex-direction: column;}
+        .bottom-container { width: max-content; display: flex; gap: 20px; justify-content: center; align-items: stretch; margin-top: 10px; }
+        .hand-zone { background-color: rgba(0,0,0,0.6); border: 2px dashed #7f8c8d; border-radius: 10px; padding: 15px; display: flex; flex-direction: column;}
+        .look-zone { background-color: rgba(0,50,100,0.6); border: 2px dashed #3498db; border-radius: 10px; padding: 15px; display: flex; flex-direction: column;}
         .hand-area, .look-area { display: flex; flex-wrap: wrap; gap: 10px; width: 100%; min-height: var(--card-h); align-items: center; justify-content: center;}
 
+        /* 🃏 卡片屬性 */
         .card { width: var(--card-w); height: var(--card-h); border-radius: 6px; box-shadow: 0 4px 8px rgba(0,0,0,0.8); cursor: grab; transition: transform 0.2s ease-out; position: absolute; perspective: 1000px; touch-action: none;}
-        .hand-area .card, .look-area .card { position: relative; left: 0 !important; top: 0 !important; margin-left: -15px;}
+        .hand-area .card, .look-area .card { position: relative; left: 0 !important; top: 0 !important; margin-left: -20px;}
         .hand-area .card:first-child, .look-area .card:first-child { margin-left: 0; }
         .card:hover { transform: translateY(-5px) scale(1.05); z-index: 500 !important; }
         
@@ -139,10 +142,10 @@
 
         #mulligan-modal { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(0,0,0,0.95); border: 3px solid #f39c12; padding: 30px; border-radius: 15px; z-index: 10005; text-align: center; box-shadow: 0 0 30px rgba(243, 156, 18, 0.5); width: 90%; max-width: 400px;}
 
-        /* 🔍 超巨型全局放大鏡：相較上一版放大 1.5 倍，佔據整個左側空間 */
+        /* 🔍 左下角超大檢視器 (尺寸放大 1.5 倍) */
         #card-magnifier { 
             position: fixed; left: 20px; bottom: 20px; 
-            width: calc(var(--card-w) * 5); height: calc(var(--card-h) * 5); 
+            width: calc(var(--card-w) * 3); height: calc(var(--card-h) * 3); 
             background: #111; border: 4px solid #f39c12; border-radius: 12px; 
             display: none; z-index: 10010; pointer-events: none; 
             box-shadow: 0 15px 40px rgba(0,0,0,0.9); overflow: hidden; 
@@ -221,7 +224,7 @@
                         <h4 style="margin: 0; color: #f39c12;">🎯 我的 AP 卡</h4>
                         <span id="ap-counter" style="font-weight: bold;">0 / 3</span>
                     </div>
-                    <div class="card-grid" id="ap-deck-grid" style="min-height: var(--card-h);"></div>
+                    <div class="card-grid" id="ap-deck-grid" style="min-height: 120px;"></div>
                 </div>
                 <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
                     <h4 style="margin: 0; color: #3498db;">🃏 主要牌組</h4>
@@ -261,11 +264,6 @@
             </div>
 
             <div class="game-table" id="game-table-inner">
-
-                <div style="width: 100%; max-width: 900px; display: flex; gap: 15px;">
-                    <div class="look-zone" id="opp-look-zone"><div class="line-label">檢索區</div><div class="look-area" id="opp-look-area"></div></div>
-                    <div class="hand-zone" style="flex:7;"><div class="line-label" style="color:#e74c3c;">對手手牌區</div><div class="hand-area" id="opp-hand-area"></div></div>
-                </div>
 
                 <div class="battlefield">
                     
@@ -309,27 +307,12 @@
                         <div class="side-zone right-side">
                             <div><div class="line-label">卡組</div><div class="slot" id="my-deck-area"></div></div>
                             <div><div class="line-label">公開</div><div class="slot" id="my-public-area"></div></div>
-                            
-                            <div style="width: 100%; display: flex; flex-direction: column; align-items: center; gap: 4px;">
-                                <div class="line-label">場外</div>
-                                <div class="slot" id="my-outside-area" style="margin-bottom: 2px;"></div>
-                                
-                                <div style="width: 100%; display: flex; flex-direction: column; gap: 3px; align-items: center;">
-                                    <div style="color: #3498db; font-size: 10px; font-weight: bold; background: rgba(52,152,219,0.2); padding: 2px 4px; border-radius: 3px; white-space: nowrap;">對手：<span id="opp-phase-display">等待中</span></div>
-                                    <div class="phase-bar" style="display: grid; grid-template-columns: 1fr 1fr; gap: 3px; background: rgba(0,0,0,0.8); padding: 4px; border-radius: 6px; border: 1px solid #f39c12; width: 100%; box-sizing: border-box;">
-                                        <div class="phase-step active" onclick="setPhase(this, '起始')">起始</div>
-                                        <div class="phase-step" onclick="setPhase(this, '移動')">移動</div>
-                                        <div class="phase-step" onclick="setPhase(this, '主要')">主要</div>
-                                        <div class="phase-step" onclick="setPhase(this, '戰鬥')">戰鬥</div>
-                                    </div>
-                                    <button id="btn-end-turn" onclick="endTurn()" class="start-btn" style="padding: 4px; font-size: 12px; width: 100%; border: 1px solid #c0392b; background: #e74c3c;">⛔ 結束回合</button>
-                                </div>
-                            </div>
+                            <div><div class="line-label">場外</div><div class="slot" id="my-outside-area"></div></div>
                         </div>
                     </div>
                 </div>
 
-                <div class="bottom-container" style="width: 100%; max-width: 1000px;">
+                <div class="bottom-container">
                     <div class="hand-zone"><div class="line-label" style="color:#2ecc71;">YOUR HAND (我方手牌)</div><div class="hand-area" id="my-hand-area"></div></div>
                     <div class="look-zone">
                         <div class="line-label" style="display: flex; justify-content: space-between; align-items: center;">
@@ -338,6 +321,18 @@
                         </div>
                         <div class="look-area" id="my-look-area"></div>
                     </div>
+                </div>
+
+                <div class="right-sidebar">
+                    <div style="color: #3498db; font-size: 13px; font-weight: bold; background: rgba(52,152,219,0.2); padding: 5px 8px; border-radius: 5px; text-align: center;">對手階段<br><span id="opp-phase-display" style="color: white; font-size: 16px;">等待中</span></div>
+                    <hr style="width: 100%; border: 1px solid #555; margin: 0;">
+                    <div style="display: flex; flex-direction: column; gap: 8px;">
+                        <div class="phase-step active" onclick="setPhase(this, '起始')">起始階段</div>
+                        <div class="phase-step" onclick="setPhase(this, '移動')">移動階段</div>
+                        <div class="phase-step" onclick="setPhase(this, '主要')">主要階段</div>
+                        <div class="phase-step" onclick="setPhase(this, '戰鬥')">戰鬥階段</div>
+                    </div>
+                    <button id="btn-end-turn" onclick="endTurn()" class="start-btn" style="padding: 12px; font-size: 16px; width: 100%; border: 1px solid #c0392b; background: #e74c3c;">⛔ 結束回合</button>
                 </div>
 
             </div>
@@ -535,12 +530,12 @@
             if(!wrapper) return;
             let w = wrapper.clientWidth;
             let h = wrapper.clientHeight;
-            // 🌟 重新調整縮放比例以適應 1350x1050 巨型場地
-            window.camScale = Math.min(w / 1350, h / 1050) * 0.98; 
+            // 🌟 配合 1150x1300 巨型場地重新計算縮放
+            window.camScale = Math.min(w / 1100, h / 1350) * 0.95; 
             if(window.camScale > 1.5) window.camScale = 1.5;
             
-            window.camX = (w - (1350 * window.camScale)) / 2;
-            window.camY = (h - (1050 * window.camScale)) / 2;
+            window.camX = (w - (1150 * window.camScale)) / 2;
+            window.camY = (h - (1300 * window.camScale)) / 2;
             updateCamera();
         };
 
@@ -806,8 +801,9 @@
             card.style.zIndex = myIndex;
             if (slotBelow.id.includes('deck') || slotBelow.id.includes('outside') || slotBelow.id.includes('remove') || slotBelow.id.includes('public') || slotBelow.id.includes('ap')) { card.style.left='0px'; card.style.top='0px'; }
             else if (slotBelow.id.includes('life')) { 
+                /* 🌟 生命區因應 175px 高度重新校準，間距放大到 30px */
                 card.style.left = 'calc((var(--card-h) - var(--card-w)) / 2)'; 
-                card.style.top = `calc((var(--card-w) - var(--card-h)) / -2 + ${myIndex * 2.2}vh)`; 
+                card.style.top = `calc((var(--card-w) - var(--card-h)) / -2 + ${myIndex * 30}px)`; 
                 card.classList.add('in-life'); 
                 card.classList.remove('rest');
             }
