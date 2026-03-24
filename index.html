@@ -7,8 +7,7 @@
     <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
     <style>
         :root {
-            /* 📐 場地內縮優化 */
-            --card-h: min(10.5vh, 110px); 
+            var(--card-h: min(10.5vh, 110px); 
             --card-w: calc(var(--card-h) * 0.714); 
             --gap-size: min(1vh, 6px);
             --font-size-base: min(1.5vh, 14px);
@@ -78,8 +77,9 @@
         .slot:hover::after { opacity: 1; }
         .slot[data-count="0"]::after, .slot[data-count="1"]::after, .slot:not([data-count])::after { display: none; }
 
+        /* 🎯 標記圖示優化：不再限制 my-board，只要是場地格子都可以亮起 */
         .marker { position: absolute; top: -8px; left: -8px; font-size: 16px; cursor: pointer; opacity: 0; transition: 0.2s; z-index: 9999; background: rgba(0,0,0,0.7); border-radius: 50%; width: 24px; height: 24px; display: flex; justify-content: center; align-items: center; border: 2px solid transparent; pointer-events: auto; }
-        #my-board .slot:hover .marker { opacity: 0.4; }
+        .slot:hover .marker { opacity: 0.4; }
         .slot.marked .marker { opacity: 1 !important; border-color: #e74c3c; box-shadow: 0 0 10px #e74c3c; filter: drop-shadow(0 0 5px red); transform: scale(1.2); }
         .slot.marked { box-shadow: inset 0 0 25px rgba(231, 76, 60, 0.7) !important; border-color: #e74c3c !important; }
 
@@ -130,9 +130,10 @@
             body { overflow: hidden; }
         }
 
-        #dice-overlay { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(20,20,20,0.95); padding: 30px 50px; border-radius: 20px; border: 4px solid #9b59b6; z-index: 100000; text-align: center; box-shadow: 0 0 50px rgba(155, 89, 182, 0.8); backdrop-filter: blur(5px); }
-        #dice-result-text { font-size: 24px; font-weight: bold; color: white; margin-top: 15px; }
-        #dice-value { font-size: 60px; color: #f1c40f; font-weight: 900; text-shadow: 0 0 20px rgba(241, 196, 15, 0.8); margin: 10px 0; }
+        #center-overlay { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(20,20,20,0.95); padding: 30px 50px; border-radius: 20px; border: 4px solid #9b59b6; z-index: 100000; text-align: center; box-shadow: 0 0 50px rgba(155, 89, 182, 0.8); backdrop-filter: blur(5px); }
+        #overlay-icon { font-size: 60px; margin-bottom: 10px; }
+        #overlay-title { font-size: 24px; font-weight: bold; color: white; margin-top: 15px; }
+        #overlay-value { font-size: 50px; color: #f1c40f; font-weight: 900; text-shadow: 0 0 20px rgba(241, 196, 15, 0.8); margin: 10px 0; white-space: nowrap;}
     </style>
 </head>
 <body>
@@ -143,10 +144,10 @@
         <div style="font-size: 14px; color: #aaa; margin-top: 10px;">(卡牌對戰需要較寬的畫面空間)</div>
     </div>
 
-    <div id="dice-overlay">
-        <div style="font-size: 60px; margin-bottom: 10px;">🎲</div>
-        <div id="dice-result-text">擲出點數</div>
-        <div id="dice-value">6</div>
+    <div id="center-overlay">
+        <div id="overlay-icon">🎲</div>
+        <div id="overlay-title">標題</div>
+        <div id="overlay-value">內容</div>
     </div>
 
     <div id="sys-msg">系統訊息</div>
@@ -463,21 +464,34 @@
             sysMsgTimer = setTimeout(() => { box.style.display = 'none'; }, 4000); 
         }
 
+        function showCenterAlert(icon, title, value, color) {
+            let overlay = document.getElementById('center-overlay');
+            document.getElementById('overlay-icon').innerText = icon;
+            document.getElementById('overlay-title').innerText = title;
+            let valEl = document.getElementById('overlay-value');
+            valEl.innerText = value;
+            valEl.style.color = color;
+            valEl.style.textShadow = `0 0 20px ${color}`;
+            overlay.style.border = `4px solid ${color}`;
+            overlay.style.boxShadow = `0 0 50px ${color}`;
+            overlay.style.display = 'block';
+            setTimeout(() => { overlay.style.display = 'none'; }, 2500);
+        }
+
         window.onload = () => { 
             let savedCustom = JSON.parse(localStorage.getItem('ua_custom_cards')) || [];
             if(typeof masterCardCatalog !== 'undefined') masterCardCatalog.push(...savedCustom);
             updateDeckSelector(); initSeriesFilter(); renderBuilder(); renderDeck(); 
 
+            // 🎯 全面解除限制：敵我雙方的戰鬥區格子皆可被標記！
             document.querySelectorAll('#my-front-line .slot, #my-energy-line .slot, #opp-front-line .slot, #opp-energy-line .slot').forEach(slot => {
                 let marker = document.createElement('div');
                 marker.className = 'marker';
                 marker.innerText = '🎯';
                 marker.onclick = (e) => {
                     e.stopPropagation(); 
-                    if(slot.id.startsWith('my-')) {
-                        slot.classList.toggle('marked');
-                        broadcastMyState();
-                    }
+                    slot.classList.toggle('marked');
+                    broadcastMyState();
                 };
                 slot.appendChild(marker);
             });
@@ -508,9 +522,16 @@
                 if(data.type === 'START_GAME') { showSysMsg("對手已進入盤面！"); initOpponentBoard(data.deck, data.ap); }
                 else if(data.type === 'SYNC_BOARD') applyOpponentSync(data);
                 else if(data.type === 'FLIP_CARD') applyOpponentFlip(data.id);
-                else if(data.type === 'DICE_ROLL') showDiceOverlay(`對手擲出了：`, data.value, false);
-                // 🌟 接收對手的廣播訊息
-                else if(data.type === 'PHASE_BROADCAST') { showSysMsg(`⚠️ 對手進入了【 ${data.phase}階段 】！`); }
+                else if(data.type === 'DICE_ROLL') showCenterAlert('🎲', '對手擲出了：', data.value, '#e74c3c');
+                
+                else if(data.type === 'PHASE_BROADCAST') { 
+                    if (data.phase === '結束') {
+                        showCenterAlert('⚠️', '對手回合結束', '輪到你了！', '#2ecc71');
+                    } else {
+                        showCenterAlert('⚠️', '對手進入了', data.phase + '階段', '#f39c12');
+                    }
+                }
+                
                 else if(data.type === 'SURRENDER') {
                     alert("對手已投降並返回構築區！\n點擊確定後將同步返回大廳。");
                     resetBoard();
@@ -527,7 +548,7 @@
 
         function resetBoard() {
             document.querySelectorAll('.card').forEach(c => c.remove());
-            document.querySelectorAll('.slot').forEach(s => s.classList.remove('marked'));
+            document.querySelectorAll('.slot.marked').forEach(s => s.classList.remove('marked'));
             document.querySelectorAll('.phase-step').forEach(btn => btn.classList.remove('active'));
             document.querySelector('.phase-step:first-child').classList.add('active');
             document.getElementById('game-scene').style.display = 'none'; 
@@ -537,39 +558,29 @@
 
         window.rollDice = function() {
             let result = Math.floor(Math.random() * 6) + 1;
-            showDiceOverlay(`你擲出了：`, result, true);
+            showCenterAlert('🎲', '你擲出了：', result, '#2ecc71');
             if (conn) conn.send({ type: 'DICE_ROLL', value: result });
         };
 
-        function showDiceOverlay(title, value, isMe) {
-            let overlay = document.getElementById('dice-overlay');
-            document.getElementById('dice-result-text').innerText = title;
-            let valEl = document.getElementById('dice-value');
-            valEl.innerText = value;
-            valEl.style.color = isMe ? '#2ecc71' : '#e74c3c';
-            valEl.style.textShadow = `0 0 20px ${isMe ? 'rgba(46, 204, 113, 0.8)' : 'rgba(231, 76, 60, 0.8)'}`;
-            overlay.style.display = 'block';
-            setTimeout(() => { overlay.style.display = 'none'; }, 3000);
-        }
-
-        // 🌟 階段切換：加入廣播系統！
         window.setPhase = function(el, phaseName) {
             document.querySelectorAll('.phase-step').forEach(btn => btn.classList.remove('active'));
             el.classList.add('active');
             broadcastMyState();
-            showSysMsg(`➡️ 進入 ${phaseName}階段`);
-            if(conn) conn.send({ type: 'PHASE_BROADCAST', phase: phaseName });
+            showCenterAlert('🔄', '進入階段', phaseName + '階段', '#3498db');
+            if(conn && isConnected) conn.send({ type: 'PHASE_BROADCAST', phase: phaseName });
         };
 
         window.endTurn = function() {
             document.querySelectorAll('.phase-step').forEach(btn => btn.classList.remove('active'));
             document.querySelector('.phase-step:first-child').classList.add('active'); 
             
+            // 🌟 回合結束：清空場上「所有」橫置與標記（包含對手的）
             document.querySelectorAll('#my-board .card.rest').forEach(c => c.classList.remove('rest'));
-            document.querySelectorAll('#my-board .slot.marked').forEach(s => s.classList.remove('marked'));
+            document.querySelectorAll('.slot.marked').forEach(s => s.classList.remove('marked'));
             
             broadcastMyState();
-            showSysMsg("🔄 回合結束，卡片已全數轉正！");
+            showCenterAlert('⛔', '回合結束', '換對手回合', '#e74c3c');
+            if(conn && isConnected) conn.send({ type: 'PHASE_BROADCAST', phase: '結束' });
         };
 
         let myCardsElements = []; let oppCardsElements = [];
@@ -590,7 +601,9 @@
 
             let activePhaseEl = document.querySelector('.phase-step.active');
             let myPhase = activePhaseEl ? activePhaseEl.innerText : '等待中';
-            let markedSlots = Array.from(document.querySelectorAll('#my-board .slot.marked')).map(el => el.id);
+            
+            // 🎯 標記同步核心：打包場面上「所有」亮起的格子
+            let markedSlots = Array.from(document.querySelectorAll('.slot.marked')).map(el => el.id);
 
             conn.send({ type: 'SYNC_BOARD', state: state, phase: myPhase, markedSlots: markedSlots });
         }
@@ -618,11 +631,13 @@
 
             if(data.phase) document.getElementById('opp-phase-display').innerText = data.phase;
             
-            document.querySelectorAll('#opp-board .slot').forEach(el => el.classList.remove('marked'));
+            // 🎯 接收對手的標記並進行「視角反轉」
+            document.querySelectorAll('.slot').forEach(el => el.classList.remove('marked'));
             if(data.markedSlots) {
                 data.markedSlots.forEach(id => {
-                    let oppId = id.replace('my-', 'opp-');
-                    let slot = document.getElementById(oppId);
+                    // 如果對手標記了他的 my-，在我畫面就是 opp-；如果他標記了他的 opp-，在我畫面就是 my-
+                    let localId = id.startsWith('my-') ? id.replace('my-', 'opp-') : id.replace('opp-', 'my-');
+                    let slot = document.getElementById(localId);
                     if(slot) slot.classList.add('marked');
                 });
             }
@@ -696,7 +711,7 @@
             if (slotBelow.id.includes('deck') || slotBelow.id.includes('outside') || slotBelow.id.includes('remove') || slotBelow.id.includes('public') || slotBelow.id.includes('ap')) { card.style.left='0px'; card.style.top='0px'; }
             else if (slotBelow.id.includes('life')) { 
                 card.style.left = 'calc((var(--card-h) - var(--card-w)) / 2)'; 
-                card.style.top = `calc((var(--card-w) - var(--card-h)) / 2 + ${myIndex * 2.2}vh)`; 
+                card.style.top = `calc((var(--card-h) - var(--card-w)) / -2 + ${myIndex * 2.2}vh)`; 
                 card.classList.add('in-life'); 
                 card.classList.remove('rest');
             }
@@ -903,27 +918,24 @@
             let slot = e.target.closest('.slot'); if(slot === hoveredSlot) hoveredSlot = null; 
         });
 
-        // 🌟 快捷鍵系統修復：R(轉置)、B(置底)、T(置頂)、F(翻面)、C(進手牌)、V(進場外)
+        // ⌨️ 快捷鍵系統全功能回歸
         document.addEventListener('keydown', e => {
             if(document.getElementById('game-scene').style.display === 'none') return;
             if(hoveredCard && !hoveredCard.parentElement.id.includes('opp-')) {
                 let key = e.key.toLowerCase();
                 
-                // F：翻面
                 if(key === 'f') { hoveredCard.classList.toggle('is-flipped'); broadcastMyState(); }
                 
-                // R：轉置 (直立 / 橫置)
                 if(key === 'r') { 
                     if (!hoveredCard.classList.contains('in-life')) {
                         hoveredCard.classList.toggle('rest'); broadcastMyState(); 
                     }
                 }
                 
-                // B：置底 (Bottom) / T：置頂 (Top)
                 if(key === 'b' || key === 't') {
                     let dest = document.getElementById('my-deck-area');
-                    if (key === 'b') dest.insertBefore(hoveredCard, dest.firstChild); // 插在最前面 = 牌底
-                    else dest.appendChild(hoveredCard); // 接在最後面 = 牌頂
+                    if (key === 'b') dest.insertBefore(hoveredCard, dest.firstChild); 
+                    else dest.appendChild(hoveredCard); 
                     
                     hoveredCard.classList.add('is-flipped');
                     hoveredCard.classList.remove('rest', 'in-life');
@@ -933,7 +945,6 @@
                     broadcastMyState();
                 }
 
-                // C：進手牌 / V：進場外
                 if(key === 'c' || key === 'v') {
                     let targetCard = hoveredCard || (hoveredSlot ? hoveredSlot.querySelectorAll('.card')[hoveredSlot.querySelectorAll('.card').length-1] : null);
                     if(targetCard) {
