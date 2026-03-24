@@ -7,26 +7,27 @@
     <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
     <style>
         :root {
-            --card-h: min(10.5vh, 110px); 
+            /* 📐 場地終極內縮，確保一屏看完 */
+            --card-h: min(11vh, 105px); 
             --card-w: calc(var(--card-h) * 0.714); 
-            --gap-size: min(1vh, 6px);
-            --font-size-base: min(1.5vh, 14px);
+            --gap-size: min(0.8vh, 5px);
+            --font-size-base: min(1.5vh, 12px);
         }
 
-        body { background-color: #0a0a0a; margin: 0; min-height: 100vh; overflow-x: hidden; overflow-y: auto; font-family: '微軟正黑體', sans-serif; display: flex; flex-direction: column; align-items: center; padding: 1.5vh 2vw; box-sizing: border-box; color: white; touch-action: manipulation; -webkit-user-select: none; user-select: none; }
+        body { background-color: #0a0a0a; margin: 0; min-height: 100vh; overflow-x: hidden; overflow-y: auto; font-family: '微軟正黑體', sans-serif; display: flex; flex-direction: column; align-items: center; padding: 1vh 1vw; box-sizing: border-box; color: white; touch-action: manipulation; -webkit-user-select: none; user-select: none; }
         input, textarea, select { -webkit-user-select: auto; user-select: auto; }
 
         #sys-msg { position: fixed; top: 10px; left: 50%; transform: translateX(-50%); background: #e67e22; padding: 10px 20px; border-radius: 5px; font-weight: bold; display: none; z-index: 10000; box-shadow: 0 4px 10px rgba(0,0,0,0.5); }
         
-        #builder-scene { width: 100%; max-width: 1200px; display: flex; flex-direction: column; gap: 15px; margin-bottom: 30px; }
-        #game-scene { display: none; width: 100%; max-width: 1600px; flex-direction: column; align-items: center; gap: var(--gap-size); margin-bottom: 20px; }
+        #builder-scene { width: 100%; max-width: 1200px; display: flex; flex-direction: column; gap: 10px; margin-bottom: 30px; }
+        #game-scene { display: none; width: 100%; max-width: 1600px; flex-direction: column; align-items: center; gap: var(--gap-size); margin-bottom: 10px; }
 
         .network-panel { background: rgba(41, 128, 185, 0.2); border: 2px solid #3498db; border-radius: 10px; padding: 10px 15px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; }
         .network-box { display: flex; gap: 10px; align-items: center; }
         .network-input { padding: 8px; border-radius: 5px; border: none; font-size: 16px; outline: none; width: 200px; }
         #my-peer-id { color: #f1c40f; font-weight: bold; font-size: 18px; cursor: pointer; background: rgba(0,0,0,0.5); padding: 5px 10px; border-radius: 5px; }
 
-        .builder-container { display: flex; gap: 20px; flex: 1; min-height: 60vh; flex-wrap: wrap; }
+        .builder-container { display: flex; gap: 15px; flex: 1; min-height: 50vh; flex-wrap: wrap; }
         .catalog-panel { flex: 6; min-width: 300px; background: rgba(0,0,0,0.5); border-radius: 10px; padding: 15px; display: flex; flex-direction: column; max-height: 75vh; overflow-y: auto; }
         .deck-panel { flex: 4; min-width: 300px; background: rgba(139, 21, 21, 0.5); border-radius: 10px; padding: 15px; display: flex; flex-direction: column; border: 2px dashed #d32f2f; max-height: 75vh; overflow-y: auto; }
         
@@ -36,8 +37,8 @@
         .catalog-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; flex-wrap: wrap; gap: 10px;}
         .series-filter { padding: 5px 10px; font-size: 16px; border-radius: 5px; background: #f39c12; color: #1a1a1a; font-weight: bold; border: none; cursor: pointer; outline: none; }
         
-        .series-title { border-left: 5px solid #f39c12; padding-left: 10px; background: rgba(255,255,255,0.1); padding: 5px; margin: 15px 0 10px 0; font-size: 18px; }
-        .card-grid { display: flex; flex-wrap: wrap; gap: 10px; }
+        .series-title { border-left: 5px solid #f39c12; padding-left: 10px; background: rgba(255,255,255,0.1); padding: 5px; margin: 10px 0 5px 0; font-size: 16px; }
+        .card-grid { display: flex; flex-wrap: wrap; gap: 8px; }
         .preview-card { width: var(--card-w); height: var(--card-h); border-radius: 5px; cursor: pointer; transition: transform 0.1s; box-shadow: 0 2px 5px rgba(0,0,0,0.5); }
         .preview-card:hover { transform: scale(1.05); }
         .preview-card img { width: 100%; height: 100%; object-fit: cover; border-radius: 5px; pointer-events: none; }
@@ -47,50 +48,51 @@
         .ctrl-btn { background: #3498db; color: white; border: none; padding: 8px 15px; border-radius: 5px; cursor: pointer; font-weight: bold; }
         .ctrl-btn.danger { background: #e74c3c; }
 
-        .import-section { background: rgba(155, 89, 182, 0.2); border: 2px dashed #9b59b6; padding: 10px; border-radius: 8px; margin-bottom: 15px; display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+        .import-section { background: rgba(155, 89, 182, 0.2); border: 2px dashed #9b59b6; padding: 10px; border-radius: 8px; margin-bottom: 10px; display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
         .import-textarea { flex: 1; min-width: 200px; height: 35px; background: #2c3e50; color: white; border: 1px solid #34495e; border-radius: 4px; padding: 8px; font-family: monospace; resize: none; outline: none; }
 
-        .board-wrapper { width: 100%; overflow-x: auto; overflow-y: hidden; padding-bottom: 10px; scrollbar-width: none; }
+        .board-wrapper { width: 100%; overflow-x: auto; overflow-y: hidden; padding-bottom: 5px; scrollbar-width: none; }
         .board-wrapper::-webkit-scrollbar { display: none; }
 
-        .game-table { min-width: 820px; width: 100%; display: flex; flex-direction: column; align-items: center; gap: 0; margin: 0 auto; }
+        .game-table { min-width: 800px; width: 100%; display: flex; flex-direction: column; align-items: center; gap: 0; margin: 0 auto; }
 
-        .battlefield { display: flex; flex-direction: column; width: 100%; background: linear-gradient(145deg, #1c2833, #2c0e0e); border: 3px solid #d32f2f; border-radius: 15px; box-shadow: inset 0 0 40px rgba(0,0,0,0.9), 0 15px 30px rgba(0,0,0,0.9); position: relative; overflow: hidden; }
+        .battlefield { display: flex; flex-direction: column; width: 100%; background: linear-gradient(145deg, #1c2833, #2c0e0e); border: 2px solid #d32f2f; border-radius: 12px; box-shadow: inset 0 0 20px rgba(0,0,0,0.9), 0 10px 20px rgba(0,0,0,0.8); position: relative; overflow: hidden; }
         
-        .playmat { display: grid; grid-template-columns: calc(var(--card-w) + 2vw) auto calc(var(--card-w) + 2vw); gap: 1.5vw; padding: 1.5vh 1.5vw; width: 100%; box-sizing: border-box; }
+        /* 📐 場地內縮，間距變小 */
+        .playmat { display: grid; grid-template-columns: auto auto auto; justify-content: center; gap: 2vw; padding: 1.5vh 1vw; width: 100%; box-sizing: border-box; }
         
-        .board-divider { width: 100%; height: 2px; background: rgba(241, 196, 15, 0.3); box-shadow: 0 0 10px rgba(241, 196, 15, 0.6); }
+        .board-divider { width: 100%; height: 2px; background: rgba(241, 196, 15, 0.2); box-shadow: 0 0 5px rgba(241, 196, 15, 0.4); margin: 0;}
 
-        .line-label { color: rgba(255,255,255,0.8); font-size: var(--font-size-base); font-weight: bold; text-align: center; margin: 0.3vh 0; letter-spacing: 1px; text-shadow: 1px 1px 3px black; z-index: 1;}
+        .line-label { color: rgba(255,255,255,0.7); font-size: var(--font-size-base); font-weight: bold; text-align: center; margin: 0.2vh 0; letter-spacing: 1px; text-shadow: 1px 1px 2px black; z-index: 1;}
         
         .center-zone { display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 1; gap: 6px; }
         .side-zone { display: flex; flex-direction: column; gap: var(--gap-size); height: 100%; z-index: 1; justify-content: space-between; } 
         .card-row { display: flex; gap: calc(var(--gap-size) * 1.2); }
 
-        .slot { width: var(--card-w); height: var(--card-h); background-color: rgba(0,0,0,0.5); border: 2px dashed rgba(241, 196, 15, 0.5); border-radius: 6px; box-shadow: inset 0 0 15px rgba(0,0,0,0.8); position: relative; display: flex; justify-content: center; align-items: center; }
-        .slot.life-slot { width: var(--card-h); height: var(--card-w); justify-content: flex-start; align-items: flex-start; } 
+        .slot { width: var(--card-w); height: var(--card-h); background-color: rgba(0,0,0,0.5); border: 2px dashed rgba(241, 196, 15, 0.4); border-radius: 6px; box-shadow: inset 0 0 10px rgba(0,0,0,0.8); position: relative; display: flex; justify-content: center; align-items: center; }
+        
+        /* 🩸 生命區長方形特化，拉長確保卡片疊放不會超出版面 */
+        .slot.life-slot { width: var(--card-h); height: calc(var(--card-w) + 22vh); justify-content: flex-start; align-items: flex-start; border-color: rgba(231, 76, 60, 0.6);} 
         
         .slot::after { content: attr(data-count); position: absolute; top: -5px; right: -5px; background-color: #e74c3c; color: white; border-radius: 50%; width: min(2.5vh, 22px); height: min(2.5vh, 22px); display: flex; justify-content: center; align-items: center; font-size: var(--font-size-base); opacity: 0; transition: opacity 0.2s; z-index: 999; font-weight: bold; box-shadow: 0 2px 5px rgba(0,0,0,0.5); }
         .slot:hover::after { opacity: 1; }
         .slot[data-count="0"]::after, .slot[data-count="1"]::after, .slot:not([data-count])::after { display: none; }
 
-        /* 🎯 指定圖示 (Marker) UI 設計 */
         .marker { position: absolute; top: -8px; left: -8px; font-size: 18px; cursor: pointer; opacity: 0; transition: 0.2s; z-index: 9999; background: rgba(0,0,0,0.7); border-radius: 50%; width: 26px; height: 26px; display: flex; justify-content: center; align-items: center; border: 2px solid transparent; pointer-events: auto; }
         #my-board .slot:hover .marker { opacity: 0.4; }
         .slot.marked .marker { opacity: 1 !important; border-color: #e74c3c; box-shadow: 0 0 10px #e74c3c; filter: drop-shadow(0 0 5px red); transform: scale(1.2); }
         .slot.marked { box-shadow: inset 0 0 25px rgba(231, 76, 60, 0.7) !important; border-color: #e74c3c !important; }
 
-        /* 🔄 階段指示器 UI 移至右側 */
-        .phase-step { padding: 4px; border-radius: 4px; background: #2c3e50; cursor: pointer; font-weight: bold; font-size: 12px; transition: 0.3s; color: #bdc3c7; text-align: center; }
-        .phase-step.active { background: #f39c12; color: #000; box-shadow: 0 0 8px #f39c12; }
+        /* 📣 放大版階段按鈕 (設計於場外左側) */
+        .phase-step { padding: 8px 15px; border-radius: 6px; background: #2c3e50; cursor: pointer; font-weight: bold; font-size: 15px; transition: 0.3s; color: #bdc3c7; text-align: center; border: 1px solid #34495e;}
+        .phase-step.active { background: #f39c12; color: #000; box-shadow: 0 0 12px #f39c12; border-color: #f1c40f;}
 
-        .bottom-container { width: 100%; display: flex; gap: 15px; flex-wrap: wrap; justify-content: center; margin-top: 15px;}
-        .hand-zone { flex: 7; background-color: rgba(0,0,0,0.6); border: 2px dashed #7f8c8d; border-radius: 10px; padding: 1vh; display: flex; flex-direction: column;}
-        .look-zone { flex: 3; background-color: rgba(0,50,100,0.6); border: 2px dashed #3498db; border-radius: 10px; padding: 1vh; display: flex; flex-direction: column;}
+        .bottom-container { width: 100%; display: flex; gap: 15px; flex-wrap: wrap; justify-content: center; margin-top: 10px;}
+        .hand-zone { flex: 7; background-color: rgba(0,0,0,0.6); border: 2px dashed #7f8c8d; border-radius: 8px; padding: 1vh; display: flex; flex-direction: column;}
+        .look-zone { flex: 3; background-color: rgba(0,50,100,0.6); border: 2px dashed #3498db; border-radius: 8px; padding: 1vh; display: flex; flex-direction: column;}
         .hand-area, .look-area { display: flex; flex-wrap: wrap; gap: var(--gap-size); width: 100%; min-height: var(--card-h); align-items: center; justify-content: center;}
 
-        /* 🃏 卡片懸浮立體感 */
-        .card { width: var(--card-w); height: var(--card-h); border-radius: 6px; box-shadow: 0 4px 8px rgba(0,0,0,0.8); cursor: grab; transition: transform 0.2s ease-out; position: absolute; perspective: 1000px; touch-action: none;}
+        .card { width: var(--card-w); height: var(--card-h); border-radius: 6px; box-shadow: 0 3px 6px rgba(0,0,0,0.8); cursor: grab; transition: transform 0.2s ease-out; position: absolute; perspective: 1000px; touch-action: none;}
         .hand-area .card, .look-area .card { position: relative; left: 0 !important; top: 0 !important; margin-left: -20px;}
         .hand-area .card:first-child, .look-area .card:first-child { margin-left: 0; }
         .card:hover { transform: translateY(-5px) scale(1.05); z-index: 500 !important; }
@@ -120,21 +122,22 @@
 
         #mulligan-modal { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(0,0,0,0.95); border: 3px solid #f39c12; padding: 30px; border-radius: 15px; z-index: 10005; text-align: center; box-shadow: 0 0 30px rgba(243, 156, 18, 0.5); width: 90%; max-width: 400px;}
 
-        /* 🔍 全局放大鏡 */
         #card-magnifier { position: fixed; left: 2vw; bottom: 2vh; width: calc(var(--card-w) * 2.5); height: calc(var(--card-h) * 2.5); background: #111; border: 3px solid #f39c12; border-radius: 10px; display: none; z-index: 10010; pointer-events: none; box-shadow: 0 10px 30px rgba(0,0,0,0.9); overflow: hidden; }
         #card-magnifier img { width: 100%; height: 100%; object-fit: cover; }
 
-        /* 📱 手機直立防呆提示 */
         #portrait-warning { display: none; }
         @media screen and (orientation: portrait) and (max-width: 850px) {
             #portrait-warning { display: flex; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.98); z-index: 999999; color: #f1c40f; font-size: 24px; font-weight: bold; justify-content: center; align-items: center; text-align: center; flex-direction: column; padding: 20px; box-sizing: border-box; }
             body { overflow: hidden; }
         }
 
-        /* 🎲 霸氣立體擲骰子面板 */
         #dice-overlay { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(20,20,20,0.95); padding: 40px 60px; border-radius: 20px; border: 4px solid #9b59b6; z-index: 100000; text-align: center; box-shadow: 0 0 50px rgba(155, 89, 182, 0.8); backdrop-filter: blur(5px); }
         #dice-result-text { font-size: 32px; font-weight: bold; color: white; margin-top: 15px; }
         #dice-value { font-size: 80px; color: #f1c40f; font-weight: 900; text-shadow: 0 0 20px rgba(241, 196, 15, 0.8); margin: 10px 0; }
+
+        /* 📣 全螢幕階段宣告字幅 */
+        #phase-banner { display: none; position: fixed; top: 35%; left: 50%; transform: translateX(-50%); font-size: 60px; font-weight: 900; color: #f1c40f; text-shadow: 0 0 25px #e67e22, 3px 3px 10px black; z-index: 100000; pointer-events: none; white-space: nowrap;}
+        @keyframes phasePop { 0% { transform: translate(-50%, -50%) scale(0.3); opacity: 0; } 15% { transform: translate(-50%, -50%) scale(1.1); opacity: 1; } 85% { transform: translate(-50%, -50%) scale(1); opacity: 1; } 100% { transform: translate(-50%, -50%) scale(0.8); opacity: 0; } }
     </style>
 </head>
 <body>
@@ -150,6 +153,8 @@
         <div id="dice-result-text">擲出點數</div>
         <div id="dice-value">6</div>
     </div>
+
+    <div id="phase-banner">進入 主要階段！</div>
 
     <div id="sys-msg">系統訊息</div>
 
@@ -211,7 +216,7 @@
     <div id="card-magnifier"><img src="" id="magnifier-img"></div>
 
     <div id="game-scene">
-        <div style="width: 100%; display: flex; justify-content: space-between; align-items: center; background: rgba(0,0,0,0.8); padding: 1vh 2vw; border-radius: 8px; box-sizing: border-box; margin-bottom: 10px;">
+        <div style="width: 100%; display: flex; justify-content: space-between; align-items: center; background: rgba(0,0,0,0.8); padding: 1vh 2vw; border-radius: 8px; box-sizing: border-box; margin-bottom: 5px;">
             <div style="color: #f1c40f; font-weight: bold; font-size: 18px;">UA 遠端對戰平台</div>
             <div style="display: flex; gap: 15px;">
                 <button onclick="rollDice()" class="ctrl-btn" style="background: #9b59b6; font-size: 16px;">🎲 擲骰子</button>
@@ -227,7 +232,7 @@
             <button id="btn-cancel-drop" class="drop-btn cancel">取消放置</button>
         </div>
 
-        <div style="width: 100%; max-width: 900px; display: flex; gap: 15px; margin-bottom: 10px;">
+        <div style="width: 100%; max-width: 900px; display: flex; gap: 15px; margin-bottom: 5px;">
             <div class="look-zone" id="opp-look-zone"><div class="line-label">檢索區</div><div class="look-area" id="opp-look-area"></div></div>
             <div class="hand-zone" style="flex:7;"><div class="line-label" style="color:#e74c3c;">對手手牌區</div><div class="hand-area" id="opp-hand-area"></div></div>
         </div>
@@ -237,11 +242,15 @@
                 <div class="battlefield">
                     
                     <div id="opp-board" class="playmat">
-                        <div class="side-zone left-side">
-                            <div><div class="line-label">卡組</div><div class="slot" id="opp-deck-area"></div></div>
-                            <div><div class="line-label">公開</div><div class="slot" id="opp-public-area"></div></div>
-                            <div><div class="line-label">場外</div><div class="slot" id="opp-outside-area"></div></div>
+                        <div class="side-zone left-side" style="display: flex; flex-direction: row; gap: 15px;">
+                            <div style="display: flex; flex-direction: column; gap: var(--gap-size); justify-content: space-between; width: calc(var(--card-w) + 1vw);">
+                                <div><div class="line-label">卡組</div><div class="slot" id="opp-deck-area"></div></div>
+                                <div><div class="line-label">公開</div><div class="slot" id="opp-public-area"></div></div>
+                                <div><div class="line-label">場外</div><div class="slot" id="opp-outside-area"></div></div>
+                            </div>
+                            <div style="width: 70px;"></div>
                         </div>
+
                         <div class="center-zone">
                             <div class="line-label">ACTION POINT</div>
                             <div class="card-row ap-row" id="opp-ap-area"><div class="slot" id="opp-ap-3"></div><div class="slot" id="opp-ap-2"></div><div class="slot" id="opp-ap-1"></div></div>
@@ -250,7 +259,8 @@
                             <div class="line-label">FRONT LINE</div>
                             <div class="card-row" id="opp-front-line"><div class="slot" id="opp-fl-4"></div><div class="slot" id="opp-fl-3"></div><div class="slot" id="opp-fl-2"></div><div class="slot" id="opp-fl-1"></div></div>
                         </div>
-                        <div class="side-zone right-side" style="width: calc(var(--card-h) * 1.1);">
+
+                        <div class="side-zone right-side">
                             <div><div class="line-label">生命區</div><div class="slot life-slot" id="opp-life-area"></div></div>
                             <div><div class="line-label">移除區</div><div class="slot" id="opp-remove-area"></div></div>
                         </div>
@@ -273,21 +283,18 @@
                             <div class="card-row ap-row" id="my-ap-area"><div class="slot" id="my-ap-1"></div><div class="slot" id="my-ap-2"></div><div class="slot" id="my-ap-3"></div></div>
                         </div>
                         
-                        <div class="side-zone right-side" style="width: calc(var(--card-h) * 1.1);">
-                            <div><div class="line-label">卡組</div><div class="slot" id="my-deck-area"></div></div>
-                            <div><div class="line-label">公開</div><div class="slot" id="my-public-area"></div></div>
-                            
-                            <div style="width: 100%; display: flex; flex-direction: column; gap: 5px;">
-                                <div><div class="line-label">場外</div><div class="slot" id="my-outside-area" style="margin-bottom: 5px;"></div></div>
-                                
-                                <div style="color: #3498db; font-size: 11px; font-weight: bold; text-align: center; background: rgba(52,152,219,0.2); padding: 3px; border-radius: 4px;">對手階段：<span id="opp-phase-display">等待中</span></div>
-                                <div class="phase-bar" style="display: grid; grid-template-columns: 1fr 1fr; gap: 4px; background: rgba(0,0,0,0.8); padding: 5px; border-radius: 6px; border: 1px solid #f39c12; width: 100%; box-sizing: border-box;">
-                                    <div class="phase-step active" onclick="setPhase(this, '起始')">起始</div>
-                                    <div class="phase-step" onclick="setPhase(this, '移動')">移動</div>
-                                    <div class="phase-step" onclick="setPhase(this, '主要')">主要</div>
-                                    <div class="phase-step" onclick="setPhase(this, '戰鬥')">戰鬥</div>
-                                </div>
-                                <button id="btn-end-turn" onclick="endTurn()" class="start-btn" style="padding: 6px; font-size: 13px; width: 100%; border: 1px solid #c0392b; background: #e74c3c;">⛔ 結束回合</button>
+                        <div class="side-zone right-side" style="display: flex; flex-direction: row; gap: 15px;">
+                            <div style="display: flex; flex-direction: column; gap: 8px; justify-content: flex-end; padding-bottom: 5px;">
+                                <div class="phase-step active" onclick="setPhase(this, '起始')">起始</div>
+                                <div class="phase-step" onclick="setPhase(this, '移動')">移動</div>
+                                <div class="phase-step" onclick="setPhase(this, '主要')">主要</div>
+                                <div class="phase-step" onclick="setPhase(this, '戰鬥')">戰鬥</div>
+                                <button id="btn-end-turn" onclick="endTurn()" class="start-btn" style="padding: 8px 0; font-size: 15px; width: 70px; border: 1px solid #c0392b; background: #e74c3c;">結束</button>
+                            </div>
+                            <div style="display: flex; flex-direction: column; gap: var(--gap-size); justify-content: space-between; width: calc(var(--card-w) + 1vw);">
+                                <div><div class="line-label">卡組</div><div class="slot" id="my-deck-area"></div></div>
+                                <div><div class="line-label">公開</div><div class="slot" id="my-public-area"></div></div>
+                                <div><div class="line-label">場外</div><div class="slot" id="my-outside-area"></div></div>
                             </div>
                         </div>
                     </div>
@@ -333,7 +340,6 @@
 
     <script>
         let invalidCardsCache = JSON.parse(localStorage.getItem('ua_invalid_cards')) || [];
-        
         window.markCardInvalid = function(cardId) {
             if (!invalidCardsCache.includes(cardId)) {
                 invalidCardsCache.push(cardId);
@@ -456,8 +462,7 @@
         let sysMsgTimer = null;
         function showSysMsg(msg) { 
             let box = document.getElementById('sys-msg'); 
-            box.innerText = msg; 
-            box.style.display = 'block'; 
+            box.innerText = msg; box.style.display = 'block'; 
             clearTimeout(sysMsgTimer);
             sysMsgTimer = setTimeout(() => { box.style.display = 'none'; }, 4000); 
         }
@@ -467,18 +472,10 @@
             if(typeof masterCardCatalog !== 'undefined') masterCardCatalog.push(...savedCustom);
             updateDeckSelector(); initSeriesFilter(); renderBuilder(); renderDeck(); 
 
-            // 🎯 動態生成戰鬥場地的「標記圖示 (Marker)」
+            // 🎯 動態生成前衛區與能量區的標記
             document.querySelectorAll('#my-front-line .slot, #my-energy-line .slot, #opp-front-line .slot, #opp-energy-line .slot').forEach(slot => {
-                let marker = document.createElement('div');
-                marker.className = 'marker';
-                marker.innerText = '🎯';
-                marker.onclick = (e) => {
-                    e.stopPropagation(); 
-                    if(slot.id.startsWith('my-')) {
-                        slot.classList.toggle('marked');
-                        broadcastMyState();
-                    }
-                };
+                let marker = document.createElement('div'); marker.className = 'marker'; marker.innerText = '🎯';
+                marker.onclick = (e) => { e.stopPropagation(); if(slot.id.startsWith('my-')) { slot.classList.toggle('marked'); broadcastMyState(); } };
                 slot.appendChild(marker);
             });
         };
@@ -510,14 +507,11 @@
                 else if(data.type === 'SYNC_BOARD') applyOpponentSync(data);
                 else if(data.type === 'FLIP_CARD') applyOpponentFlip(data.id);
                 else if(data.type === 'DICE_ROLL') showDiceOverlay(`對手擲出了：`, data.value, false);
-                else if(data.type === 'SURRENDER') {
-                    alert("對手已投降並返回構築區！\n點擊確定後將同步返回大廳。");
-                    resetBoard();
-                }
+                else if(data.type === 'PHASE_CHANGE') showPhaseBanner(`對手宣告：【 ${data.phase} 】`);
+                else if(data.type === 'SURRENDER') { alert("對手已投降並返回構築區！\n點擊確定後將同步返回大廳。"); resetBoard(); }
             });
         }
 
-        // 🛡️ 無限重開局：退回大廳並徹底重置
         document.getElementById('btn-back-builder').addEventListener('click', () => {
             if(confirm("確定要投降並返回構築區嗎？")) {
                 if(conn && isConnected) conn.send({ type: 'SURRENDER' });
@@ -535,7 +529,6 @@
             myCardsElements = []; oppCardsElements = [];
         }
 
-        // 🎲 全螢幕霸氣擲骰子功能
         window.rollDice = function() {
             let result = Math.floor(Math.random() * 6) + 1;
             showDiceOverlay(`你擲出了：`, result, true);
@@ -553,10 +546,21 @@
             setTimeout(() => { overlay.style.display = 'none'; }, 3000);
         }
 
-        // 🔄 階段指示器功能
+        // 📣 超顯眼字幅動畫
+        function showPhaseBanner(text) {
+            let banner = document.getElementById('phase-banner');
+            banner.innerText = text;
+            banner.style.animation = 'none';
+            banner.offsetHeight; // trigger reflow
+            banner.style.animation = 'phasePop 1.5s ease-out forwards';
+            banner.style.display = 'block';
+        }
+
         window.setPhase = function(el, phaseName) {
             document.querySelectorAll('.phase-step').forEach(btn => btn.classList.remove('active'));
             el.classList.add('active');
+            showPhaseBanner(`【 ${phaseName}階段 】`);
+            if (conn) conn.send({ type: 'PHASE_CHANGE', phase: `${phaseName}階段` });
             broadcastMyState();
         };
 
@@ -564,12 +568,12 @@
             document.querySelectorAll('.phase-step').forEach(btn => btn.classList.remove('active'));
             document.querySelector('.phase-step:first-child').classList.add('active'); 
             
-            // 🌟 回合結束：所有卡片轉正，所有標記清除
             document.querySelectorAll('#my-board .card.rest').forEach(c => c.classList.remove('rest'));
             document.querySelectorAll('#my-board .slot.marked').forEach(s => s.classList.remove('marked'));
             
+            showPhaseBanner("【 回合結束 】");
+            if (conn) conn.send({ type: 'PHASE_CHANGE', phase: '回合結束' });
             broadcastMyState();
-            showSysMsg("🔄 回合結束，卡片已全數轉正！");
         };
 
         let myCardsElements = []; let oppCardsElements = [];
@@ -588,12 +592,8 @@
                 }
             });
 
-            // 打包階段與標記狀態
-            let activePhaseEl = document.querySelector('.phase-step.active');
-            let myPhase = activePhaseEl ? activePhaseEl.innerText : '等待中';
             let markedSlots = Array.from(document.querySelectorAll('#my-board .slot.marked')).map(el => el.id);
-
-            conn.send({ type: 'SYNC_BOARD', state: state, phase: myPhase, markedSlots: markedSlots });
+            conn.send({ type: 'SYNC_BOARD', state: state, markedSlots: markedSlots });
         }
 
         function applyOpponentSync(data) {
@@ -616,9 +616,6 @@
                     if(d.inLife) el.classList.add('in-life'); else el.classList.remove('in-life');
                 }
             });
-
-            // 應用對手的標記與階段
-            if(data.phase) document.getElementById('opp-phase-display').innerText = data.phase;
             
             document.querySelectorAll('#opp-board .slot').forEach(el => el.classList.remove('marked'));
             if(data.markedSlots) {
@@ -632,9 +629,13 @@
             updateSlotCounts();
         }
 
+        // 👁️ 對手翻牌時，如果翻的是我方的牌，強制再廣播一次確認
         function applyOpponentFlip(networkId) {
             let el = myCardsElements.find(c => c.dataset.networkId === networkId) || oppCardsElements.find(c => c.dataset.networkId === networkId);
-            if(el) el.classList.toggle('is-flipped');
+            if(el) {
+                el.classList.toggle('is-flipped');
+                if (el.dataset.networkId.startsWith('p_')) broadcastMyState();
+            }
         }
 
         function shuffleArray(array) { for (let i = array.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [array[i], array[j]] = [array[j], array[i]]; } return array; }
@@ -643,7 +644,27 @@
         function createCardDOM(cardData, networkId, isMine) {
             let el = document.createElement("div"); el.className = "card is-flipped"; el.dataset.networkId = networkId;
             el.innerHTML = `<div class="card-inner"><div class="card-front"><img src="${cardData.imageUrl}"></div><div class="card-back">UNION<br>ARENA</div></div>`;
-            if(isMine) attachMyDragEvents(el); return el;
+            if(isMine) attachMyDragEvents(el); 
+            else {
+                // 對手卡片的雙擊翻面支援
+                el.addEventListener('click', (e) => {
+                    if(window.isTouchDevice) {
+                        let tapLength = new Date().getTime() - (el.lastTapTime || 0);
+                        el.lastTapTime = new Date().getTime();
+                        if(tapLength < 300 && tapLength > 0) {
+                            el.classList.toggle('is-flipped');
+                            if(conn) conn.send({ type: 'FLIP_CARD', id: el.dataset.networkId });
+                        }
+                    }
+                });
+                el.addEventListener('dblclick', (e) => {
+                    if(!window.isTouchDevice) {
+                        el.classList.toggle('is-flipped');
+                        if(conn) conn.send({ type: 'FLIP_CARD', id: el.dataset.networkId });
+                    }
+                });
+            }
+            return el;
         }
 
         function initMyBoard(deck, apDeck) {
@@ -692,13 +713,21 @@
             recalcStacking(deckArea); recalcStacking(lifeArea); updateSlotCounts(); broadcastMyState(); showSysMsg("🎯 對戰開始！");
         }
 
+        // 📐 生命區極致疊放邏輯：由下而上鋪疊
         function applyStackingStyle(card, slotBelow, myIndex) {
             if (!slotBelow) return;
             card.style.zIndex = myIndex;
             if (slotBelow.id.includes('deck') || slotBelow.id.includes('outside') || slotBelow.id.includes('remove') || slotBelow.id.includes('public') || slotBelow.id.includes('ap')) { card.style.left='0px'; card.style.top='0px'; }
             else if (slotBelow.id.includes('life')) { 
-                card.style.left = 'calc((var(--card-h) - var(--card-w)) / 2)'; 
-                card.style.top = `calc((var(--card-w) - var(--card-h)) / 2 + ${myIndex * 2.5}vh)`; 
+                let maxCards = Math.max(7, slotBelow.querySelectorAll('.card').length);
+                card.style.left = 'calc((var(--card-h) - var(--card-w)) / 2 * -1)'; 
+                if (slotBelow.id.includes('my-')) {
+                    // 我方由下往上疊 (先放的 Y 最大，在最下面) 間距加寬到 3.5vh 方便點擊
+                    card.style.top = `calc((var(--card-w) - var(--card-h)) / 2 + ${(maxCards - 1 - myIndex) * 3.5}vh)`; 
+                } else {
+                    // 對手鏡像，由上往下疊
+                    card.style.top = `calc((var(--card-w) - var(--card-h)) / 2 + ${myIndex * 3.5}vh)`; 
+                }
                 card.classList.add('in-life'); 
                 card.classList.remove('rest');
             }
@@ -774,6 +803,7 @@
                     if (!isDragging) {
                         if(originalParent) originalParent.querySelectorAll('.card').forEach(c => c.classList.remove('stack-glowing'));
                         
+                        // 🔒 禁區防呆：這些區域的牌不准轉置
                         let noRestZones = ['hand', 'look', 'outside', 'deck', 'remove', 'public'];
                         let canRest = !noRestZones.some(z => originalParent.id.includes(z));
                         
@@ -862,6 +892,7 @@
                         if (dropZone.id.includes('deck')) { if (originalParent && originalParent.id.includes('public')) c.classList.remove('is-flipped'); else c.classList.add('is-flipped'); } 
                         else if (dropZone.id.includes('public') || dropZone.id.includes('modal-public')) c.classList.remove('is-flipped');
                         
+                        // 🔒 禁區防呆：丟進去一律轉正
                         if (dropZone.id.includes('outside') || dropZone.id.includes('remove') || dropZone.id.includes('deck') || dropZone.id.includes('public')) {
                             c.classList.remove('rest');
                         } else if (dropZone.closest('#my-front-line, #my-energy-line')) { let fromField = originalParent && originalParent.closest('#my-front-line, #my-energy-line'); if (!fromField) c.classList.add('rest'); }
@@ -908,7 +939,12 @@
         document.addEventListener('keydown', e => {
             if(document.getElementById('game-scene').style.display === 'none') return;
             if(hoveredCard && !hoveredCard.parentElement.id.includes('opp-')) {
-                if(e.key.toLowerCase() === 'f') { hoveredCard.classList.toggle('is-flipped'); broadcastMyState(); }
+                if(e.key.toLowerCase() === 'f') { 
+                    hoveredCard.classList.toggle('is-flipped'); 
+                    if(hoveredCard.dataset.networkId.startsWith('p_')) broadcastMyState(); 
+                    // 👁️ 對方牌用 F 鍵翻面也要同步
+                    else if(conn) conn.send({ type: 'FLIP_CARD', id: hoveredCard.dataset.networkId });
+                }
                 if(e.key.toLowerCase() === 'c' || e.key.toLowerCase() === 'v') {
                     let targetCard = hoveredCard || (hoveredSlot ? hoveredSlot.querySelectorAll('.card')[hoveredSlot.querySelectorAll('.card').length-1] : null);
                     if(targetCard) {
@@ -969,6 +1005,7 @@
             });
         });
 
+        // 👁️ 在 Modal 內翻對方牌也要廣播
         modalContainer.addEventListener('click', e => {
             let card = e.target.closest('.card');
             if(card && currentModalSourceSlot && currentModalSourceSlot.id.includes('life')) {
@@ -995,5 +1032,3 @@
     </script>
 </body>
 </html>
-
-
