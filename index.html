@@ -52,12 +52,13 @@
         .import-textarea { flex: 1 1 150px; height: 35px; background: #2c3e50; color: white; border: 1px solid #34495e; border-radius: 4px; padding: 8px; font-family: monospace; resize: none; outline: none; }
         #import-series-name { flex: 0 1 120px; }
 
-        /* 🎥 觀景窗 */
+        /* 🎥 觀景窗：啟動 3D 透視深度 (perspective) */
         .board-wrapper { 
             width: 100%; height: 92vh; 
             overflow: hidden; position: relative; background: #111; 
             border: 3px solid #333; border-radius: 10px; box-shadow: inset 0 0 50px black;
             cursor: grab; touch-action: none; 
+            perspective: 1500px; /* 🌟 MD 視角關鍵：產生 Z 軸遠近感 */
         }
         .board-wrapper:active { cursor: grabbing; }
 
@@ -69,67 +70,82 @@
             font-size: 20px; font-weight: bold; cursor: pointer; display: flex; justify-content: center; align-items: center; box-shadow: 0 4px 10px rgba(0,0,0,0.5); transition: 0.2s;
         }
         .cam-btn:hover { background: #f39c12; color: black; }
+        #btn-3d { background: rgba(0,0,0,0.8); border-color: #3498db; }
 
-        /* 🎮 HUD 懸浮面板：階段按鈕獨立出來，永遠顯示在右側，不隨地圖縮放！ */
+        /* 🎮 HUD 懸浮面板：維持 2D 貼齊螢幕 */
         .hud-sidebar {
             position: absolute; right: 20px; top: 50%; transform: translateY(-50%);
             display: flex; flex-direction: column; gap: 15px; 
             background: rgba(0,0,0,0.85); padding: 15px; border-radius: 12px; 
             border: 2px solid #f39c12; width: 130px; box-sizing: border-box; 
-            box-shadow: 0 0 30px rgba(0,0,0,0.8); z-index: 10010;
-            pointer-events: auto; /* 確保點擊有效 */
+            box-shadow: 0 0 30px rgba(0,0,0,0.8); z-index: 10010; pointer-events: auto; 
         }
         .phase-step { padding: 10px; border-radius: 6px; background: #2c3e50; cursor: pointer; font-weight: bold; font-size: 14px; transition: 0.3s; color: #bdc3c7; text-align: center; border: 1px solid #34495e;}
         .phase-step:hover { background: #34495e; color: white;}
         .phase-step.active { background: #f39c12; color: #000; box-shadow: 0 0 12px #f39c12; border-color: #f1c40f;}
 
-        /* 📐 重新定義戰鬥桌：移除死板高度限制，允許內部彈性撐開 */
+        /* 📐 戰鬥桌面容器 */
         .game-table { 
             width: 950px; min-height: 1450px; height: max-content;
             position: absolute; left: 0; top: 0; transform-origin: top left;
             display: flex; flex-direction: column; align-items: center; gap: 20px; padding: 20px; box-sizing: border-box;
+            transform-style: preserve-3d; /* 讓子元素繼承 3D 變形 */
         }
 
-        /* 🗜️ 頂部與底部的防擠壓容器 */
+        /* 🗜️ 頂部與底部防擠壓容器 (HUD 屬性，不參與 3D 傾斜) */
         .top-container, .bottom-container { 
-            width: 100%; max-width: 840px; display: flex; gap: 20px; justify-content: center; align-items: stretch; 
-            flex-shrink: 0; /* 🌟 核心防擠壓：絕對不允許縮小！ */
+            width: 100%; max-width: 840px; display: flex; gap: 20px; justify-content: center; align-items: stretch; flex-shrink: 0; z-index: 100;
         }
         .hand-zone { flex: 7; background-color: rgba(0,0,0,0.6); border: 2px dashed #7f8c8d; border-radius: 10px; padding: 15px; display: flex; flex-direction: column;}
         .look-zone { flex: 3; background-color: rgba(0,50,100,0.6); border: 2px dashed #3498db; border-radius: 10px; padding: 15px; display: flex; flex-direction: column;}
         .hand-area, .look-area { display: flex; flex-wrap: wrap; gap: 10px; width: 100%; min-height: var(--card-h); align-items: center; justify-content: center;}
 
 
-        /* 🗜️ 紅框場地極致內縮：並拉開了中間與兩側的距離(gap: 35px) 讓比例更完美 */
-        .battlefield { display: flex; flex-direction: column; width: max-content; background: linear-gradient(145deg, #1c2833, #2c0e0e); border: 3px solid #d32f2f; border-radius: 15px; box-shadow: inset 0 0 40px rgba(0,0,0,0.9), 0 15px 30px rgba(0,0,0,0.9); position: relative; margin: 0 auto; flex-shrink: 0;}
+        /* 🗜️ 核心 2.5D 桌墊：加入 3D 動畫轉場屬性 */
+        .battlefield { 
+            display: flex; flex-direction: column; width: max-content; background: linear-gradient(145deg, #1c2833, #2c0e0e); 
+            border: 3px solid #d32f2f; border-radius: 15px; box-shadow: inset 0 0 40px rgba(0,0,0,0.9), 0 15px 30px rgba(0,0,0,0.9); 
+            position: relative; margin: 0 auto; flex-shrink: 0;
+            transform-origin: center center; /* 從中心點傾斜 */
+            transition: transform 0.6s cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow 0.6s ease;
+            transform-style: preserve-3d;
+        }
         
-        .playmat { display: flex; justify-content: center; align-items: stretch; gap: 35px; padding: 25px; width: 100%; box-sizing: border-box; }
+        /* 🌟🌟 MD 3D 傾斜透視視角切換！ 🌟🌟 */
+        .mode-3d .battlefield {
+            transform: rotateX(35deg) translateY(-20px);
+            box-shadow: 0 50px 80px rgba(0,0,0,0.9), inset 0 0 40px rgba(0,0,0,0.9);
+            border-bottom: 12px solid #7b241c; /* 創造出木桌實體的厚度感！ */
+            border-bottom-left-radius: 20px; border-bottom-right-radius: 20px;
+        }
+
+        .playmat { display: flex; justify-content: center; align-items: stretch; gap: 35px; padding: 25px; width: 100%; box-sizing: border-box; transform-style: preserve-3d; }
         .board-divider { width: 100%; height: 2px; background: rgba(241, 196, 15, 0.3); box-shadow: 0 0 10px rgba(241, 196, 15, 0.6); }
 
         .line-label { color: rgba(255,255,255,0.8); font-size: var(--font-size-base); font-weight: bold; text-align: center; margin: 4px 0; letter-spacing: 1px; text-shadow: 1px 1px 3px black; z-index: 1; white-space: nowrap; pointer-events: none; }
         
-        .center-zone { display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 1; gap: 12px; }
-        .side-zone { display: flex; flex-direction: column; gap: 15px; height: 100%; z-index: 1; justify-content: space-between; align-items: center; } 
+        .center-zone { display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 1; gap: 12px; transform-style: preserve-3d;}
+        .side-zone { display: flex; flex-direction: column; gap: 15px; height: 100%; z-index: 1; justify-content: space-between; align-items: center; transform-style: preserve-3d;} 
         
-        .card-row { display: flex; gap: 12px; }
+        .card-row { display: flex; gap: 12px; transform-style: preserve-3d;}
 
-        .slot { width: var(--card-w); height: var(--card-h); background-color: rgba(0,0,0,0.5); border: 2px dashed rgba(241, 196, 15, 0.5); border-radius: 6px; box-shadow: inset 0 0 15px rgba(0,0,0,0.8); position: relative; display: flex; justify-content: center; align-items: center; }
+        .slot { width: var(--card-w); height: var(--card-h); background-color: rgba(0,0,0,0.5); border: 2px dashed rgba(241, 196, 15, 0.5); border-radius: 6px; box-shadow: inset 0 0 15px rgba(0,0,0,0.8); position: relative; display: flex; justify-content: center; align-items: center; transform-style: preserve-3d;}
         .slot.life-slot { width: var(--card-h); height: calc(var(--card-w) + 160px); justify-content: flex-start; align-items: flex-start; } 
         
-        .slot::after { content: attr(data-count); position: absolute; top: -5px; right: -5px; background-color: #e74c3c; color: white; border-radius: 50%; width: 22px; height: 22px; display: flex; justify-content: center; align-items: center; font-size: var(--font-size-base); opacity: 0; transition: opacity 0.2s; z-index: 999; font-weight: bold; box-shadow: 0 2px 5px rgba(0,0,0,0.5); }
+        .slot::after { content: attr(data-count); position: absolute; top: -5px; right: -5px; background-color: #e74c3c; color: white; border-radius: 50%; width: 22px; height: 22px; display: flex; justify-content: center; align-items: center; font-size: var(--font-size-base); opacity: 0; transition: opacity 0.2s; z-index: 999; font-weight: bold; box-shadow: 0 2px 5px rgba(0,0,0,0.5); transform: translateZ(10px); }
         .slot:hover::after { opacity: 1; }
         .slot[data-count="0"]::after, .slot[data-count="1"]::after, .slot:not([data-count])::after { display: none; }
 
-        .marker { position: absolute; top: -8px; left: -8px; font-size: 16px; cursor: pointer; opacity: 0; transition: 0.2s; z-index: 9999; background: rgba(0,0,0,0.7); border-radius: 50%; width: 24px; height: 24px; display: flex; justify-content: center; align-items: center; border: 2px solid transparent; pointer-events: auto; }
+        .marker { position: absolute; top: -8px; left: -8px; font-size: 16px; cursor: pointer; opacity: 0; transition: 0.2s; z-index: 9999; background: rgba(0,0,0,0.7); border-radius: 50%; width: 24px; height: 24px; display: flex; justify-content: center; align-items: center; border: 2px solid transparent; pointer-events: auto; transform: translateZ(5px);}
         .slot:hover .marker { opacity: 0.4; }
-        .slot.marked .marker { opacity: 1 !important; border-color: #e74c3c; box-shadow: 0 0 10px #e74c3c; filter: drop-shadow(0 0 5px red); transform: scale(1.2); }
+        .slot.marked .marker { opacity: 1 !important; border-color: #e74c3c; box-shadow: 0 0 10px #e74c3c; filter: drop-shadow(0 0 5px red); transform: scale(1.2) translateZ(10px); }
         .slot.marked { box-shadow: inset 0 0 25px rgba(231, 76, 60, 0.7) !important; border-color: #e74c3c !important; }
 
-        /* 🃏 卡片屬性 */
-        .card { width: var(--card-w); height: var(--card-h); border-radius: 6px; box-shadow: 0 4px 8px rgba(0,0,0,0.8); cursor: grab; transition: transform 0.2s ease-out; position: absolute; perspective: 1000px; touch-action: none;}
+        /* 🃏 卡片屬性：支援 3D 圖層穿透 */
+        .card { width: var(--card-w); height: var(--card-h); border-radius: 6px; box-shadow: 0 4px 8px rgba(0,0,0,0.8); cursor: grab; transition: transform 0.2s ease-out; position: absolute; perspective: 1000px; touch-action: none; transform-style: preserve-3d;}
         .hand-area .card, .look-area .card { position: relative; left: 0 !important; top: 0 !important; margin-left: -20px;}
         .hand-area .card:first-child, .look-area .card:first-child { margin-left: 0; }
-        .card:hover { transform: translateY(-5px) scale(1.05); z-index: 500 !important; }
+        .card:hover { transform: translateY(-5px) scale(1.05) translateZ(10px) !important; z-index: 500 !important; }
         
         .card-inner { position: relative; width: 100%; height: 100%; transition: transform 0.3s; transform-style: preserve-3d; }
         .card.is-flipped .card-inner { transform: rotateY(180deg); }
@@ -140,7 +156,8 @@
         
         #opp-hand-area .card-inner, #opp-look-area .card-inner { transform: rotateY(180deg) !important; }
 
-        .card.dragging { transform: scale(1.15) rotate(5deg) !important; z-index: 9999 !important; transition: none; box-shadow: 0 15px 30px rgba(0,0,0,0.9); }
+        /* 3D 懸浮拖曳效果 */
+        .card.dragging { transform: scale(1.15) rotate(5deg) translateZ(30px) !important; z-index: 9999 !important; transition: none; box-shadow: -10px 20px 30px rgba(0,0,0,0.8); }
         .card.stack-glowing { box-shadow: 0 0 15px 5px #f1c40f !important; }
         .card.rest { transform: rotate(90deg); }
         .card.in-life { transform: rotate(-90deg) !important; }
@@ -156,7 +173,7 @@
 
         #mulligan-modal { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(0,0,0,0.95); border: 3px solid #f39c12; padding: 30px; border-radius: 15px; z-index: 10005; text-align: center; box-shadow: 0 0 30px rgba(243, 156, 18, 0.5); width: 90%; max-width: 400px;}
 
-        /* 🔍 左下角超大檢視器 */
+        /* 🔍 左下角超大檢視器 (尺寸放大 1.5 倍) */
         #card-magnifier { 
             position: fixed; left: 20px; bottom: 20px; 
             width: calc(var(--card-w) * 3); height: calc(var(--card-h) * 3); 
@@ -238,7 +255,7 @@
                         <h4 style="margin: 0; color: #f39c12;">🎯 我的 AP 卡</h4>
                         <span id="ap-counter" style="font-weight: bold;">0 / 3</span>
                     </div>
-                    <div class="card-grid" id="ap-deck-grid" style="min-height: var(--card-h);"></div>
+                    <div class="card-grid" id="ap-deck-grid" style="min-height: 120px;"></div>
                 </div>
                 <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
                     <h4 style="margin: 0; color: #3498db;">🃏 主要牌組</h4>
@@ -272,6 +289,7 @@
         <div class="board-wrapper" id="board-viewport">
             
             <div class="cam-ctrl-box">
+                <button class="cam-btn" onclick="toggle3D()" id="btn-3d" style="font-size: 14px;">3D</button>
                 <button class="cam-btn" onclick="zoomCam(0.15)">➕</button>
                 <button class="cam-btn" onclick="resetCam()">🎯</button>
                 <button class="cam-btn" onclick="zoomCam(-0.15)">➖</button>
@@ -549,13 +567,23 @@
             if(!wrapper) return;
             let w = wrapper.clientWidth;
             let h = wrapper.clientHeight;
-            // 🌟 配合新底板彈性高度重新計算縮放，初始視角稍微縮小一點以縱覽全局
             window.camScale = Math.min(w / 1000, h / 1500) * 0.95; 
             if(window.camScale > 1.2) window.camScale = 1.2;
             
             window.camX = (w - (950 * window.camScale)) / 2;
             window.camY = (h - (1450 * window.camScale)) / 2;
             updateCamera();
+        };
+
+        // 🌟 3D 切換邏輯
+        window.is3D = false;
+        window.toggle3D = function() {
+            window.is3D = !window.is3D;
+            let btn = document.getElementById('btn-3d');
+            btn.style.background = window.is3D ? '#e74c3c' : 'rgba(0,0,0,0.8)';
+            let table = document.getElementById('game-table-inner');
+            if(window.is3D) table.classList.add('mode-3d');
+            else table.classList.remove('mode-3d');
         };
 
         function startPan(e) {
