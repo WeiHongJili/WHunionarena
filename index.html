@@ -7,6 +7,7 @@
     <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
     <style>
         :root {
+            /* 🌟 已經修復這裡的語法錯誤！ */
             --card-h: min(10.5vh, 110px); 
             --card-w: calc(var(--card-h) * 0.714); 
             --gap-size: min(1vh, 6px);
@@ -521,9 +522,7 @@
                 else if(data.type === 'SYNC_BOARD') applyOpponentSync(data);
                 else if(data.type === 'FLIP_CARD') applyOpponentFlip(data.id);
                 else if(data.type === 'DICE_ROLL') showCenterAlert('🎲', '對手擲出了：', data.value, '#e74c3c');
-                
                 else if(data.type === 'SHUFFLE_DECK') showCenterAlert('🔀', '對手洗牌中', 'Shuffling...', '#9b59b6');
-
                 else if(data.type === 'PHASE_BROADCAST') { 
                     if (data.phase === '結束') {
                         showCenterAlert('⚠️', '對手回合結束', '輪到你了！', '#2ecc71');
@@ -531,7 +530,6 @@
                         showCenterAlert('⚠️', '對手進入了', data.phase + '階段', '#f39c12');
                     }
                 }
-                
                 else if(data.type === 'SURRENDER') {
                     alert("對手已投降並返回構築區！\n點擊確定後將同步返回大廳。");
                     resetBoard();
@@ -913,14 +911,12 @@
             let slot = e.target.closest('.slot'); if(slot === hoveredSlot) hoveredSlot = null; 
         });
 
-        // ⌨️ 全新快捷鍵系統：新增 R(全局洗牌)、G(進檢索區)
         document.addEventListener('keydown', e => {
             if(document.getElementById('game-scene').style.display === 'none') return;
             if(e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
 
             let key = e.key.toLowerCase();
             
-            // R 鍵：牌組全局洗牌特效
             if (key === 'r') {
                 let deckArea = document.getElementById('my-deck-area');
                 let cards = Array.from(deckArea.querySelectorAll('.card'));
@@ -960,7 +956,6 @@
                     broadcastMyState();
                 }
 
-                // C: 手牌 / V: 場外 / G: 檢索區
                 if(key === 'c' || key === 'v' || key === 'g') {
                     let targetCard = hoveredCard || (hoveredSlot ? hoveredSlot.querySelectorAll('.card')[hoveredSlot.querySelectorAll('.card').length-1] : null);
                     if(targetCard) {
