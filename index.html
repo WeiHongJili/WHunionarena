@@ -7,11 +7,11 @@
     <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
     <style>
         :root {
-            /* 📐 動態縮放：讓卡片在 iPad 上稍微縮小，確保一屏塞滿 */
-            --card-h: clamp(80px, 11vh, 120px); 
+            /* 📐 場地內縮優化 */
+            --card-h: min(10.5vh, 110px); 
             --card-w: calc(var(--card-h) * 0.714); 
             --gap-size: min(1vh, 6px);
-            --font-size-base: clamp(10px, 1.2vh, 14px);
+            --font-size-base: min(1.5vh, 14px);
         }
 
         body { background-color: #0a0a0a; margin: 0; min-height: 100vh; overflow-x: hidden; overflow-y: auto; font-family: '微軟正黑體', sans-serif; display: flex; flex-direction: column; align-items: center; padding: 1.5vh 2vw; box-sizing: border-box; color: white; touch-action: manipulation; -webkit-user-select: none; user-select: none; }
@@ -48,7 +48,6 @@
         .ctrl-btn { background: #3498db; color: white; border: none; padding: 6px 12px; border-radius: 5px; cursor: pointer; font-weight: bold; font-size: 13px;}
         .ctrl-btn.danger { background: #e74c3c; }
 
-        /* 🛠️ 修復圖二輸入框被擠壓的問題 */
         .import-section { background: rgba(155, 89, 182, 0.2); border: 2px dashed #9b59b6; padding: 10px; border-radius: 8px; margin-bottom: 15px; display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
         .import-textarea { flex: 1 1 150px; height: 35px; background: #2c3e50; color: white; border: 1px solid #34495e; border-radius: 4px; padding: 8px; font-family: monospace; resize: none; outline: none; }
         #import-series-name { flex: 0 1 120px; }
@@ -56,28 +55,31 @@
         .board-wrapper { width: 100%; overflow-x: auto; overflow-y: hidden; padding-bottom: 10px; scrollbar-width: none; }
         .board-wrapper::-webkit-scrollbar { display: none; }
 
-        .game-table { min-width: 800px; width: 100%; display: flex; flex-direction: column; align-items: center; gap: 0; margin: 0 auto; }
+        .game-table { min-width: 820px; width: 100%; display: flex; flex-direction: column; align-items: center; gap: 0; margin: 0 auto; }
 
         .battlefield { display: flex; flex-direction: column; width: 100%; background: linear-gradient(145deg, #1c2833, #2c0e0e); border: 3px solid #d32f2f; border-radius: 15px; box-shadow: inset 0 0 40px rgba(0,0,0,0.9), 0 15px 30px rgba(0,0,0,0.9); position: relative; overflow: hidden; }
         
-        /* 🌊 彈性流動佈局：取代原本死板的 Grid */
-        .playmat { display: flex; justify-content: space-evenly; align-items: stretch; gap: 2vw; padding: 2vh 2vw; width: 100%; box-sizing: border-box; }
+        /* 🌊 放棄死板的 Grid，改用 Flexbox 讓排版充滿彈性 */
+        .playmat { display: flex; justify-content: space-between; align-items: stretch; gap: 1vw; padding: 1.5vh 2vw; width: 100%; box-sizing: border-box; }
         
         .board-divider { width: 100%; height: 2px; background: rgba(241, 196, 15, 0.3); box-shadow: 0 0 10px rgba(241, 196, 15, 0.6); }
 
-        /* 🛡️ 強制不換行，解決圖一 ENERG Y LINE 的問題 */
+        /* 🛡️ 最高指令：文字絕對不准換行！ */
         .line-label { color: rgba(255,255,255,0.8); font-size: var(--font-size-base); font-weight: bold; text-align: center; margin: 0.3vh 0; letter-spacing: 1px; text-shadow: 1px 1px 3px black; z-index: 1; white-space: nowrap; }
         
-        .center-zone { display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 1; gap: 6px; flex: 1 1 auto; }
-        .side-zone { display: flex; flex-direction: column; gap: var(--gap-size); height: 100%; z-index: 1; justify-content: space-between; align-items: center; flex: 0 0 auto; } 
+        .center-zone { display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 1; gap: 6px; flex-grow: 1; }
+        
+        /* 讓兩側固定寬度，不會壓縮中間 */
+        .side-zone { display: flex; flex-direction: column; gap: var(--gap-size); height: 100%; z-index: 1; justify-content: space-between; align-items: center; flex-shrink: 0; width: calc(var(--card-h) + 1vw); } 
+        
         .card-row { display: flex; gap: calc(var(--gap-size) * 1.2); }
 
         .slot { width: var(--card-w); height: var(--card-h); background-color: rgba(0,0,0,0.5); border: 2px dashed rgba(241, 196, 15, 0.5); border-radius: 6px; box-shadow: inset 0 0 15px rgba(0,0,0,0.8); position: relative; display: flex; justify-content: center; align-items: center; }
         
-        /* 🩸 生命區底座：確實設定為橫向大小 */
-        .slot.life-slot { width: var(--card-h); height: var(--card-w); justify-content: flex-start; align-items: flex-start; } 
+        /* 🩸 生命區進化：真正的直立長方形底座 */
+        .slot.life-slot { width: var(--card-h); height: calc(var(--card-w) + 15vh); justify-content: flex-start; align-items: flex-start; } 
         
-        .slot::after { content: attr(data-count); position: absolute; top: -5px; right: -5px; background-color: #e74c3c; color: white; border-radius: 50%; width: min(2.5vh, 20px); height: min(2.5vh, 20px); display: flex; justify-content: center; align-items: center; font-size: var(--font-size-base); opacity: 0; transition: opacity 0.2s; z-index: 999; font-weight: bold; box-shadow: 0 2px 5px rgba(0,0,0,0.5); }
+        .slot::after { content: attr(data-count); position: absolute; top: -5px; right: -5px; background-color: #e74c3c; color: white; border-radius: 50%; width: min(2.5vh, 22px); height: min(2.5vh, 22px); display: flex; justify-content: center; align-items: center; font-size: var(--font-size-base); opacity: 0; transition: opacity 0.2s; z-index: 999; font-weight: bold; box-shadow: 0 2px 5px rgba(0,0,0,0.5); }
         .slot:hover::after { opacity: 1; }
         .slot[data-count="0"]::after, .slot[data-count="1"]::after, .slot:not([data-count])::after { display: none; }
 
@@ -87,7 +89,7 @@
         .slot.marked .marker { opacity: 1 !important; border-color: #e74c3c; box-shadow: 0 0 10px #e74c3c; filter: drop-shadow(0 0 5px red); transform: scale(1.2); }
         .slot.marked { box-shadow: inset 0 0 25px rgba(231, 76, 60, 0.7) !important; border-color: #e74c3c !important; }
 
-        /* 🔄 壓縮版階段指示器 */
+        /* 🔄 階段指示器 */
         .phase-step { padding: 4px; border-radius: 4px; background: #2c3e50; cursor: pointer; font-weight: bold; font-size: 11px; transition: 0.3s; color: #bdc3c7; text-align: center; }
         .phase-step.active { background: #f39c12; color: #000; box-shadow: 0 0 8px #f39c12; }
 
@@ -699,9 +701,9 @@
             card.style.zIndex = myIndex;
             if (slotBelow.id.includes('deck') || slotBelow.id.includes('outside') || slotBelow.id.includes('remove') || slotBelow.id.includes('public') || slotBelow.id.includes('ap')) { card.style.left='0px'; card.style.top='0px'; }
             else if (slotBelow.id.includes('life')) { 
-                // 🌟 精準數學計算，確保卡片旋轉後對齊底座左上角，垂直發展
+                // 🌟 修正公式：移除 * -1，確保精準向右下角推疊，並對齊左邊界
                 card.style.left = 'calc((var(--card-h) - var(--card-w)) / 2)'; 
-                card.style.top = `calc((var(--card-h) - var(--card-w)) / -2 + ${myIndex * 2.2}vh)`; 
+                card.style.top = `calc((var(--card-w) - var(--card-h)) / 2 + ${myIndex * 2.2}vh)`; 
                 card.classList.add('in-life'); 
                 card.classList.remove('rest');
             }
