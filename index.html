@@ -7,11 +7,11 @@
     <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
     <style>
         :root {
-            /* 🌟 放棄動態縮放，改用絕對完美尺寸，配合虛擬攝影機！ */
-            --card-h: 110px; 
+            /* 🌟 卡片極限放大：提升至 135px，填滿桌面空隙 */
+            --card-h: 135px; 
             --card-w: calc(var(--card-h) * 0.714); 
             --gap-size: 8px;
-            --font-size-base: 13px;
+            --font-size-base: 14px;
         }
 
         body { background-color: #0a0a0a; margin: 0; min-height: 100vh; overflow-x: hidden; overflow-y: auto; font-family: '微軟正黑體', sans-serif; display: flex; flex-direction: column; align-items: center; padding: 1.5vh 2vw; box-sizing: border-box; color: white; touch-action: manipulation; -webkit-user-select: none; user-select: none; }
@@ -54,8 +54,8 @@
 
         /* 🎥 虛擬攝影機觀景窗 (Viewport) */
         .board-wrapper { 
-            width: 100%; height: 80vh; 
-            overflow: hidden; position: relative; background: #151515; 
+            width: 100%; height: 85vh; 
+            overflow: hidden; position: relative; background: #111; 
             border: 3px solid #333; border-radius: 10px; box-shadow: inset 0 0 50px black;
             cursor: grab; touch-action: none; 
         }
@@ -71,24 +71,24 @@
         }
         .cam-btn:hover { background: #f39c12; color: black; }
 
-        /* 📐 絕對完美的實體戰鬥桌面 */
+        /* 📐 絕對完美的實體戰鬥桌面 (鎖定 1250x950，取消動態 vw/vh) */
         .game-table { 
             width: 1250px; height: 950px; 
             position: absolute; left: 0; top: 0; transform-origin: top left;
-            display: flex; flex-direction: column; align-items: center; gap: 10px; padding: 20px; box-sizing: border-box;
+            display: flex; flex-direction: column; align-items: center; gap: 15px; padding: 20px; box-sizing: border-box;
         }
 
         .battlefield { display: flex; flex-direction: column; width: 100%; background: linear-gradient(145deg, #1c2833, #2c0e0e); border: 3px solid #d32f2f; border-radius: 15px; box-shadow: inset 0 0 40px rgba(0,0,0,0.9), 0 15px 30px rgba(0,0,0,0.9); position: relative; }
         
-        .playmat { display: flex; justify-content: space-between; align-items: stretch; gap: 15px; padding: 15px; width: 100%; box-sizing: border-box; }
+        .playmat { display: flex; justify-content: space-between; align-items: stretch; gap: 20px; padding: 20px; width: 100%; box-sizing: border-box; }
         .board-divider { width: 100%; height: 2px; background: rgba(241, 196, 15, 0.3); box-shadow: 0 0 10px rgba(241, 196, 15, 0.6); }
 
         .line-label { color: rgba(255,255,255,0.8); font-size: var(--font-size-base); font-weight: bold; text-align: center; margin: 4px 0; letter-spacing: 1px; text-shadow: 1px 1px 3px black; z-index: 1; white-space: nowrap; pointer-events: none; }
         
-        .center-zone { display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 1; gap: 8px; flex-grow: 1; }
-        .side-zone { display: flex; flex-direction: column; gap: 10px; height: 100%; z-index: 1; justify-content: space-between; align-items: center; flex-shrink: 0; width: calc(var(--card-h) + 10px); } 
+        .center-zone { display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 1; gap: 10px; flex-grow: 1; }
+        .side-zone { display: flex; flex-direction: column; gap: 12px; height: 100%; z-index: 1; justify-content: space-between; align-items: center; flex-shrink: 0; width: calc(var(--card-h) + 10px); } 
         
-        .card-row { display: flex; gap: 10px; }
+        .card-row { display: flex; gap: 12px; }
 
         .slot { width: var(--card-w); height: var(--card-h); background-color: rgba(0,0,0,0.5); border: 2px dashed rgba(241, 196, 15, 0.5); border-radius: 6px; box-shadow: inset 0 0 15px rgba(0,0,0,0.8); position: relative; display: flex; justify-content: center; align-items: center; }
         .slot.life-slot { width: var(--card-h); height: calc(var(--card-w) + 120px); justify-content: flex-start; align-items: flex-start; } 
@@ -102,12 +102,12 @@
         .slot.marked .marker { opacity: 1 !important; border-color: #e74c3c; box-shadow: 0 0 10px #e74c3c; filter: drop-shadow(0 0 5px red); transform: scale(1.2); }
         .slot.marked { box-shadow: inset 0 0 25px rgba(231, 76, 60, 0.7) !important; border-color: #e74c3c !important; }
 
-        .phase-step { padding: 4px; border-radius: 4px; background: #2c3e50; cursor: pointer; font-weight: bold; font-size: 11px; transition: 0.3s; color: #bdc3c7; text-align: center; }
+        .phase-step { padding: 4px; border-radius: 4px; background: #2c3e50; cursor: pointer; font-weight: bold; font-size: 12px; transition: 0.3s; color: #bdc3c7; text-align: center; }
         .phase-step.active { background: #f39c12; color: #000; box-shadow: 0 0 8px #f39c12; }
 
         .bottom-container { width: 100%; display: flex; gap: 15px; justify-content: center; align-items: stretch; }
-        .hand-zone { flex: 7; background-color: rgba(0,0,0,0.6); border: 2px dashed #7f8c8d; border-radius: 10px; padding: 10px; display: flex; flex-direction: column;}
-        .look-zone { flex: 3; background-color: rgba(0,50,100,0.6); border: 2px dashed #3498db; border-radius: 10px; padding: 10px; display: flex; flex-direction: column;}
+        .hand-zone { flex: 7; background-color: rgba(0,0,0,0.6); border: 2px dashed #7f8c8d; border-radius: 10px; padding: 12px; display: flex; flex-direction: column;}
+        .look-zone { flex: 3; background-color: rgba(0,50,100,0.6); border: 2px dashed #3498db; border-radius: 10px; padding: 12px; display: flex; flex-direction: column;}
         .hand-area, .look-area { display: flex; flex-wrap: wrap; gap: 10px; width: 100%; min-height: var(--card-h); align-items: center; justify-content: center;}
 
         /* 🃏 卡片屬性 */
@@ -141,7 +141,14 @@
 
         #mulligan-modal { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(0,0,0,0.95); border: 3px solid #f39c12; padding: 30px; border-radius: 15px; z-index: 10005; text-align: center; box-shadow: 0 0 30px rgba(243, 156, 18, 0.5); width: 90%; max-width: 400px;}
 
-        #card-magnifier { position: fixed; left: 2vw; bottom: 2vh; width: calc(var(--card-w) * 2.5); height: calc(var(--card-h) * 2.5); background: #111; border: 3px solid #f39c12; border-radius: 10px; display: none; z-index: 10010; pointer-events: none; box-shadow: 0 10px 30px rgba(0,0,0,0.9); overflow: hidden; }
+        /* 🔍 超巨型全局放大鏡：佔據左側版面，尺寸放大 3.5 倍 */
+        #card-magnifier { 
+            position: fixed; left: 30px; bottom: 30px; 
+            width: calc(var(--card-w) * 3.5); height: calc(var(--card-h) * 3.5); 
+            background: #111; border: 4px solid #f39c12; border-radius: 12px; 
+            display: none; z-index: 10010; pointer-events: none; 
+            box-shadow: 0 15px 40px rgba(0,0,0,0.9); overflow: hidden; 
+        }
         #card-magnifier img { width: 100%; height: 100%; object-fit: cover; }
 
         #portrait-warning { display: none; }
@@ -310,21 +317,21 @@
                                 <div class="slot" id="my-outside-area" style="margin-bottom: 2px;"></div>
                                 
                                 <div style="width: 100%; display: flex; flex-direction: column; gap: 3px; align-items: center;">
-                                    <div style="color: #3498db; font-size: 10px; font-weight: bold; background: rgba(52,152,219,0.2); padding: 2px 4px; border-radius: 3px; white-space: nowrap;">對手：<span id="opp-phase-display">等待中</span></div>
-                                    <div class="phase-bar" style="display: grid; grid-template-columns: 1fr 1fr; gap: 3px; background: rgba(0,0,0,0.8); padding: 4px; border-radius: 6px; border: 1px solid #f39c12; width: 100%; box-sizing: border-box;">
+                                    <div style="color: #3498db; font-size: 11px; font-weight: bold; background: rgba(52,152,219,0.2); padding: 4px 6px; border-radius: 4px; white-space: nowrap;">對手：<span id="opp-phase-display">等待中</span></div>
+                                    <div class="phase-bar" style="display: grid; grid-template-columns: 1fr 1fr; gap: 4px; background: rgba(0,0,0,0.8); padding: 6px; border-radius: 6px; border: 1px solid #f39c12; width: 100%; box-sizing: border-box;">
                                         <div class="phase-step active" onclick="setPhase(this, '起始')">起始</div>
                                         <div class="phase-step" onclick="setPhase(this, '移動')">移動</div>
                                         <div class="phase-step" onclick="setPhase(this, '主要')">主要</div>
                                         <div class="phase-step" onclick="setPhase(this, '戰鬥')">戰鬥</div>
                                     </div>
-                                    <button id="btn-end-turn" onclick="endTurn()" class="start-btn" style="padding: 4px; font-size: 12px; width: 100%; border: 1px solid #c0392b; background: #e74c3c;">⛔ 結束回合</button>
+                                    <button id="btn-end-turn" onclick="endTurn()" class="start-btn" style="padding: 6px; font-size: 14px; width: 100%; border: 1px solid #c0392b; background: #e74c3c;">⛔ 結束回合</button>
                                 </div>
                             </div>
                         </div>
                     </div>
                 </div>
 
-                <div class="bottom-container" style="max-width: 900px;">
+                <div class="bottom-container" style="width: 100%; max-width: 1000px;">
                     <div class="hand-zone"><div class="line-label" style="color:#2ecc71;">YOUR HAND (我方手牌)</div><div class="hand-area" id="my-hand-area"></div></div>
                     <div class="look-zone">
                         <div class="line-label" style="display: flex; justify-content: space-between; align-items: center;">
@@ -349,7 +356,7 @@
         <div class="modal-header" id="secondary-modal-header" style="display:none; margin-top:20px; font-size: 18px;">
             <span style="color: #3498db;">⬇️ 公開區 (可從上方拖曳加入)</span>
         </div>
-        <div class="modal-content" id="modal-public-container" style="display:none; border-color: #3498db; min-height: 120px;"></div>
+        <div class="modal-content" id="modal-public-container" style="display:none; border-color: #3498db; min-height: 140px;"></div>
     </div>
 
     <div id="mulligan-modal">
@@ -530,9 +537,8 @@
             if(!wrapper) return;
             let w = wrapper.clientWidth;
             let h = wrapper.clientHeight;
-            // 完美的自動適應比例
             window.camScale = Math.min(w / 1250, h / 950) * 0.95; 
-            if(window.camScale > 1) window.camScale = 1;
+            if(window.camScale > 1.2) window.camScale = 1.2;
             
             window.camX = (w - (1250 * window.camScale)) / 2;
             window.camY = (h - (950 * window.camScale)) / 2;
@@ -715,7 +721,6 @@
                     let parentEl = document.getElementById(targetParentId);
                     if(parentEl && el.parentElement !== parentEl) parentEl.appendChild(el);
                     
-                    // 🌟 因為虛擬攝影機改變了架構，絕對定位依然完美有效
                     el.style.position = (targetParentId.includes('hand') || targetParentId.includes('look')) ? 'relative' : 'absolute';
                     el.style.left = d.x; el.style.top = d.y; el.style.zIndex = d.zIndex; 
                     
@@ -804,8 +809,9 @@
             card.style.zIndex = myIndex;
             if (slotBelow.id.includes('deck') || slotBelow.id.includes('outside') || slotBelow.id.includes('remove') || slotBelow.id.includes('public') || slotBelow.id.includes('ap')) { card.style.left='0px'; card.style.top='0px'; }
             else if (slotBelow.id.includes('life')) { 
+                // 🌟 生命區：改用絕對 px 值，確保相機縮放時排版不崩潰
                 card.style.left = 'calc((var(--card-h) - var(--card-w)) / 2)'; 
-                card.style.top = `calc((var(--card-w) - var(--card-h)) / -2 + ${myIndex * 2.2}vh)`; 
+                card.style.top = `calc((var(--card-w) - var(--card-h)) / -2 + ${myIndex * 22}px)`; 
                 card.classList.add('in-life'); 
                 card.classList.remove('rest');
             }
@@ -813,7 +819,6 @@
         }
         function recalcStacking(areaElement) { if(!areaElement || areaElement.id.includes('hand') || areaElement.id.includes('look')) return; Array.from(areaElement.querySelectorAll('.card')).forEach((c, idx) => applyStackingStyle(c, areaElement, idx)); }
 
-        // 🌟 轉換矩陣加持的完美拖曳引擎
         function attachMyDragEvents(cardElement) {
             cardElement.clickTimeout = null;
             let gameTableInner = document.getElementById('game-table-inner');
@@ -839,7 +844,6 @@
                 let clientX = isTouch ? event.touches[0].clientX : event.clientX;
                 let clientY = isTouch ? event.touches[0].clientY : event.clientY;
                 
-                // 🌟 核心：消除螢幕放大縮小的偏移誤差
                 let rect = cardElement.getBoundingClientRect();
                 let shiftX = (clientX - rect.left) / window.camScale;
                 let shiftY = (clientY - rect.top) / window.camScale;
@@ -1029,14 +1033,12 @@
             let slot = e.target.closest('.slot'); if(slot === hoveredSlot) hoveredSlot = null; 
         });
 
-        // ⌨️ 全面快捷鍵系統
         document.addEventListener('keydown', e => {
             if(document.getElementById('game-scene').style.display === 'none') return;
             if(e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
 
             let key = e.key.toLowerCase();
             
-            // 🔀 R 鍵：全局洗牌動畫
             if (key === 'r' && !hoveredCard) {
                 let deckArea = document.getElementById('my-deck-area');
                 let cards = Array.from(deckArea.querySelectorAll('.card'));
@@ -1063,7 +1065,6 @@
             if(hoveredCard && !hoveredCard.parentElement.id.includes('opp-')) {
                 if(key === 'f') { hoveredCard.classList.toggle('is-flipped'); broadcastMyState(); }
                 
-                // R：轉置卡片
                 if(key === 'r') { 
                     if (!hoveredCard.classList.contains('in-life')) {
                         hoveredCard.classList.toggle('rest'); broadcastMyState(); 
