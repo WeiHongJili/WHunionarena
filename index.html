@@ -7,14 +7,14 @@
     <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
     <style>
         :root {
-            /* 🌟 卡片極限巨型化 */
+            /* 🌟 巨型化卡片設定 */
             --card-h: 170px; 
             --card-w: calc(var(--card-h) * 0.714); 
             --gap-size: 10px;
             --font-size-base: 14px;
         }
 
-        body { background-color: #0a0a0a; margin: 0; min-height: 100vh; overflow-x: hidden; overflow-y: auto; font-family: '微軟正黑體', sans-serif; display: flex; flex-direction: column; align-items: center; padding: 1.5vh 2vw; box-sizing: border-box; color: white; touch-action: manipulation; -webkit-user-select: none; user-select: none; }
+        body { background-color: #0a0a0a; margin: 0; min-height: 100vh; overflow-x: hidden; overflow-y: auto; font-family: '微軟正黑體', sans-serif; display: flex; flex-direction: column; align-items: center; padding: 1.5vh 2vw; box-sizing: border-box; color: white; touch-action: auto; -webkit-user-select: none; user-select: none; }
         input, textarea, select { -webkit-user-select: auto; user-select: auto; }
 
         #sys-msg { position: fixed; top: 10px; left: 50%; transform: translateX(-50%); background: #e67e22; padding: 10px 20px; border-radius: 5px; font-weight: bold; display: none; z-index: 100000; box-shadow: 0 4px 10px rgba(0,0,0,0.5); }
@@ -72,13 +72,12 @@
         .cam-btn:hover { background: #f39c12; color: black; }
         #btn-3d { background: rgba(0,0,0,0.8); border-color: #3498db; }
 
-        /* 🎮 懸浮 HUD 系統：完美防擠壓 */
+        /* 🎮 懸浮 HUD 系統 */
         .hud-top {
             position: absolute; top: 10px; left: 50%; transform: translateX(-50%) scale(0.65); transform-origin: top center;
             width: 95%; max-width: 1400px; display: flex; gap: 15px; z-index: 10010; pointer-events: none;
         }
         
-        /* 🗜️ 壓縮版手牌區：最大寬度 900px，強制堆疊 */
         .hud-bottom {
             position: absolute; bottom: 10px; left: 50%; transform: translateX(-50%) scale(0.85); transform-origin: bottom center;
             width: 90%; max-width: 900px; display: flex; gap: 15px; z-index: 10010; pointer-events: none; align-items: flex-end; justify-content: center;
@@ -96,7 +95,6 @@
         .hand-zone { flex: 8; background-color: rgba(0,0,0,0.8); border: 2px dashed #7f8c8d; border-radius: 10px; padding: 15px; display: flex; flex-direction: column;}
         .look-zone { flex: 2; background-color: rgba(0,50,100,0.8); border: 2px dashed #3498db; border-radius: 10px; padding: 15px; display: flex; flex-direction: column;}
         
-        /* 🗜️ 強制不換行扇形展開 */
         .hand-area, .look-area { 
             display: flex; flex-wrap: nowrap; overflow: visible; 
             width: 100%; height: var(--card-h); align-items: center; justify-content: center;
@@ -129,43 +127,47 @@
         .playmat { display: flex; justify-content: center; align-items: stretch; gap: 35px; padding: 25px; width: 100%; box-sizing: border-box; transform-style: preserve-3d; }
         .board-divider { width: 100%; height: 2px; background: rgba(241, 196, 15, 0.3); box-shadow: 0 0 10px rgba(241, 196, 15, 0.6); }
 
-        .line-label { color: rgba(255,255,255,0.8); font-size: var(--font-size-base); font-weight: bold; text-align: center; margin: 4px 0; letter-spacing: 1px; text-shadow: 1px 1px 3px black; white-space: nowrap; pointer-events: none; }
+        .line-label { color: rgba(255,255,255,0.8); font-size: var(--font-size-base); font-weight: bold; text-align: center; margin: 4px 0; letter-spacing: 1px; text-shadow: 1px 1px 3px black; z-index: 1; white-space: nowrap; pointer-events: none; }
         
-        /* 🌌 拔除干擾 3D 的 z-index！強制全部繼承 3D 空間 */
         .center-zone { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; transform-style: preserve-3d;}
         .side-zone { display: flex; flex-direction: column; gap: 15px; height: 100%; justify-content: space-between; align-items: center; transform-style: preserve-3d;} 
         
         .slot-group { display: flex; flex-direction: column; align-items: center; transform-style: preserve-3d; }
         .card-row { display: flex; gap: 12px; transform-style: preserve-3d;}
 
-        .slot { width: var(--card-w); height: var(--card-h); background-color: rgba(0,0,0,0.5); border: 2px dashed rgba(241, 196, 15, 0.5); border-radius: 6px; box-shadow: inset 0 0 15px rgba(0,0,0,0.8); position: relative; display: flex; justify-content: center; align-items: center; transform-style: preserve-3d; transform: translateZ(0);}
+        /* 🌟 拔除所有干擾 3D 的 z-index 設定 */
+        .slot { width: var(--card-w); height: var(--card-h); background-color: rgba(0,0,0,0.5); border: 2px dashed rgba(241, 196, 15, 0.5); border-radius: 6px; box-shadow: inset 0 0 15px rgba(0,0,0,0.8); position: relative; display: flex; justify-content: center; align-items: center; transform-style: preserve-3d; cursor: pointer; pointer-events: auto;}
         .slot.life-slot { width: var(--card-h); height: calc(var(--card-w) + 160px); justify-content: flex-start; align-items: flex-start; } 
         
-        .slot::after { content: attr(data-count); position: absolute; top: -5px; right: -5px; background-color: #e74c3c; color: white; border-radius: 50%; width: 22px; height: 22px; display: flex; justify-content: center; align-items: center; font-size: var(--font-size-base); opacity: 0; transition: opacity 0.2s; z-index: 999; font-weight: bold; box-shadow: 0 2px 5px rgba(0,0,0,0.5); transform: translateZ(10px); }
+        .slot::after { content: attr(data-count); position: absolute; top: -5px; right: -5px; background-color: #e74c3c; color: white; border-radius: 50%; width: 22px; height: 22px; display: flex; justify-content: center; align-items: center; font-size: var(--font-size-base); opacity: 0; transition: opacity 0.2s; font-weight: bold; box-shadow: 0 2px 5px rgba(0,0,0,0.5); transform: translateZ(10px); }
         .slot:hover::after { opacity: 1; }
         .slot[data-count="0"]::after, .slot[data-count="1"]::after, .slot:not([data-count])::after { display: none; }
 
-        /* 🎯 標記圖示：拉高 Z 軸並增加預設能見度 */
-        .marker { position: absolute; top: -10px; left: -10px; font-size: 22px; cursor: pointer; opacity: 0.15; transition: 0.2s; z-index: 10000; background: rgba(0,0,0,0.8); border-radius: 50%; width: 32px; height: 32px; display: flex; justify-content: center; align-items: center; border: 2px solid transparent; pointer-events: auto; transform: translateZ(100px);}
-        .slot:hover .marker { opacity: 0.9; transform: scale(1.1) translateZ(110px); }
-        .slot.marked .marker { opacity: 1 !important; border-color: #e74c3c; box-shadow: 0 0 15px #e74c3c; filter: drop-shadow(0 0 5px red); transform: scale(1.3) translateZ(120px); }
-        .slot.marked { box-shadow: inset 0 0 25px rgba(231, 76, 60, 0.7) !important; border-color: #e74c3c !important; }
+        /* 🎯 全新 3D 防崩潰標記樣式：改用實體外框線與半透明填滿，確保 3D 空間內絕對清晰可見！ */
+        .slot.marked { 
+            outline: 5px solid #e74c3c !important; 
+            outline-offset: 3px;
+            box-shadow: 0 0 40px rgba(231, 76, 60, 0.9) !important; 
+            background-color: rgba(231, 76, 60, 0.4) !important; 
+            border-color: transparent !important;
+        }
 
         .phase-step { padding: 10px; border-radius: 6px; background: #2c3e50; cursor: pointer; font-weight: bold; font-size: 14px; transition: 0.3s; color: #bdc3c7; text-align: center; border: 1px solid #34495e;}
         .phase-step:hover { background: #34495e; color: white;}
         .phase-step.active { background: #f39c12; color: #000; box-shadow: 0 0 12px #f39c12; border-color: #f1c40f;}
 
-        /* 🃏 卡片屬性：支援單排極限重疊展開 */
+        /* 🃏 卡片屬性 */
         .card { 
             width: var(--card-w); height: var(--card-h); border-radius: 6px; box-shadow: 0 4px 8px rgba(0,0,0,0.8); 
             cursor: grab; transition: transform 0.2s ease-out, margin 0.2s ease-out; position: absolute; perspective: 1000px; touch-action: none; transform-style: preserve-3d;
             transform: translate(var(--tx, 0px), var(--ty, 0px)) rotate(var(--rot, 0deg)) translateZ(var(--z-offset, 0px));
+            pointer-events: auto;
         }
         
-        .hand-area .card, .look-area .card { position: relative; left: 0 !important; top: 0 !important; margin-left: -45px;} /* 🗜️ 緊湊疊放 */
+        .hand-area .card, .look-area .card { position: relative; left: 0 !important; top: 0 !important; margin-left: -45px;} 
         .hand-area .card:first-child, .look-area .card:first-child { margin-left: 0; }
         
-        .card:hover { transform: translateY(-5px) scale(1.05) translateZ(100px) !important; z-index: 500 !important; }
+        .card:hover { transform: translateY(-5px) scale(1.05) translateZ(100px) !important; }
         .hand-area .card:hover, .look-area .card:hover { transform: translateY(-20px) scale(1.1) translateZ(100px) !important; margin-right: 35px; }
         
         .card-inner { position: relative; width: 100%; height: 100%; transition: transform 0.3s; transform-style: preserve-3d; }
@@ -177,8 +179,7 @@
         
         #opp-hand-area .card-inner, #opp-look-area .card-inner { transform: rotateY(180deg) !important; }
 
-        /* 🛡️ 拖曳視覺修正：強制拉高到 800px 絕對凌空，徹底斷絕跟 35 度桌面的碰撞！ */
-        .card.dragging { z-index: 999999 !important; transition: none; box-shadow: -20px 40px 50px rgba(0,0,0,0.6); }
+        .card.dragging { transition: none; box-shadow: -20px 40px 50px rgba(0,0,0,0.6); }
         .card.stack-glowing { box-shadow: 0 0 15px 5px #f1c40f !important; }
         
         .card.rest { --rot: 90deg !important; }
@@ -611,8 +612,7 @@
         // 🌟 防誤觸機制：過濾任何卡片與卡槽，絕對不移動桌布
         function startPan(e) {
             if(e.target.closest('.card') || e.target.closest('.slot') || e.target.closest('.cam-btn') || 
-               e.target.closest('.marker') || e.target.closest('.hud-sidebar') || 
-               e.target.closest('.hud-top') || e.target.closest('.hud-bottom')) return; 
+               e.target.closest('.hud-sidebar') || e.target.closest('.hud-top') || e.target.closest('.hud-bottom')) return; 
                
             isCamDragging = true;
             let clientX = e.type.includes('touch') ? e.touches[0].clientX : e.clientX;
@@ -638,23 +638,9 @@
             if(typeof masterCardCatalog !== 'undefined') masterCardCatalog.push(...savedCustom);
             updateDeckSelector(); initSeriesFilter(); renderBuilder(); renderDeck(); 
 
-            // 🎯 取代原本點不到的 click，利用更深層的 pointerdown 創造「全視角點擊標記」
-            document.querySelectorAll('.slot').forEach(slot => {
-                let marker = document.createElement('div');
-                marker.className = 'marker';
-                marker.innerText = '🎯';
-                slot.appendChild(marker);
-            });
-
-            // 🎯 只要點擊到「對手卡槽區」，無腦自動幫你標記，不怕點不到！
-            document.addEventListener('pointerdown', e => {
-                if (e.target.closest('.cam-btn') || e.target.closest('.modal-content')) return;
-
-                if (e.target.closest('.marker')) {
-                    let slot = e.target.closest('.slot');
-                    if(slot) { slot.classList.toggle('marked'); broadcastMyState(); }
-                    return;
-                }
+            // 🎯 全域點擊判定：直接點擊對手的卡片或空格，自動幫你標記！(改用 click，無視 3D 空間降維影響)
+            document.addEventListener('click', e => {
+                if (e.target.closest('.cam-btn') || e.target.closest('.modal-content') || e.target.closest('.hud-sidebar') || e.target.closest('.hud-top') || e.target.closest('.hud-bottom')) return;
 
                 let slot = e.target.closest('.slot');
                 if (slot && slot.id.includes('opp-') && !slot.id.includes('hand') && !slot.id.includes('look')) {
@@ -680,8 +666,22 @@
             window.addEventListener('resize', resetCam);
         };
 
-        // ================= 網路連線引擎 =================
-        let peer = new Peer({ config: { 'iceServers': [ { urls: 'stun:stun.l.google.com:19302' }, { urls: 'stun:stun1.l.google.com:19302' }, { urls: 'stun:stun2.l.google.com:19302' }, { urls: 'turn:openrelay.metered.ca:80', username: 'openrelayproject', credential: 'openrelayproject' }, { urls: 'turn:openrelay.metered.ca:443', username: 'openrelayproject', credential: 'openrelayproject' } ] } });
+        // ================= 🚨 防火牆無敵穿透・網路連線引擎 =================
+        // 加入 TCP 通道與 Google 的備用伺服器，偽裝成 HTTPS 繞過公司/學校防火牆！
+        let peer = new Peer({ 
+            secure: true,
+            port: 443,
+            config: { 
+                'iceServers': [ 
+                    { urls: 'stun:stun.l.google.com:19302' }, 
+                    { urls: 'stun:stun1.l.google.com:19302' }, 
+                    { urls: 'turn:openrelay.metered.ca:80', username: 'openrelayproject', credential: 'openrelayproject' }, 
+                    { urls: 'turn:openrelay.metered.ca:443', username: 'openrelayproject', credential: 'openrelayproject' },
+                    { urls: 'turn:openrelay.metered.ca:443?transport=tcp', username: 'openrelayproject', credential: 'openrelayproject' }
+                ] 
+            } 
+        });
+        
         let conn = null; let isConnected = false;
 
         peer.on('open', id => { document.getElementById('my-peer-id').innerText = id; document.getElementById('my-peer-id').onclick = () => { navigator.clipboard.writeText(id); showSysMsg("🔗 你的 ID 已複製！"); }; });
@@ -724,6 +724,11 @@
                     alert("對手已投降並返回構築區！\n點擊確定後將同步返回大廳。");
                     resetBoard();
                 }
+            });
+            conn.on('close', () => {
+                isConnected = false;
+                alert("⚠️ 與對手連線已中斷。");
+                resetBoard();
             });
         }
 
@@ -969,7 +974,6 @@
                                 });
                             }
                         } else {
-                            // 🌟 拔出 3D 空間，直接加入 2D 觀景窗，保證不破圖插進土裡！
                             viewportLayer.appendChild(cardElement); 
                             cardElement.style.position = 'absolute';
                             cardElement.classList.add('dragging'); cardElement.classList.remove('in-life'); 
@@ -1041,8 +1045,6 @@
                         let endY = event.type.includes('touch') ? event.changedTouches[0].clientY : event.clientY;
                         
                         let cardsToDrop = isStackDrag ? stackCardsData.map(item => item.el) : [cardElement];
-                        
-                        // 🌟 落地前隱藏，確保能精準點擊到被 3D 覆蓋的地圖元素
                         cardsToDrop.forEach(c => { c.style.display = 'none'; c.style.transform = ''; }); 
                         let elemBelow = document.elementFromPoint(endX, endY);
                         cardsToDrop.forEach(c => c.style.display = 'block'); 
