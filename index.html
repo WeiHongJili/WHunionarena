@@ -7,7 +7,6 @@
     <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
     <style>
         :root {
-            /* 🌟 卡片極限巨型化 */
             --card-h: 170px; 
             --card-w: calc(var(--card-h) * 0.714); 
             --gap-size: 10px;
@@ -24,8 +23,9 @@
 
         .network-panel { background: rgba(41, 128, 185, 0.2); border: 2px solid #3498db; border-radius: 10px; padding: 10px 15px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; }
         .network-box { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
-        .network-input { padding: 8px; border-radius: 5px; border: none; font-size: 14px; outline: none; width: 180px; }
-        #my-peer-id { color: #f1c40f; font-weight: bold; font-size: 16px; cursor: pointer; background: rgba(0,0,0,0.5); padding: 5px 10px; border-radius: 5px; }
+        .network-input { padding: 8px; border-radius: 5px; border: none; font-size: 14px; outline: none; width: 180px; letter-spacing: 2px; font-weight: bold; text-align: center;}
+        
+        #my-peer-id { color: #f1c40f; font-weight: 900; font-size: 24px; cursor: pointer; background: rgba(0,0,0,0.5); padding: 5px 15px; border-radius: 5px; letter-spacing: 3px;}
 
         .builder-container { display: flex; gap: 20px; flex: 1; min-height: 60vh; flex-wrap: wrap; }
         .catalog-panel { flex: 6; min-width: 300px; background: rgba(0,0,0,0.5); border-radius: 10px; padding: 15px; display: flex; flex-direction: column; max-height: 75vh; overflow-y: auto; -webkit-overflow-scrolling: touch; }
@@ -52,7 +52,6 @@
         .import-textarea { flex: 1 1 150px; height: 35px; background: #2c3e50; color: white; border: 1px solid #34495e; border-radius: 4px; padding: 8px; font-family: monospace; resize: none; outline: none; }
         #import-series-name { flex: 0 1 120px; }
 
-        /* 🎥 觀景窗 */
         .board-wrapper { 
             width: 100%; height: 92vh; 
             overflow: hidden; position: relative; background: #111; 
@@ -71,7 +70,6 @@
         .cam-btn:hover { background: #f39c12; color: black; }
         #btn-3d { background: rgba(0,0,0,0.8); border-color: #3498db; }
 
-        /* 🎮 懸浮 HUD 系統：完美通透玻璃感 */
         .hud-top {
             position: absolute; top: 10px; left: 50%; transform: translateX(-50%) scale(0.65); transform-origin: top center;
             width: 95%; max-width: 1400px; display: flex; gap: 15px; z-index: 10010; pointer-events: none;
@@ -99,7 +97,6 @@
             width: 100%; height: var(--card-h); align-items: center; justify-content: center;
         }
 
-        /* 📐 純淨戰鬥桌：移除子層混亂的 3D 透視，改為單一畫布傾斜 */
         .game-table { 
             width: 1150px; height: 1000px; 
             position: absolute; left: 0; top: 0; transform-origin: top left;
@@ -107,7 +104,6 @@
             padding: 50px; box-sizing: border-box; perspective: 1500px; 
         }
 
-        /* 🗜️ 取消 preserve-3d，使用 flat 渲染，完美修復 Hitbox 判定崩潰問題！ */
         .battlefield { 
             display: flex; flex-direction: column; width: max-content; background: linear-gradient(145deg, #1c2833, #2c0e0e); 
             border: 3px solid #d32f2f; border-radius: 15px; box-shadow: inset 0 0 40px rgba(0,0,0,0.9), 0 15px 30px rgba(0,0,0,0.9); 
@@ -141,7 +137,6 @@
         .slot:hover::after { opacity: 1; }
         .slot[data-count="0"]::after, .slot[data-count="1"]::after, .slot:not([data-count])::after { display: none; }
 
-        /* 🎯 標記圖示修復：利用單一平面的 z-index 取代 3D Z軸，點擊 100% 精準！ */
         .marker { position: absolute; top: -10px; left: -10px; font-size: 22px; cursor: pointer; opacity: 0.15; transition: 0.2s; z-index: 10000; background: rgba(0,0,0,0.8); border-radius: 50%; width: 32px; height: 32px; display: flex; justify-content: center; align-items: center; border: 2px solid transparent; pointer-events: auto; }
         .slot:hover .marker { opacity: 0.9; transform: scale(1.1); }
         .slot.marked .marker { opacity: 1 !important; border-color: #e74c3c; box-shadow: 0 0 15px #e74c3c; filter: drop-shadow(0 0 5px red); transform: scale(1.3); }
@@ -151,11 +146,9 @@
         .phase-step:hover { background: #34495e; color: white;}
         .phase-step.active { background: #f39c12; color: #000; box-shadow: 0 0 12px #f39c12; border-color: #f1c40f;}
 
-        /* 🃏 卡片屬性：改用 scale 模擬浮出感，徹底拔除 Z軸干擾 */
         .card { 
             width: var(--card-w); height: var(--card-h); border-radius: 6px; box-shadow: 0 4px 8px rgba(0,0,0,0.8); 
             cursor: grab; transition: transform 0.2s ease-out, margin 0.2s ease-out; position: absolute; touch-action: none; 
-            /* 運用 scale 代替 translateZ 實現彈出效果 */
             transform: translate(var(--tx, 0px), var(--ty, 0px)) rotate(var(--rot, 0deg)) scale(var(--scale, 1));
             pointer-events: auto;
         }
@@ -168,14 +161,29 @@
         
         .card-inner { position: relative; width: 100%; height: 100%; transition: transform 0.3s; transform-style: preserve-3d; }
         .card.is-flipped .card-inner { transform: rotateY(180deg); }
-        .card-front, .card-back { position: absolute; width: 100%; height: 100%; backface-visibility: hidden; border-radius: 6px; overflow: hidden; background-color: #2c3e50; }
+        .card-front, .card-back { position: absolute; width: 100%; height: 100%; backface-visibility: hidden; border-radius: 6px; overflow: hidden; background-color: transparent; }
         .card-front img { width: 100%; height: 100%; object-fit: cover; pointer-events: none; }
-        .card-back { transform: rotateY(180deg); background: linear-gradient(135deg, #8b1515, #5c0a0a); border: 2px solid #fff; box-sizing: border-box; display: flex; justify-content: center; align-items: center; color: white; font-weight: bold; font-size: var(--font-size-base); text-align: center; line-height: 1.2; padding: 2px;}
-        .ap-card .card-back { background: linear-gradient(135deg, #2c3e50, #1a252f); border-color: #f39c12; }
+        
+        /* 🌟 CSS 神級裁切術：放大高度到 115% 並且靠上對齊，直接把底部的多餘文字擠出去隱藏！ */
+        .card-back { 
+            transform: rotateY(180deg); 
+            background-color: #111;
+            background-image: url('https://www.unionarena-tcg.com/tc/images/rules/region-card/img_card_na.png');
+            background-size: 100% 115%; /* 放大高度 */
+            background-repeat: no-repeat;
+            background-position: top center; /* 讓頂部貼齊，底部超出邊界被切掉 */
+            border: 1px solid rgba(255,255,255,0.1); 
+            box-sizing: border-box; 
+        }
+        .ap-card .card-back { 
+            background-image: url('https://www.unionarena-tcg.com/tc/images/rules/region-card/img_apcard_jp.png');
+            background-size: 100% 115%; /* 放大高度 */
+            background-position: top center; /* 讓頂部貼齊，底部超出邊界被切掉 */
+            border: 1px solid rgba(243, 156, 18, 0.5); 
+        }
         
         #opp-hand-area .card-inner, #opp-look-area .card-inner { transform: rotateY(180deg) !important; }
 
-        /* 拖曳時的陰影層級 */
         .card.dragging { --scale: 1.15; --rot: 5deg; z-index: 999999 !important; transition: none; box-shadow: -20px 40px 50px rgba(0,0,0,0.6); }
         .card.stack-glowing { box-shadow: 0 0 15px 5px #f1c40f !important; }
         
@@ -193,10 +201,9 @@
 
         #mulligan-modal { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(0,0,0,0.95); border: 3px solid #f39c12; padding: 30px; border-radius: 15px; z-index: 10005; text-align: center; box-shadow: 0 0 30px rgba(243, 156, 18, 0.5); width: 90%; max-width: 400px;}
 
-        /* 🔍 左下角超大檢視器 */
         #card-magnifier { 
             position: fixed; left: 20px; bottom: 20px; 
-            width: calc(var(--card-w) * 3); height: calc(var(--card-h) * 3); 
+            width: calc(var(--card-w) * 3.2); height: calc(var(--card-h) * 3.2); 
             background: #111; border: 4px solid #f39c12; border-radius: 12px; 
             display: none; z-index: 10010; pointer-events: none; 
             box-shadow: 0 15px 40px rgba(0,0,0,0.9); overflow: hidden; 
@@ -235,11 +242,11 @@
         <div class="network-panel">
             <div class="network-box">
                 <span>🟢 你的連線 ID：</span>
-                <span id="my-peer-id">連線伺服器中...</span>
+                <span id="my-peer-id">產生密碼中...</span>
                 <span style="font-size: 12px; color: #bdc3c7;">(點擊複製)</span>
             </div>
             <div class="network-box">
-                <input type="text" id="target-id" class="network-input" placeholder="貼上朋友的 ID">
+                <input type="text" id="target-id" class="network-input" placeholder="輸入6位數代碼">
                 <button class="ctrl-btn" id="btn-connect" style="background: #e67e22;">連線加入</button>
             </div>
         </div>
@@ -254,7 +261,7 @@
             <div class="catalog-panel">
                 <div class="import-section">
                     <h4 style="margin: 0; color: #9b59b6; width: 100%;">✨ 魔法一鍵匯入</h4>
-                    <input type="text" id="import-series-name" placeholder="作品名稱" class="network-input" style="width: 130px;">
+                    <input type="text" id="import-series-name" placeholder="作品名稱" class="network-input" style="width: 130px; letter-spacing: normal;">
                     <textarea id="import-raw-text" class="import-textarea" placeholder="貼上包含卡片編號的文字"></textarea>
                     <button class="ctrl-btn" style="background: #9b59b6;" onclick="executeBatchImport()">萃取匯入</button>
                 </div>
@@ -606,7 +613,6 @@
             else table.classList.remove('mode-3d');
         };
 
-        // 🌟 防誤觸機制：過濾任何卡片與卡槽，絕對不移動桌布
         function startPan(e) {
             if(e.target.closest('.card') || e.target.closest('.slot') || e.target.closest('.cam-btn') || 
                e.target.closest('.hud-sidebar') || e.target.closest('.hud-top') || e.target.closest('.hud-bottom')) return; 
@@ -635,7 +641,6 @@
             if(typeof masterCardCatalog !== 'undefined') masterCardCatalog.push(...savedCustom);
             updateDeckSelector(); initSeriesFilter(); renderBuilder(); renderDeck(); 
 
-            // 🎯 全域點擊判定：直接點擊對手的卡片或空格，自動幫你標記！
             document.addEventListener('pointerdown', e => {
                 if (e.target.closest('.cam-btn') || e.target.closest('.modal-content') || e.target.closest('.hud-sidebar') || e.target.closest('.hud-top') || e.target.closest('.hud-bottom')) return;
 
@@ -663,13 +668,16 @@
             window.addEventListener('resize', resetCam);
         };
 
-        // ================= 🚨 終極防火牆穿透連線系統 =================
-        // 移除容易導致連線失敗的 secure/port 覆蓋，保留穩定的 TURN TCP 繞道
-        let peer = new Peer({ 
+        // ================= 🚨 6位數配對 & 連線防護升級引擎 =================
+        let myRoomId = Math.floor(100000 + Math.random() * 900000).toString();
+        
+        let peer = new Peer(myRoomId, { 
+            secure: true,
+            pingInterval: 5000, 
             config: { 
                 'iceServers': [ 
                     { urls: 'stun:stun.l.google.com:19302' }, 
-                    { urls: 'stun:stun1.l.google.com:19302' }, 
+                    { urls: 'stun:stun1.l.google.com:19302' },
                     { urls: 'turn:openrelay.metered.ca:80', username: 'openrelayproject', credential: 'openrelayproject' }, 
                     { urls: 'turn:openrelay.metered.ca:443', username: 'openrelayproject', credential: 'openrelayproject' },
                     { urls: 'turn:openrelay.metered.ca:443?transport=tcp', username: 'openrelayproject', credential: 'openrelayproject' }
@@ -679,16 +687,24 @@
         
         let conn = null; let isConnected = false;
 
-        peer.on('open', id => { document.getElementById('my-peer-id').innerText = id; document.getElementById('my-peer-id').onclick = () => { navigator.clipboard.writeText(id); showSysMsg("🔗 你的 ID 已複製！"); }; });
+        peer.on('open', id => { document.getElementById('my-peer-id').innerText = id; document.getElementById('my-peer-id').onclick = () => { navigator.clipboard.writeText(id); showSysMsg("🔗 你的 6 位數 ID 已複製！"); }; });
         
         peer.on('error', err => {
             console.error(err);
-            if (err.type === 'peer-unavailable') { alert("❌ 找不到這個 ID！對手可能已經斷線。"); } 
-            else if (err.type === 'network' || err.type === 'server-error') { alert("⚠️ 伺服器不穩。請雙方重整網頁再試！"); }
+            if (err.type === 'peer-unavailable') { alert("❌ 找不到這個 6 位數 ID！對手可能已經斷線。"); } 
+            else if (err.type === 'network' || err.type === 'server-error') { alert("⚠️ 官方配對伺服器目前不穩定或塞車中。請雙方 [重整網頁] 再試一次！"); }
         });
 
         peer.on('connection', connection => { conn = connection; setupConnection(); });
-        document.getElementById('btn-connect').addEventListener('click', () => { let targetId = document.getElementById('target-id').value.trim(); if(targetId) { showSysMsg("正在連線..."); conn = peer.connect(targetId); setupConnection(); } });
+        
+        document.getElementById('btn-connect').addEventListener('click', () => { 
+            let targetId = document.getElementById('target-id').value.trim(); 
+            if(targetId) { 
+                showSysMsg("正在配對..."); 
+                conn = peer.connect(targetId); 
+                setupConnection(); 
+            } 
+        });
 
         function setupConnection() {
             conn.on('open', () => {
@@ -780,15 +796,25 @@
                     let pId = (el.parentElement && el.parentElement.id) ? el.parentElement.id : 'none';
                     let isFlipped = el.classList.contains('is-flipped');
                     
-                    // 🛡️ 隱私防護核心
                     if (pId.includes('hand') || pId.includes('look') || el.dataset.isSecretDrag === 'true') {
                         isFlipped = true;
                     }
 
+                    let xVal = el.style.left;
+                    let yVal = el.style.top;
+                    let isGlobalDragging = (el.parentElement && el.parentElement.id === 'board-viewport');
+                    
+                    if (isGlobalDragging) {
+                        let vp = document.getElementById('board-viewport');
+                        xVal = (parseFloat(el.style.left) / vp.clientWidth).toString() + '_vp';
+                        yVal = (parseFloat(el.style.top) / vp.clientHeight).toString() + '_vp';
+                    }
+
                     state.push({ 
                         id: el.dataset.networkId, parent: pId, 
-                        x: el.style.left, y: el.style.top, zIndex: index, 
-                        isFlipped: isFlipped, isRest: el.classList.contains('rest'), inLife: el.classList.contains('in-life') 
+                        x: xVal, y: yVal, zIndex: index, 
+                        isFlipped: isFlipped, isRest: el.classList.contains('rest'), inLife: el.classList.contains('in-life'),
+                        isDragging: isGlobalDragging
                     });
                 }
             });
@@ -809,11 +835,26 @@
                     el.style.opacity = '1';
 
                     let targetParentId = d.parent.replace('my-', 'opp-');
-                    let parentEl = document.getElementById(targetParentId);
-                    if(parentEl && el.parentElement !== parentEl) parentEl.appendChild(el);
+                    let actualParentEl = d.isDragging ? document.getElementById('board-viewport') : document.getElementById(targetParentId);
+                    if(actualParentEl && el.parentElement !== actualParentEl) actualParentEl.appendChild(el);
                     
-                    el.style.position = (targetParentId.includes('hand') || targetParentId.includes('look')) ? 'relative' : 'absolute';
-                    el.style.left = d.x; el.style.top = d.y; el.style.zIndex = d.zIndex; 
+                    el.style.position = (targetParentId.includes('hand') || targetParentId.includes('look')) && !d.isDragging ? 'relative' : 'absolute';
+                    
+                    if (d.isDragging && typeof d.x === 'string' && d.x.endsWith('_vp')) {
+                        let px = parseFloat(d.x);
+                        let py = parseFloat(d.y);
+                        let vp = document.getElementById('board-viewport');
+                        el.style.left = ((1 - px) * vp.clientWidth - el.offsetWidth) + 'px';
+                        el.style.top = ((1 - py) * vp.clientHeight - el.offsetHeight) + 'px';
+                        el.style.transform = `scale(${window.camScale * 1.05})`;
+                        el.classList.add('dragging'); 
+                        el.style.zIndex = 999999;
+                    } else {
+                        el.style.left = d.x; 
+                        el.style.top = d.y;
+                        el.style.transform = '';
+                        el.classList.remove('dragging');
+                    }
                     
                     if(d.isFlipped) el.classList.add('is-flipped'); else el.classList.remove('is-flipped');
                     if(d.isRest) el.classList.add('rest'); else el.classList.remove('rest');
@@ -845,7 +886,7 @@
 
         function createCardDOM(cardData, networkId, isMine) {
             let el = document.createElement("div"); el.className = "card is-flipped"; el.dataset.networkId = networkId;
-            el.innerHTML = `<div class="card-inner"><div class="card-front"><img src="${cardData.imageUrl}"></div><div class="card-back">UNION<br>ARENA</div></div>`;
+            el.innerHTML = `<div class="card-inner"><div class="card-front"><img src="${cardData.imageUrl}"></div><div class="card-back"></div></div>`;
             if(isMine) attachMyDragEvents(el); return el;
         }
 
@@ -857,7 +898,7 @@
             let apSlots = document.querySelectorAll('#my-ap-area .slot');
             apSlots.forEach((slot, i) => {
                 slot.innerHTML = ''; let apData = apDeck[i] || apDeck[0] || {imageUrl: "https://rugiacreation.com/ua/cardlist/small/UA44BT_EVA-1-AP03.jpg"};
-                let apEl = createCardDOM(apData, `p_ap_${i}`, true); apEl.querySelector('.card-back').innerHTML = "ACTION<br>POINT"; apEl.classList.add('ap-card');
+                let apEl = createCardDOM(apData, `p_ap_${i}`, true); apEl.classList.add('ap-card');
                 myCardsElements.push(apEl); slot.appendChild(apEl); apEl.style.left = '0px'; apEl.style.top = '0px';
             });
             updateSlotCounts(); broadcastMyState(); showSysMsg("發放起手牌..."); setTimeout(drawInitialHand, 800);
@@ -867,7 +908,7 @@
             oppCardsElements = []; document.getElementById('opp-deck-area').innerHTML = '';
             deck.forEach((card, i) => { let el = createCardDOM(card, `p_card_${i}`, false); oppCardsElements.push(el); document.getElementById('opp-deck-area').appendChild(el); });
             let apSlots = document.querySelectorAll('#opp-ap-area .slot');
-            apSlots.forEach((slot, i) => { slot.innerHTML = ''; let apData = apDeck[i] || apDeck[0]; let apEl = createCardDOM(apData, `p_ap_${i}`, false); apEl.querySelector('.card-back').innerHTML = "ACTION<br>POINT"; apEl.classList.add('ap-card'); oppCardsElements.push(apEl); slot.appendChild(apEl); });
+            apSlots.forEach((slot, i) => { slot.innerHTML = ''; let apData = apDeck[i] || apDeck[0]; let apEl = createCardDOM(apData, `p_ap_${i}`, false); apEl.classList.add('ap-card'); oppCardsElements.push(apEl); slot.appendChild(apEl); });
             updateSlotCounts();
         }
 
@@ -895,7 +936,6 @@
             recalcStacking(deckArea); recalcStacking(lifeArea); updateSlotCounts(); broadcastMyState(); showSysMsg("🎯 對戰開始！");
         }
 
-        // 🌟 Z 軸物理疊放修正：完全移除 3D 空間下的 z-offset，改用最穩定的 CSS z-index 控制上下層
         function applyStackingStyle(card, slotBelow, myIndex) {
             if (!slotBelow) return;
             card.style.zIndex = myIndex;
@@ -917,7 +957,6 @@
         }
         function recalcStacking(areaElement) { if(!areaElement || areaElement.id.includes('hand') || areaElement.id.includes('look')) return; Array.from(areaElement.querySelectorAll('.card')).forEach((c, idx) => applyStackingStyle(c, areaElement, idx)); }
 
-        // 🌟 完美 2D/3D 拖曳融合引擎
         function attachMyDragEvents(cardElement) {
             cardElement.clickTimeout = null;
             let viewportLayer = document.getElementById('board-viewport');
@@ -1002,7 +1041,9 @@
                     if (isTouch && event.cancelable) event.preventDefault();
 
                     if (!isDragging) {
-                        cardElement.removeAttribute('data-isSecretDrag');
+                        // 🌟 解除隱私標記
+                        delete cardElement.dataset.isSecretDrag;
+                        
                         if(originalParent) originalParent.querySelectorAll('.card').forEach(c => c.classList.remove('stack-glowing'));
                         
                         let noRestZones = ['hand', 'look', 'outside', 'deck', 'remove', 'public'];
@@ -1068,7 +1109,8 @@
             let processCards = (action.startsWith('bottom')) ? [...cards].reverse() : cards;
             processCards.forEach(c => {
                 c.classList.remove('dragging', 'stack-glowing');
-                c.removeAttribute('data-isSecretDrag'); 
+                // 🌟 卡片落地瞬間，徹底解除秘密狀態
+                delete c.dataset.isSecretDrag; 
 
                 if (dropZone && action !== 'cancel') {
                     if (action === 'top-faceup') { dropZone.appendChild(c); c.classList.remove('is-flipped', 'rest'); dropZone.querySelectorAll('.card').forEach(cardInSlot => cardInSlot.classList.remove('rest')); } 
@@ -1231,7 +1273,6 @@
         const modal = document.getElementById('search-modal'), modalContainer = document.getElementById('modal-cards-container'), modalTitle = document.getElementById('modal-title');
         let currentModalSourceSlot = null;
         
-        // 🌟 右鍵檢視全解鎖
         document.querySelectorAll('#my-deck-area, #my-outside-area, #my-remove-area, #my-life-area, #my-public-area, #opp-deck-area, #opp-outside-area, #opp-remove-area, #opp-life-area, #opp-public-area').forEach(zone => {
             zone.addEventListener('contextmenu', e => {
                 e.preventDefault(); 
