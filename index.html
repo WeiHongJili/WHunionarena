@@ -7,7 +7,7 @@
     <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
     <style>
         :root {
-            /* 🌟 卡片極限巨型化：170px，視覺衝擊力滿分 */
+            /* 🌟 卡片極限巨型化 */
             --card-h: 170px; 
             --card-w: calc(var(--card-h) * 0.714); 
             --gap-size: 10px;
@@ -28,8 +28,8 @@
         #my-peer-id { color: #f1c40f; font-weight: bold; font-size: 16px; cursor: pointer; background: rgba(0,0,0,0.5); padding: 5px 10px; border-radius: 5px; }
 
         .builder-container { display: flex; gap: 20px; flex: 1; min-height: 60vh; flex-wrap: wrap; }
-        .catalog-panel { flex: 6; min-width: 300px; background: rgba(0,0,0,0.5); border-radius: 10px; padding: 15px; display: flex; flex-direction: column; max-height: 75vh; overflow-y: auto; }
-        .deck-panel { flex: 4; min-width: 300px; background: rgba(139, 21, 21, 0.5); border-radius: 10px; padding: 15px; display: flex; flex-direction: column; border: 2px dashed #d32f2f; max-height: 75vh; overflow-y: auto; }
+        .catalog-panel { flex: 6; min-width: 300px; background: rgba(0,0,0,0.5); border-radius: 10px; padding: 15px; display: flex; flex-direction: column; max-height: 75vh; overflow-y: auto; -webkit-overflow-scrolling: touch; }
+        .deck-panel { flex: 4; min-width: 300px; background: rgba(139, 21, 21, 0.5); border-radius: 10px; padding: 15px; display: flex; flex-direction: column; border: 2px dashed #d32f2f; max-height: 75vh; overflow-y: auto; -webkit-overflow-scrolling: touch; }
         
         .deck-controls { display: flex; gap: 10px; margin-bottom: 10px; align-items: center; background: rgba(0,0,0,0.3); padding: 10px; border-radius: 8px; flex-wrap: wrap; }
         .deck-selector { flex: 1; padding: 5px; font-size: 14px; border-radius: 5px; background: #2c3e50; color: white; border: 1px solid #34495e; min-width: 120px; }
@@ -72,16 +72,17 @@
         .cam-btn:hover { background: #f39c12; color: black; }
         #btn-3d { background: rgba(0,0,0,0.8); border-color: #3498db; }
 
-        /* 🎮 懸浮 HUD 系統：完美與戰鬥桌解綁，永遠貼在螢幕邊緣 */
+        /* 🎮 懸浮 HUD 系統 */
         .hud-top {
             position: absolute; top: 10px; left: 50%; transform: translateX(-50%) scale(0.65); transform-origin: top center;
-            width: 100%; max-width: 900px; display: flex; gap: 15px; z-index: 10010; pointer-events: none;
+            width: 95%; max-width: 1400px; display: flex; gap: 15px; z-index: 10010; pointer-events: none;
         }
+        
         .hud-bottom {
             position: absolute; bottom: 10px; left: 50%; transform: translateX(-50%) scale(0.85); transform-origin: bottom center;
-            width: 100%; max-width: 1000px; display: flex; gap: 15px; z-index: 10010; pointer-events: none;
+            width: 95%; max-width: 1200px; display: flex; gap: 15px; z-index: 10010; pointer-events: none; align-items: flex-end; justify-content: center;
         }
-        .hand-zone, .look-zone { pointer-events: auto; } /* 讓 HUD 內的區域可以被點擊/拖曳 */
+        .hand-zone, .look-zone { pointer-events: auto; }
 
         .hud-sidebar {
             position: absolute; right: 20px; top: 50%; transform: translateY(-50%);
@@ -91,11 +92,15 @@
             box-shadow: 0 0 30px rgba(0,0,0,0.8); z-index: 10010; pointer-events: auto; 
         }
         
-        .hand-zone { flex: 7; background-color: rgba(0,0,0,0.8); border: 2px dashed #7f8c8d; border-radius: 10px; padding: 15px; display: flex; flex-direction: column;}
-        .look-zone { flex: 3; background-color: rgba(0,50,100,0.8); border: 2px dashed #3498db; border-radius: 10px; padding: 15px; display: flex; flex-direction: column;}
-        .hand-area, .look-area { display: flex; flex-wrap: wrap; gap: 10px; width: 100%; min-height: var(--card-h); align-items: center; justify-content: center;}
+        .hand-zone { flex: 8; background-color: rgba(0,0,0,0.8); border: 2px dashed #7f8c8d; border-radius: 10px; padding: 15px; display: flex; flex-direction: column;}
+        .look-zone { flex: 2; background-color: rgba(0,50,100,0.8); border: 2px dashed #3498db; border-radius: 10px; padding: 15px; display: flex; flex-direction: column;}
+        
+        .hand-area, .look-area { 
+            display: flex; flex-wrap: nowrap; overflow: visible; 
+            width: 100%; height: var(--card-h); align-items: center; justify-content: center;
+        }
 
-        /* 📐 純淨的戰鬥桌：移除手牌區後，高度變得完美緊湊 */
+        /* 📐 純淨的戰鬥桌 */
         .game-table { 
             width: 1150px; height: 1000px; 
             position: absolute; left: 0; top: 0; transform-origin: top left;
@@ -127,6 +132,8 @@
         .center-zone { display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 1; gap: 12px; transform-style: preserve-3d;}
         .side-zone { display: flex; flex-direction: column; gap: 15px; height: 100%; z-index: 1; justify-content: space-between; align-items: center; transform-style: preserve-3d;} 
         
+        /* 🌌 空間塌陷修復核心：所有包含插槽的父層，強制開啟 3D 保留！ */
+        .slot-group { display: flex; flex-direction: column; align-items: center; transform-style: preserve-3d; }
         .card-row { display: flex; gap: 12px; transform-style: preserve-3d;}
 
         .slot { width: var(--card-w); height: var(--card-h); background-color: rgba(0,0,0,0.5); border: 2px dashed rgba(241, 196, 15, 0.5); border-radius: 6px; box-shadow: inset 0 0 15px rgba(0,0,0,0.8); position: relative; display: flex; justify-content: center; align-items: center; transform-style: preserve-3d;}
@@ -136,9 +143,10 @@
         .slot:hover::after { opacity: 1; }
         .slot[data-count="0"]::after, .slot[data-count="1"]::after, .slot:not([data-count])::after { display: none; }
 
-        .marker { position: absolute; top: -8px; left: -8px; font-size: 16px; cursor: pointer; opacity: 0; transition: 0.2s; z-index: 9999; background: rgba(0,0,0,0.7); border-radius: 50%; width: 24px; height: 24px; display: flex; justify-content: center; align-items: center; border: 2px solid transparent; pointer-events: auto; transform: translateZ(5px);}
-        .slot:hover .marker { opacity: 0.4; }
-        .slot.marked .marker { opacity: 1 !important; border-color: #e74c3c; box-shadow: 0 0 10px #e74c3c; filter: drop-shadow(0 0 5px red); transform: scale(1.2) translateZ(10px); }
+        /* 🎯 標記圖示修復：預設 15% 可見度，讓平板玩家可以直接點擊！拉高 Z 軸確保不被卡片蓋住 */
+        .marker { position: absolute; top: -8px; left: -8px; font-size: 18px; cursor: pointer; opacity: 0.15; transition: 0.2s; z-index: 10000; background: rgba(0,0,0,0.8); border-radius: 50%; width: 28px; height: 28px; display: flex; justify-content: center; align-items: center; border: 2px solid transparent; pointer-events: auto; transform: translateZ(100px);}
+        .slot:hover .marker { opacity: 0.8; }
+        .slot.marked .marker { opacity: 1 !important; border-color: #e74c3c; box-shadow: 0 0 10px #e74c3c; filter: drop-shadow(0 0 5px red); transform: scale(1.2) translateZ(110px); }
         .slot.marked { box-shadow: inset 0 0 25px rgba(231, 76, 60, 0.7) !important; border-color: #e74c3c !important; }
 
         .phase-step { padding: 10px; border-radius: 6px; background: #2c3e50; cursor: pointer; font-weight: bold; font-size: 14px; transition: 0.3s; color: #bdc3c7; text-align: center; border: 1px solid #34495e;}
@@ -146,10 +154,17 @@
         .phase-step.active { background: #f39c12; color: #000; box-shadow: 0 0 12px #f39c12; border-color: #f1c40f;}
 
         /* 🃏 卡片屬性 */
-        .card { width: var(--card-w); height: var(--card-h); border-radius: 6px; box-shadow: 0 4px 8px rgba(0,0,0,0.8); cursor: grab; transition: transform 0.2s ease-out; position: absolute; perspective: 1000px; touch-action: none; transform-style: preserve-3d;}
-        .hand-area .card, .look-area .card { position: relative; left: 0 !important; top: 0 !important; margin-left: -20px;}
+        .card { 
+            width: var(--card-w); height: var(--card-h); border-radius: 6px; box-shadow: 0 4px 8px rgba(0,0,0,0.8); 
+            cursor: grab; transition: transform 0.2s ease-out, margin 0.2s ease-out; position: absolute; perspective: 1000px; touch-action: none; transform-style: preserve-3d;
+            transform: translate(var(--tx, 0px), var(--ty, 0px)) rotate(var(--rot, 0deg)) translateZ(var(--z-offset, 0px));
+        }
+        
+        .hand-area .card, .look-area .card { position: relative; left: 0 !important; top: 0 !important; margin-left: -35px;} 
         .hand-area .card:first-child, .look-area .card:first-child { margin-left: 0; }
-        .card:hover { transform: translateY(-5px) scale(1.05) translateZ(10px) !important; z-index: 500 !important; }
+        
+        .card:hover { transform: translateY(-5px) scale(1.05) translateZ(100px) !important; z-index: 500 !important; }
+        .hand-area .card:hover, .look-area .card:hover { transform: translateY(-20px) scale(1.1) translateZ(100px) !important; margin-right: 25px; }
         
         .card-inner { position: relative; width: 100%; height: 100%; transition: transform 0.3s; transform-style: preserve-3d; }
         .card.is-flipped .card-inner { transform: rotateY(180deg); }
@@ -158,11 +173,14 @@
         .card-back { transform: rotateY(180deg); background: linear-gradient(135deg, #8b1515, #5c0a0a); border: 2px solid #fff; box-sizing: border-box; display: flex; justify-content: center; align-items: center; color: white; font-weight: bold; font-size: var(--font-size-base); text-align: center; line-height: 1.2; padding: 2px;}
         .ap-card .card-back { background: linear-gradient(135deg, #2c3e50, #1a252f); border-color: #f39c12; }
         
-        /* 3D 懸浮拖曳效果 */
-        .card.dragging { transform: scale(1.15) rotate(5deg) translateZ(30px) !important; z-index: 9999 !important; transition: none; box-shadow: -10px 20px 30px rgba(0,0,0,0.8); }
+        #opp-hand-area .card-inner, #opp-look-area .card-inner { transform: rotateY(180deg) !important; }
+
+        /* 🛡️ 拖曳視覺修正：強制拉高到 800px 絕對凌空，徹底斷絕跟 35 度桌面的碰撞！ */
+        .card.dragging { z-index: 999999 !important; transition: none; box-shadow: -20px 40px 50px rgba(0,0,0,0.6); }
         .card.stack-glowing { box-shadow: 0 0 15px 5px #f1c40f !important; }
-        .card.rest { transform: rotate(90deg); }
-        .card.in-life { transform: rotate(-90deg) !important; }
+        
+        .card.rest { --rot: 90deg !important; }
+        .card.in-life { --rot: -90deg !important; }
 
         #drop-menu { display: none; position: fixed; z-index: 10001; background: rgba(20,20,20,0.95); border: 2px solid #3498db; border-radius: 8px; padding: 10px; flex-direction: column; gap: 8px; box-shadow: 0 0 15px rgba(52,152,219,0.5); }
         .drop-btn { background: #2c3e50; color: white; border: 1px solid #7f8c8d; padding: 8px 15px; cursor: pointer; border-radius: 4px; font-weight: bold; font-size: 12px;}
@@ -175,7 +193,6 @@
 
         #mulligan-modal { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(0,0,0,0.95); border: 3px solid #f39c12; padding: 30px; border-radius: 15px; z-index: 10005; text-align: center; box-shadow: 0 0 30px rgba(243, 156, 18, 0.5); width: 90%; max-width: 400px;}
 
-        /* 🔍 左下角超大檢視器 */
         #card-magnifier { 
             position: fixed; left: 20px; bottom: 20px; 
             width: calc(var(--card-w) * 3); height: calc(var(--card-h) * 3); 
@@ -331,9 +348,9 @@
                     
                     <div id="opp-board" class="playmat">
                         <div class="side-zone left-side">
-                            <div><div class="line-label">卡組</div><div class="slot" id="opp-deck-area"></div></div>
-                            <div><div class="line-label">公開</div><div class="slot" id="opp-public-area"></div></div>
-                            <div><div class="line-label">場外</div><div class="slot" id="opp-outside-area"></div></div>
+                            <div class="slot-group"><div class="line-label">卡組</div><div class="slot" id="opp-deck-area"></div></div>
+                            <div class="slot-group"><div class="line-label">公開</div><div class="slot" id="opp-public-area"></div></div>
+                            <div class="slot-group"><div class="line-label">場外</div><div class="slot" id="opp-outside-area"></div></div>
                         </div>
                         <div class="center-zone">
                             <div class="line-label">ACTION POINT</div>
@@ -344,8 +361,8 @@
                             <div class="card-row" id="opp-front-line"><div class="slot" id="opp-fl-4"></div><div class="slot" id="opp-fl-3"></div><div class="slot" id="opp-fl-2"></div><div class="slot" id="opp-fl-1"></div></div>
                         </div>
                         <div class="side-zone right-side">
-                            <div><div class="line-label">生命區</div><div class="slot life-slot" id="opp-life-area"></div></div>
-                            <div><div class="line-label">移除區</div><div class="slot" id="opp-remove-area"></div></div>
+                            <div class="slot-group"><div class="line-label">生命區</div><div class="slot life-slot" id="opp-life-area"></div></div>
+                            <div class="slot-group"><div class="line-label">移除區</div><div class="slot" id="opp-remove-area"></div></div>
                         </div>
                     </div>
 
@@ -353,8 +370,8 @@
 
                     <div id="my-board" class="playmat">
                         <div class="side-zone left-side">
-                            <div><div class="line-label">生命區</div><div class="slot life-slot" id="my-life-area"></div></div>
-                            <div><div class="line-label">移除區</div><div class="slot" id="my-remove-area"></div></div>
+                            <div class="slot-group"><div class="line-label">生命區</div><div class="slot life-slot" id="my-life-area"></div></div>
+                            <div class="slot-group"><div class="line-label">移除區</div><div class="slot" id="my-remove-area"></div></div>
                         </div>
                         
                         <div class="center-zone">
@@ -367,9 +384,9 @@
                         </div>
                         
                         <div class="side-zone right-side">
-                            <div><div class="line-label">卡組</div><div class="slot" id="my-deck-area"></div></div>
-                            <div><div class="line-label">公開</div><div class="slot" id="my-public-area"></div></div>
-                            <div><div class="line-label">場外</div><div class="slot" id="my-outside-area"></div></div>
+                            <div class="slot-group"><div class="line-label">卡組</div><div class="slot" id="my-deck-area"></div></div>
+                            <div class="slot-group"><div class="line-label">公開</div><div class="slot" id="my-public-area"></div></div>
+                            <div class="slot-group"><div class="line-label">場外</div><div class="slot" id="my-outside-area"></div></div>
                         </div>
                     </div>
                 </div>
@@ -570,7 +587,6 @@
             let w = wrapper.clientWidth;
             let h = wrapper.clientHeight;
             
-            // 🌟 配合抽離 HUD 後的精巧場地重新計算縮放
             window.camScale = Math.min(w / 1150, h / 1000) * 0.95; 
             if(window.camScale > 1.2) window.camScale = 1.2;
             
@@ -579,7 +595,6 @@
             updateCamera();
         };
 
-        // 🌟 3D 切換邏輯
         window.is3D = false;
         window.toggle3D = function() {
             window.is3D = !window.is3D;
@@ -590,8 +605,12 @@
             else table.classList.remove('mode-3d');
         };
 
+        // 🌟 防誤觸機制：只要碰到任何插槽(.slot)或卡片(.card)，絕對不捲動地圖
         function startPan(e) {
-            if(e.target.closest('.card') || e.target.closest('.cam-btn') || e.target.closest('.marker') || e.target.closest('.hud-sidebar') || e.target.closest('.hud-top') || e.target.closest('.hud-bottom')) return;
+            if(e.target.closest('.card') || e.target.closest('.slot') || e.target.closest('.cam-btn') || 
+               e.target.closest('.marker') || e.target.closest('.hud-sidebar') || 
+               e.target.closest('.hud-top') || e.target.closest('.hud-bottom')) return; 
+               
             isCamDragging = true;
             let clientX = e.type.includes('touch') ? e.touches[0].clientX : e.clientX;
             let clientY = e.type.includes('touch') ? e.touches[0].clientY : e.clientY;
@@ -616,7 +635,7 @@
             if(typeof masterCardCatalog !== 'undefined') masterCardCatalog.push(...savedCustom);
             updateDeckSelector(); initSeriesFilter(); renderBuilder(); renderDeck(); 
 
-            document.querySelectorAll('#my-front-line .slot, #my-energy-line .slot, #opp-front-line .slot, #opp-energy-line .slot').forEach(slot => {
+            document.querySelectorAll('.slot').forEach(slot => {
                 let marker = document.createElement('div');
                 marker.className = 'marker';
                 marker.innerText = '🎯';
@@ -643,6 +662,17 @@
             }, {passive: false});
 
             window.addEventListener('resize', resetCam);
+
+            // 🎯 全域點擊判定：直接點擊對手的卡片或空格，自動幫你標記！
+            document.addEventListener('click', e => {
+                if (e.target.closest('.marker') || e.target.closest('.cam-btn')) return;
+                
+                let slot = e.target.closest('.slot');
+                if (slot && slot.id.includes('opp-') && !slot.id.includes('hand') && !slot.id.includes('look')) {
+                    slot.classList.toggle('marked');
+                    broadcastMyState();
+                }
+            });
         };
 
         // ================= 網路連線引擎 =================
@@ -736,10 +766,10 @@
             let state = [];
             document.querySelectorAll('.card').forEach((el, index) => {
                 if (el.dataset.networkId && el.dataset.networkId.startsWith('p_')) {
-                    let pId = (el.parentElement && el.parentElement.id) ? el.parentElement.id : 'none';
+                    let pId = el.dataset.logicalParent || ((el.parentElement && el.parentElement.id) ? el.parentElement.id : 'none');
                     let isFlipped = el.classList.contains('is-flipped');
                     
-                    // 🛡️ 隱私防窺黑科技：如果在手牌區、檢索區，或是剛從這兩區被拉出來，強制傳送「卡背」給對手！
+                    // 🛡️ 隱私防護：只要是機密區或剛從機密區拉出，對手只能看到卡背！
                     if (pId.includes('hand') || pId.includes('look') || el.dataset.isSecretDrag === 'true') {
                         isFlipped = true;
                     }
@@ -774,9 +804,7 @@
                     el.style.position = (targetParentId.includes('hand') || targetParentId.includes('look')) ? 'relative' : 'absolute';
                     el.style.left = d.x; el.style.top = d.y; el.style.zIndex = d.zIndex; 
                     
-                    // 🌟 完全依靠網路端送來的 isFlipped 狀態，不再使用 CSS 強制覆蓋
                     if(d.isFlipped) el.classList.add('is-flipped'); else el.classList.remove('is-flipped');
-                    
                     if(d.isRest) el.classList.add('rest'); else el.classList.remove('rest');
                     if(d.inLife) el.classList.add('in-life'); else el.classList.remove('in-life');
                 }
@@ -856,29 +884,41 @@
             recalcStacking(deckArea); recalcStacking(lifeArea); updateSlotCounts(); broadcastMyState(); showSysMsg("🎯 對戰開始！");
         }
 
+        // 🌟 Z 軸物理厚度修復：賦予卡片真實空間厚度，徹底解決 3D 模式下卡片互切、點擊無效的 Bug！
         function applyStackingStyle(card, slotBelow, myIndex) {
             if (!slotBelow) return;
             card.style.zIndex = myIndex;
-            if (slotBelow.id.includes('deck') || slotBelow.id.includes('outside') || slotBelow.id.includes('remove') || slotBelow.id.includes('public') || slotBelow.id.includes('ap')) { card.style.left='0px'; card.style.top='0px'; }
+            card.style.setProperty('--z-offset', `${myIndex * 1.5}px`); 
+            
+            if (slotBelow.id.includes('deck') || slotBelow.id.includes('outside') || slotBelow.id.includes('remove') || slotBelow.id.includes('public') || slotBelow.id.includes('ap')) { 
+                card.style.left='0px'; card.style.top='0px'; 
+                card.classList.remove('in-life');
+            }
             else if (slotBelow.id.includes('life')) { 
                 card.style.left = 'calc((var(--card-h) - var(--card-w)) / 2)'; 
                 card.style.top = `calc((var(--card-w) - var(--card-h)) / -2 + ${myIndex * 26}px)`; 
                 card.classList.add('in-life'); 
                 card.classList.remove('rest');
             }
-            else if (slotBelow.classList.contains('slot')) { card.style.left=(myIndex*4)+'px'; card.style.top=(myIndex*12)+'px'; } 
+            else if (slotBelow.classList.contains('slot')) { 
+                card.style.left=(myIndex*4)+'px'; card.style.top=(myIndex*12)+'px'; 
+                card.classList.remove('in-life');
+            } 
         }
         function recalcStacking(areaElement) { if(!areaElement || areaElement.id.includes('hand') || areaElement.id.includes('look')) return; Array.from(areaElement.querySelectorAll('.card')).forEach((c, idx) => applyStackingStyle(c, areaElement, idx)); }
 
-        // 🌟 跨越 HUD 與 3D 空間的「百分比座標」精準拖曳黑科技
+        // 🌟 全新拖曳引擎：置中吸附與 2D 脫離黑科技
         function attachMyDragEvents(cardElement) {
             cardElement.clickTimeout = null;
-            let gameTableInner = document.getElementById('game-table-inner');
+            let viewportLayer = document.getElementById('board-viewport');
 
             function dragStart(event) {
                 if (event.type === 'mousedown' && window.isTouchDevice) return;
                 if (event.type === 'touchstart') window.isTouchDevice = true;
                 if (event.type === 'mousedown' && event.button !== 0) return; 
+
+                // 🛡️ 絕對防禦：只要點在卡片上，地圖絕對不准動
+                event.stopPropagation();
                 
                 let isDragging = false, isStackDrag = false, stackCardsData = [];
                 let originalParent = cardElement.parentElement;
@@ -896,17 +936,8 @@
                 let clientX = isTouch ? event.touches[0].clientX : event.clientX;
                 let clientY = isTouch ? event.touches[0].clientY : event.clientY;
                 
-                // 🌟 隱私防護標記：如果卡片是從機密區拉出來的，打上記號
                 cardElement.dataset.isSecretDrag = (originalParent && (originalParent.id.includes('hand') || originalParent.id.includes('look'))) ? 'true' : 'false';
-
-                // 🌟 核心突破：利用滑鼠點擊位置在卡片中的「百分比」，完美消除跨越 HUD (2D) 到桌面 (3D縮放) 的尺寸落差
-                let rect = cardElement.getBoundingClientRect();
-                let percX = (clientX - rect.left) / rect.width;
-                let percY = (clientY - rect.top) / rect.height;
-                let intrinsicW = cardElement.offsetWidth;
-                let intrinsicH = cardElement.offsetHeight;
-                let shiftX = percX * intrinsicW;
-                let shiftY = percY * intrinsicH;
+                cardElement.dataset.logicalParent = originalParent ? originalParent.id : 'none'; 
 
                 let dragThreshold = isTouch ? 15 : 6;
                 let startClientX = clientX;
@@ -918,38 +949,41 @@
 
                     if (!isDragging && (Math.abs(curClientX - startClientX) > dragThreshold || Math.abs(curClientY - startClientY) > dragThreshold)) {
                         isDragging = true; if(typeof longPressTimer !== 'undefined') clearTimeout(longPressTimer);
+                        
                         if (isStackDrag) {
                             if (stackCardsData.length === 0) {
                                 Array.from(originalParent.querySelectorAll('.card')).forEach(c => {
-                                    let r = c.getBoundingClientRect(); 
-                                    let pX = (startClientX - r.left) / r.width;
-                                    let pY = (startClientY - r.top) / r.height;
-                                    let sX = pX * c.offsetWidth;
-                                    let sY = pY * c.offsetHeight;
-                                    stackCardsData.push({ el: c, shiftX: sX, shiftY: sY });
-                                    gameTableInner.appendChild(c); c.style.position = 'absolute'; c.classList.add('dragging'); c.classList.remove('in-life', 'stack-glowing'); 
+                                    c.dataset.logicalParent = originalParent.id;
+                                    stackCardsData.push({ el: c });
+                                    viewportLayer.appendChild(c); 
+                                    c.style.position = 'absolute'; c.classList.add('dragging'); c.classList.remove('in-life', 'stack-glowing'); 
                                 });
                             }
                         } else {
-                            gameTableInner.appendChild(cardElement); cardElement.style.position = 'absolute';
+                            // 🌟 拔出 3D 空間：直接放到最上層的 2D 觀景窗，保證不破圖
+                            viewportLayer.appendChild(cardElement); 
+                            cardElement.style.position = 'absolute';
                             cardElement.classList.add('dragging'); cardElement.classList.remove('in-life'); 
                         }
                     }
                     if (isDragging) {
                         if (event.type.includes('touch') && event.cancelable) event.preventDefault(); 
                         
-                        let tableRect = gameTableInner.getBoundingClientRect();
+                        let viewportRect = viewportLayer.getBoundingClientRect();
                         
+                        // 🎯 滑鼠中心點吸附：放棄複雜透視數學，直接讓卡片中心黏在游標上！
                         if (isStackDrag) {
-                            stackCardsData.forEach(item => { 
-                                let localX = (curClientX - tableRect.left) / window.camScale - item.shiftX;
-                                let localY = (curClientY - tableRect.top) / window.camScale - item.shiftY;
+                            stackCardsData.forEach((item, index) => { 
+                                let localX = (curClientX - viewportRect.left) - (item.el.offsetWidth / 2) + (index * 8);
+                                let localY = (curClientY - viewportRect.top) - (item.el.offsetHeight / 2) + (index * 8);
                                 item.el.style.left = localX + 'px'; item.el.style.top = localY + 'px'; 
+                                item.el.style.transform = `scale(${window.camScale * 1.05})`; 
                             });
                         } else { 
-                            let localX = (curClientX - tableRect.left) / window.camScale - shiftX;
-                            let localY = (curClientY - tableRect.top) / window.camScale - shiftY;
+                            let localX = (curClientX - viewportRect.left) - (cardElement.offsetWidth / 2);
+                            let localY = (curClientY - viewportRect.top) - (cardElement.offsetHeight / 2);
                             cardElement.style.left = localX + 'px'; cardElement.style.top = localY + 'px'; 
+                            cardElement.style.transform = `scale(${window.camScale * 1.05})`; 
                         }
                         broadcastMyState(); 
                     }
@@ -963,8 +997,8 @@
                     if (isTouch && event.cancelable) event.preventDefault();
 
                     if (!isDragging) {
-                        // 如果沒有拖曳，只是單擊/雙擊，記得解除隱私標記
                         cardElement.removeAttribute('data-isSecretDrag');
+                        cardElement.removeAttribute('data-logicalParent');
                         if(originalParent) originalParent.querySelectorAll('.card').forEach(c => c.classList.remove('stack-glowing'));
                         
                         let noRestZones = ['hand', 'look', 'outside', 'deck', 'remove', 'public'];
@@ -998,7 +1032,8 @@
                         let endY = event.type.includes('touch') ? event.changedTouches[0].clientY : event.clientY;
                         
                         let cardsToDrop = isStackDrag ? stackCardsData.map(item => item.el) : [cardElement];
-                        cardsToDrop.forEach(c => c.style.display = 'none');
+                        // 隱藏卡片，讓光線追蹤能正確打到下面的實體桌面
+                        cardsToDrop.forEach(c => { c.style.display = 'none'; c.style.transform = ''; }); 
                         let elemBelow = document.elementFromPoint(endX, endY);
                         cardsToDrop.forEach(c => c.style.display = 'block'); 
                         
@@ -1029,7 +1064,8 @@
             let processCards = (action.startsWith('bottom')) ? [...cards].reverse() : cards;
             processCards.forEach(c => {
                 c.classList.remove('dragging', 'stack-glowing');
-                c.removeAttribute('data-isSecretDrag'); // 🌟 落地瞬間解除隱私標記
+                c.removeAttribute('data-isSecretDrag'); 
+                c.removeAttribute('data-logicalParent');
 
                 if (dropZone && action !== 'cancel') {
                     if (action === 'top-faceup') { dropZone.appendChild(c); c.classList.remove('is-flipped', 'rest'); dropZone.querySelectorAll('.card').forEach(cardInSlot => cardInSlot.classList.remove('rest')); } 
