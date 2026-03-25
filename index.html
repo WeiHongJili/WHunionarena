@@ -38,15 +38,14 @@
         .catalog-panel { flex: 6; min-width: 300px; }
         .deck-panel { flex: 4; min-width: 300px; background: rgba(139, 21, 21, 0.5); border: 2px dashed #d32f2f; }
         
-        .deck-controls { position: relative; z-index: 9999; display: flex; gap: 8px; margin-bottom: 8px; align-items: center; background: rgba(0,0,0,0.3); padding: 8px; border-radius: 8px; flex-wrap: wrap; }
+        .deck-controls { position: relative; z-index: 99999; display: flex; gap: 8px; margin-bottom: 8px; align-items: center; background: rgba(0,0,0,0.3); padding: 8px; border-radius: 8px; flex-wrap: wrap; transform: translateZ(1px); }
         .deck-selector { flex: 1; padding: 6px; font-size: 14px; border-radius: 5px; background: #2c3e50; color: white; border: 1px solid #34495e; min-width: 120px; }
         
-        .catalog-header { position: relative; z-index: 9999; display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; flex-wrap: wrap; gap: 10px; }
+        .catalog-header { position: relative; z-index: 99999; display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; flex-wrap: wrap; gap: 10px; transform: translateZ(1px); }
         .series-filter { padding: 6px 10px; font-size: 14px; border-radius: 5px; background: #f39c12; color: #1a1a1a; font-weight: bold; border: none; cursor: pointer; outline: none; }
         
-        #catalog-grid, #deck-grid, .ap-deck-section { position: relative; z-index: 1; flex: 1; overflow-y: auto; }
-        
         .series-title { border-left: 4px solid #f39c12; padding-left: 8px; background: rgba(255,255,255,0.1); padding: 4px; margin: 10px 0 8px 0; font-size: 15px; font-weight: bold;}
+        
         .card-grid { display: flex; flex-wrap: wrap; gap: 8px; }
         
         .preview-card { position: relative; z-index: 1; width: 110px; height: calc(110px / 0.714); border-radius: 5px; cursor: pointer; transition: transform 0.1s; box-shadow: 0 2px 5px rgba(0,0,0,0.5); }
@@ -58,7 +57,7 @@
         .ctrl-btn { background: #3498db; color: white; border: none; padding: 6px 12px; border-radius: 5px; cursor: pointer; font-weight: bold; font-size: 13px;}
         .ctrl-btn.danger { background: #e74c3c; }
 
-        .import-details { position: relative; z-index: 9999; background: rgba(155, 89, 182, 0.15); border: 2px dashed #9b59b6; border-radius: 8px; margin-bottom: 10px; transition: 0.3s;}
+        .import-details { background: rgba(155, 89, 182, 0.15); border: 2px dashed #9b59b6; border-radius: 8px; margin-bottom: 10px; transition: 0.3s;}
         .import-summary { padding: 10px; font-weight: bold; color: #d2b4de; cursor: pointer; outline: none; list-style: none; font-size: 14px; }
         .import-summary::-webkit-details-marker { display: none; }
         .import-content { padding: 10px; border-top: 1px dashed #9b59b6; display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
@@ -76,7 +75,9 @@
         .hud-bottom { position: absolute; bottom: 10px; left: 50%; transform: translateX(-50%) scale(0.85); transform-origin: bottom center; width: 90%; max-width: 900px; display: flex; gap: 15px; z-index: 10010; pointer-events: none; align-items: flex-end; justify-content: center; }
         .hand-zone, .look-zone { pointer-events: auto; }
 
-        .hud-sidebar { position: absolute; right: 20px; top: 50%; transform: translateY(-50%); display: flex; flex-direction: column; gap: 15px; background: rgba(0,0,0,0.4); padding: 15px; border-radius: 12px; border: 2px solid rgba(243, 156, 18, 0.5); width: 130px; box-sizing: border-box; box-shadow: 0 0 30px rgba(0,0,0,0.5); z-index: 10010; pointer-events: auto; backdrop-filter: blur(3px); }
+        /* 🌟 修復 3：控制列移至右上角 */
+        .hud-sidebar { position: absolute; right: 20px; top: 20px; display: flex; flex-direction: column; gap: 15px; background: rgba(0,0,0,0.4); padding: 15px; border-radius: 12px; border: 2px solid rgba(243, 156, 18, 0.5); width: 130px; box-sizing: border-box; box-shadow: 0 0 30px rgba(0,0,0,0.5); z-index: 10010; pointer-events: auto; backdrop-filter: blur(3px); }
+        
         .hand-zone { flex: 8; background-color: rgba(0,0,0,0.25); border: 2px dashed rgba(127,140,141,0.4); border-radius: 10px; padding: 15px; display: flex; flex-direction: column; backdrop-filter: blur(2px);}
         .look-zone { flex: 2; background-color: rgba(0,50,100,0.25); border: 2px dashed rgba(52,152,219,0.4); border-radius: 10px; padding: 15px; display: flex; flex-direction: column; backdrop-filter: blur(2px);}
         .hand-area, .look-area { display: flex; flex-wrap: nowrap; overflow: visible; width: 100%; height: var(--card-h); align-items: center; justify-content: center; }
@@ -164,7 +165,7 @@
         }
 
         @media (max-height: 600px) {
-            .hud-sidebar { right: 5px; transform: translateY(-50%) scale(0.65); transform-origin: right center; }
+            .hud-sidebar { right: 5px; top: 5px; transform: scale(0.65); transform-origin: top right; } /* 🌟 手機版也維持在右上角 */
             .hud-top { transform: translateX(-50%) scale(0.5); top: 2px; } 
             .hud-bottom { transform: translateX(-50%) scale(0.6); bottom: 2px; } 
             .cam-ctrl-box { bottom: 5px; right: 5px; transform: scale(0.7); transform-origin: bottom right; }
@@ -728,13 +729,19 @@
             });
         }
 
+        document.getElementById('btn-back-builder').addEventListener('click', () => {
+            if(confirm("確定要投降並返回構築區嗎？")) {
+                if(conn && isConnected) conn.send({ type: 'SURRENDER' });
+                resetBoard();
+            }
+        });
+
         function resetBoard() {
             document.body.classList.remove('in-game');
             if (screen.orientation && screen.orientation.unlock) {
                 screen.orientation.unlock();
             }
-            
-            // 🚨 徹底清除雙方所有卡片，防止幽靈卡
+
             myCardsElements.forEach(c => { if(c && c.parentNode) c.remove(); });
             oppCardsElements.forEach(c => { if(c && c.parentNode) c.remove(); });
             document.querySelectorAll('.card').forEach(c => c.remove());
@@ -746,13 +753,6 @@
             document.getElementById('builder-scene').style.display = 'flex';
             myCardsElements = []; oppCardsElements = [];
         }
-
-        document.getElementById('btn-back-builder').addEventListener('click', () => {
-            if(confirm("確定要投降並返回構築區嗎？")) {
-                if(conn && isConnected) conn.send({ type: 'SURRENDER' });
-                resetBoard();
-            }
-        });
 
         window.rollDice = function() {
             let result = Math.floor(Math.random() * 6) + 1;
@@ -786,7 +786,6 @@
             if(!conn || !isConnected) return;
             let state = [];
             
-            // 🚨 絕對防護：只掃描「屬於自己的卡片」，杜絕幽靈卡與手牌消失 Bug
             myCardsElements.forEach((el, index) => {
                 if (!el || !el.parentElement) return;
 
@@ -801,17 +800,30 @@
                 let yVal = el.style.top;
                 let isGlobalDragging = (pId === 'board-viewport');
                 
+                // 🌟 修復 2：虛擬桌面座標系轉換 (保證 3D 模式下的拖曳完美同步)
                 if (isGlobalDragging) {
-                    let vp = document.getElementById('board-viewport');
-                    xVal = (parseFloat(el.style.left) / vp.clientWidth).toString() + '_vp';
-                    yVal = (parseFloat(el.style.top) / vp.clientHeight).toString() + '_vp';
+                    let px = parseFloat(el.style.left);
+                    let py = parseFloat(el.style.top);
+                    let cardW = el.offsetWidth;
+                    let cardH = el.offsetHeight;
+                    let currentScale = window.camScale * 1.05;
+                    
+                    let cx = px + (cardW * currentScale) / 2;
+                    let cy = py + (cardH * currentScale) / 2;
+                    
+                    let logicalCx = (cx - window.camX) / window.camScale;
+                    let logicalCy = (cy - window.camY) / window.camScale;
+                    
+                    xVal = (logicalCx / 1150).toString() + '_board';
+                    yVal = (logicalCy / 1000).toString() + '_board';
                 }
 
                 let tiltVal = el.style.getPropertyValue('--tilt') || '0deg';
 
                 state.push({ 
                     id: el.dataset.networkId, parent: pId, 
-                    x: xVal, y: yVal, zIndex: index, 
+                    x: xVal, y: yVal, 
+                    zIndex: el.style.zIndex || index, // 🌟 修復 1：強制發送準確的圖層高度，解決 A 放 B 上順序錯亂
                     isFlipped: isFlipped, isRest: el.classList.contains('rest'), inLife: el.classList.contains('in-life'),
                     isDragging: isGlobalDragging,
                     tilt: tiltVal 
@@ -835,25 +847,57 @@
 
                     let targetParentId = d.parent.replace('my-', 'opp-');
                     let actualParentEl = d.isDragging ? document.getElementById('board-viewport') : document.getElementById(targetParentId);
-                    if(actualParentEl && el.parentElement !== actualParentEl) actualParentEl.appendChild(el);
                     
-                    el.style.position = (targetParentId.includes('hand') || targetParentId.includes('look')) && !d.isDragging ? 'relative' : 'absolute';
+                    let isInModal = el.parentElement && el.parentElement.id.includes('modal');
                     
-                    if (d.isDragging && typeof d.x === 'string' && d.x.endsWith('_vp')) {
-                        let px = parseFloat(d.x);
-                        let py = parseFloat(d.y);
-                        let vp = document.getElementById('board-viewport');
-                        el.style.left = ((1 - px) * vp.clientWidth - el.offsetWidth) + 'px';
-                        el.style.top = ((1 - py) * vp.clientHeight - el.offsetHeight) + 'px';
-                        el.style.transform = `scale(${window.camScale * 1.05})`;
-                        el.classList.add('dragging'); 
-                        el.style.zIndex = 999999;
-                    } else {
-                        el.style.left = d.x; 
-                        el.style.top = d.y;
-                        el.style.transform = '';
-                        el.classList.remove('dragging');
-                        el.style.zIndex = ''; 
+                    if (!isInModal) {
+                        if(actualParentEl && el.parentElement !== actualParentEl) actualParentEl.appendChild(el);
+                        
+                        el.style.position = (targetParentId.includes('hand') || targetParentId.includes('look')) && !d.isDragging ? 'relative' : 'absolute';
+                        
+                        // 🌟 修復 2：精準接收並鏡像轉換虛擬桌面座標
+                        if (d.isDragging && typeof d.x === 'string' && d.x.endsWith('_board')) {
+                            let nx = parseFloat(d.x);
+                            let ny = parseFloat(d.y);
+                            
+                            let flippedNx = 1 - nx;
+                            let flippedNy = 1 - ny;
+                            
+                            let logicalCx = flippedNx * 1150;
+                            let logicalCy = flippedNy * 1000;
+                            
+                            let cx = logicalCx * window.camScale + window.camX;
+                            let cy = logicalCy * window.camScale + window.camY;
+                            
+                            let cardW = el.offsetWidth;
+                            let cardH = el.offsetHeight;
+                            let currentScale = window.camScale * 1.05;
+                            
+                            let px = cx - (cardW * currentScale) / 2;
+                            let py = cy - (cardH * currentScale) / 2;
+
+                            el.style.left = px + 'px';
+                            el.style.top = py + 'px';
+                            el.style.transform = `scale(${currentScale})`;
+                            el.classList.add('dragging'); 
+                            el.style.zIndex = 999999;
+                            
+                        } else if (d.isDragging && typeof d.x === 'string' && d.x.endsWith('_vp')) {
+                            let px = parseFloat(d.x);
+                            let py = parseFloat(d.y);
+                            let vp = document.getElementById('board-viewport');
+                            el.style.left = ((1 - px) * vp.clientWidth - el.offsetWidth) + 'px';
+                            el.style.top = ((1 - py) * vp.clientHeight - el.offsetHeight) + 'px';
+                            el.style.transform = `scale(${window.camScale * 1.05})`;
+                            el.classList.add('dragging'); 
+                            el.style.zIndex = 999999;
+                        } else {
+                            el.style.left = d.x; 
+                            el.style.top = d.y;
+                            el.style.transform = '';
+                            el.classList.remove('dragging');
+                            el.style.zIndex = d.zIndex || ''; // 🌟 修復 1：套用對手的精準 Z-Index，解決堆疊顯示錯亂
+                        }
                     }
                     
                     if(d.isFlipped) el.classList.add('is-flipped'); else el.classList.remove('is-flipped');
@@ -879,8 +923,11 @@
         }
 
         function applyOpponentFlip(networkId) {
-            let el = myCardsElements.find(c => c.dataset.networkId === networkId) || oppCardsElements.find(c => c.dataset.networkId === networkId);
-            if(el) el.classList.toggle('is-flipped');
+            let el = myCardsElements.find(c => c.dataset.networkId === networkId);
+            if(el) {
+                el.classList.toggle('is-flipped');
+                broadcastMyState(); 
+            }
         }
 
         function shuffleArray(array) { for (let i = array.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [array[i], array[j]] = [array[j], array[i]]; } return array; }
@@ -893,7 +940,6 @@
         }
 
         function initMyBoard(deck, apDeck) {
-            // 🚨 徹底清除上一局的殘留卡片
             myCardsElements.forEach(c => { if(c && c.parentNode) c.remove(); });
             myCardsElements = []; document.getElementById('my-deck-area').innerHTML = ''; 
             
@@ -910,7 +956,6 @@
         }
 
         function initOpponentBoard(deck, apDeck) {
-            // 🚨 徹底清除上一局對手的殘留幽靈卡片
             oppCardsElements.forEach(c => { if(c && c.parentNode) c.remove(); });
             oppCardsElements = []; document.getElementById('opp-deck-area').innerHTML = '';
             
@@ -1257,6 +1302,7 @@
                         let dest = document.getElementById(destId);
                         dest.appendChild(targetCard); 
                         targetCard.classList.remove('rest', 'is-flipped');
+                        targetCard.style.setProperty('--tilt', '0deg');
 
                         if(dest.id.includes('hand') || dest.id.includes('look')) {
                             targetCard.style.position = 'relative';
@@ -1322,8 +1368,11 @@
             let card = e.target.closest('.card');
             if(card && currentModalSourceSlot && currentModalSourceSlot.id.includes('life')) {
                 card.classList.toggle('is-flipped');
-                if(card.dataset.networkId.startsWith('p_')) broadcastMyState();
-                else if(conn) conn.send({ type: 'FLIP_CARD', id: card.dataset.networkId });
+                if (myCardsElements.includes(card)) {
+                    broadcastMyState();
+                } else {
+                    if (conn) conn.send({ type: 'FLIP_CARD', id: card.dataset.networkId });
+                }
             }
         });
 
