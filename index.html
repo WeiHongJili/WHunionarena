@@ -218,7 +218,7 @@
                     <summary class="import-summary">✨ 魔法一鍵匯入 (點擊展開)</summary>
                     <div class="import-content">
                         <input type="text" id="import-series-name" placeholder="作品名稱" class="network-input" style="flex: 1; min-width: 100px;">
-                        <textarea id="import-raw-text" class="import-textarea" placeholder="貼上編號"></textarea>
+                        <textarea id="import-raw-text" class="import-textarea" placeholder="可貼上多個編號，以逗號或空白分隔"></textarea>
                         <button class="ctrl-btn" style="background: #9b59b6;" onclick="executeBatchImport()">匯入</button>
                     </div>
                 </details>
@@ -460,13 +460,19 @@
             }
         });
 
+        // 🌟 升級版一鍵匯入：支援半形逗號、全形逗號、自動轉大寫
         window.executeBatchImport = function() {
             let series = document.getElementById('import-series-name').value.trim() || "自訂匯入";
             let rawText = document.getElementById('import-raw-text').value;
-            let ids = rawText.split(/[\s,\n]+/).filter(s => s.startsWith('UA') || s.startsWith('EX') && s.length > 5);
-            if(ids.length === 0) return alert("❌ 找不到任何有效的卡片編號！請確認貼上的文字。");
+            
+            let rawIds = rawText.split(/[,\s\n\t，]+/); 
+            
+            let ids = rawIds.map(s => s.trim().toUpperCase()).filter(s => s.length > 5 && (s.startsWith('UA') || s.startsWith('EX')));
+            if(ids.length === 0) return alert("❌ 找不到任何有效的卡片編號！請確認輸入格式 (例如: UA01BT/CGH-1-001, UA02...)");
+            
             ids = [...new Set(ids)]; 
             let newCards = ids.map(id => ({ id: id, name: id, series: series, imageUrl: `https://rugiacreation.com/ua/cardlist/small/${id.replace(/\//g, '_')}.jpg` }));
+            
             if(typeof masterCardCatalog !== 'undefined') masterCardCatalog.push(...newCards);
             let savedCustom = JSON.parse(localStorage.getItem('ua_custom_cards')) || [];
             savedCustom.push(...newCards); localStorage.setItem('ua_custom_cards', JSON.stringify(savedCustom));
@@ -1420,7 +1426,6 @@
                 else if(zone.id.includes('life')) modalTitle.innerText = `檢索中：生命區 (${cards.length}張) (點擊可翻開)`;
                 else if(zone.id.includes('fl-') || zone.id.includes('en-')) modalTitle.innerText = `檢索中：場上疊牌 (${cards.length}張)`;
                 
-                // 🌟 現在場上的格子也擁有雙層檢索框的待遇了！
                 let isDualPane = zone.id === 'my-outside-area' || zone.id === 'my-life-area' || (zone.classList.contains('slot') && (zone.id.includes('my-fl-') || zone.id.includes('my-en-')));
                 
                 if(isDualPane) {
