@@ -38,14 +38,12 @@
         .catalog-panel { flex: 6; min-width: 300px; }
         .deck-panel { flex: 4; min-width: 300px; background: rgba(139, 21, 21, 0.5); border: 2px dashed #d32f2f; }
         
-        /* 🌟 給所有選單與標題區塊加上最高圖層防護 */
         .deck-controls { position: relative; z-index: 9999; display: flex; gap: 8px; margin-bottom: 8px; align-items: center; background: rgba(0,0,0,0.3); padding: 8px; border-radius: 8px; flex-wrap: wrap; }
         .deck-selector { flex: 1; padding: 6px; font-size: 14px; border-radius: 5px; background: #2c3e50; color: white; border: 1px solid #34495e; min-width: 120px; }
         
         .catalog-header { position: relative; z-index: 9999; display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; flex-wrap: wrap; gap: 10px; }
         .series-filter { padding: 6px 10px; font-size: 14px; border-radius: 5px; background: #f39c12; color: #1a1a1a; font-weight: bold; border: none; cursor: pointer; outline: none; }
         
-        /* 🌟 強制將展示卡片的區域關在底層 (z-index: 1)，保證不管卡片怎麼放大都不會蓋到上方選單 */
         #catalog-grid, #deck-grid, .ap-deck-section { position: relative; z-index: 1; flex: 1; overflow-y: auto; }
         
         .series-title { border-left: 4px solid #f39c12; padding-left: 8px; background: rgba(255,255,255,0.1); padding: 4px; margin: 10px 0 8px 0; font-size: 15px; font-weight: bold;}
@@ -162,6 +160,7 @@
             .catalog-panel, .deck-panel { width: 100%; flex: none; max-height: none; height: 50vh; }
             .import-content { flex-direction: column; align-items: stretch; }
             #import-series-name, .import-textarea, .import-content button { width: 100%; flex: none; }
+            .preview-card:hover { transform: none !important; z-index: 1; }
         }
 
         @media (max-height: 600px) {
@@ -228,7 +227,7 @@
                     <h3 style="margin: 0; font-size: 16px;">卡片目錄 (點擊加入)</h3>
                     <select id="series-filter" class="series-filter"><option value="ALL">全部作品 (All)</option></select>
                 </div>
-                <div id="catalog-grid"></div>
+                <div id="catalog-grid" style="flex: 1; overflow-y: auto;"></div>
             </div>
             
             <div class="deck-panel">
@@ -248,7 +247,7 @@
                     <h4 style="margin: 0; color: #3498db; font-size: 15px;">🃏 主要牌組</h4>
                     <span id="deck-counter" style="font-weight: bold; font-size: 14px;">0 / 50</span>
                 </div>
-                <div id="deck-grid">
+                <div id="deck-grid" style="flex: 1; overflow-y: auto;">
                     <div class="card-grid" id="deck-grid-inner"></div>
                 </div>
             </div>
@@ -729,20 +728,17 @@
             });
         }
 
-        document.getElementById('btn-back-builder').addEventListener('click', () => {
-            if(confirm("確定要投降並返回構築區嗎？")) {
-                if(conn && isConnected) conn.send({ type: 'SURRENDER' });
-                resetBoard();
-            }
-        });
-
         function resetBoard() {
             document.body.classList.remove('in-game');
             if (screen.orientation && screen.orientation.unlock) {
                 screen.orientation.unlock();
             }
-
+            
+            // 🚨 徹底清除雙方所有卡片，防止幽靈卡
+            myCardsElements.forEach(c => { if(c && c.parentNode) c.remove(); });
+            oppCardsElements.forEach(c => { if(c && c.parentNode) c.remove(); });
             document.querySelectorAll('.card').forEach(c => c.remove());
+
             document.querySelectorAll('.slot.marked').forEach(s => s.classList.remove('marked'));
             document.querySelectorAll('.phase-step').forEach(btn => btn.classList.remove('active'));
             document.querySelector('.phase-step:first-child').classList.add('active');
@@ -750,6 +746,13 @@
             document.getElementById('builder-scene').style.display = 'flex';
             myCardsElements = []; oppCardsElements = [];
         }
+
+        document.getElementById('btn-back-builder').addEventListener('click', () => {
+            if(confirm("確定要投降並返回構築區嗎？")) {
+                if(conn && isConnected) conn.send({ type: 'SURRENDER' });
+                resetBoard();
+            }
+        });
 
         window.rollDice = function() {
             let result = Math.floor(Math.random() * 6) + 1;
@@ -782,35 +785,37 @@
         function broadcastMyState() {
             if(!conn || !isConnected) return;
             let state = [];
-            document.querySelectorAll('.card').forEach((el, index) => {
-                if (el.dataset.networkId && el.dataset.networkId.startsWith('p_')) {
-                    let pId = (el.parentElement && el.parentElement.id) ? el.parentElement.id : 'none';
-                    let isFlipped = el.classList.contains('is-flipped');
-                    
-                    if (pId.includes('hand') || pId.includes('look') || el.dataset.isSecretDrag === 'true') {
-                        isFlipped = true;
-                    }
+            
+            // 🚨 絕對防護：只掃描「屬於自己的卡片」，杜絕幽靈卡與手牌消失 Bug
+            myCardsElements.forEach((el, index) => {
+                if (!el || !el.parentElement) return;
 
-                    let xVal = el.style.left;
-                    let yVal = el.style.top;
-                    let isGlobalDragging = (el.parentElement && el.parentElement.id === 'board-viewport');
-                    
-                    if (isGlobalDragging) {
-                        let vp = document.getElementById('board-viewport');
-                        xVal = (parseFloat(el.style.left) / vp.clientWidth).toString() + '_vp';
-                        yVal = (parseFloat(el.style.top) / vp.clientHeight).toString() + '_vp';
-                    }
-
-                    let tiltVal = el.style.getPropertyValue('--tilt') || '0deg';
-
-                    state.push({ 
-                        id: el.dataset.networkId, parent: pId, 
-                        x: xVal, y: yVal, zIndex: index, 
-                        isFlipped: isFlipped, isRest: el.classList.contains('rest'), inLife: el.classList.contains('in-life'),
-                        isDragging: isGlobalDragging,
-                        tilt: tiltVal 
-                    });
+                let pId = el.parentElement.id || 'none';
+                let isFlipped = el.classList.contains('is-flipped');
+                
+                if (pId.includes('hand') || pId.includes('look') || el.dataset.isSecretDrag === 'true') {
+                    isFlipped = true;
                 }
+
+                let xVal = el.style.left;
+                let yVal = el.style.top;
+                let isGlobalDragging = (pId === 'board-viewport');
+                
+                if (isGlobalDragging) {
+                    let vp = document.getElementById('board-viewport');
+                    xVal = (parseFloat(el.style.left) / vp.clientWidth).toString() + '_vp';
+                    yVal = (parseFloat(el.style.top) / vp.clientHeight).toString() + '_vp';
+                }
+
+                let tiltVal = el.style.getPropertyValue('--tilt') || '0deg';
+
+                state.push({ 
+                    id: el.dataset.networkId, parent: pId, 
+                    x: xVal, y: yVal, zIndex: index, 
+                    isFlipped: isFlipped, isRest: el.classList.contains('rest'), inLife: el.classList.contains('in-life'),
+                    isDragging: isGlobalDragging,
+                    tilt: tiltVal 
+                });
             });
 
             let activePhaseEl = document.querySelector('.phase-step.active');
@@ -848,6 +853,7 @@
                         el.style.top = d.y;
                         el.style.transform = '';
                         el.classList.remove('dragging');
+                        el.style.zIndex = ''; 
                     }
                     
                     if(d.isFlipped) el.classList.add('is-flipped'); else el.classList.remove('is-flipped');
@@ -887,7 +893,10 @@
         }
 
         function initMyBoard(deck, apDeck) {
+            // 🚨 徹底清除上一局的殘留卡片
+            myCardsElements.forEach(c => { if(c && c.parentNode) c.remove(); });
             myCardsElements = []; document.getElementById('my-deck-area').innerHTML = ''; 
+            
             deck.forEach((card, i) => {
                 let el = createCardDOM(card, `p_card_${i}`, true); myCardsElements.push(el); document.getElementById('my-deck-area').appendChild(el); el.style.left = '0px'; el.style.top = '0px';
             });
@@ -901,7 +910,10 @@
         }
 
         function initOpponentBoard(deck, apDeck) {
+            // 🚨 徹底清除上一局對手的殘留幽靈卡片
+            oppCardsElements.forEach(c => { if(c && c.parentNode) c.remove(); });
             oppCardsElements = []; document.getElementById('opp-deck-area').innerHTML = '';
+            
             deck.forEach((card, i) => { let el = createCardDOM(card, `p_card_${i}`, false); oppCardsElements.push(el); document.getElementById('opp-deck-area').appendChild(el); });
             let apSlots = document.querySelectorAll('#opp-ap-area .slot');
             apSlots.forEach((slot, i) => { slot.innerHTML = ''; let apData = apDeck[i] || apDeck[0]; let apEl = createCardDOM(apData, `p_ap_${i}`, false); apEl.classList.add('ap-card'); oppCardsElements.push(apEl); slot.appendChild(apEl); });
@@ -1229,6 +1241,7 @@
                     hoveredCard.classList.add('is-flipped');
                     hoveredCard.classList.remove('rest', 'in-life');
                     hoveredCard.style.position = 'absolute';
+                    hoveredCard.style.setProperty('--tilt', '0deg');
                     recalcStacking(dest);
                     updateSlotCounts();
                     broadcastMyState();
