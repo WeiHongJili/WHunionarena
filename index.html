@@ -146,6 +146,7 @@
         .phase-step:hover { background: #34495e; color: white;}
         .phase-step.active { background: #f39c12; color: #000; box-shadow: 0 0 12px #f39c12; border-color: #f1c40f;}
 
+        /* 🍃 移除永久傾斜，還原原本的拖曳微傾與落地回彈效果 */
         .card { 
             width: var(--card-w); height: var(--card-h); border-radius: 6px; box-shadow: 0 4px 8px rgba(0,0,0,0.8); 
             cursor: grab; transition: transform 0.2s ease-out, margin 0.2s ease-out; position: absolute; touch-action: none; 
@@ -164,27 +165,28 @@
         .card-front, .card-back { position: absolute; width: 100%; height: 100%; backface-visibility: hidden; border-radius: 6px; overflow: hidden; background-color: transparent; }
         .card-front img { width: 100%; height: 100%; object-fit: cover; pointer-events: none; }
         
-        /* 🌟 CSS 神級裁切術：放大高度到 115% 並且靠上對齊，直接把底部的多餘文字擠出去隱藏！ */
+        /* 🌟 CSS 神級裁切術：放大高度到 115% 並且靠上對齊 */
         .card-back { 
             transform: rotateY(180deg); 
             background-color: #111;
             background-image: url('https://www.unionarena-tcg.com/tc/images/rules/region-card/img_card_na.png');
-            background-size: 100% 115%; /* 放大高度 */
+            background-size: 100% 115%; 
             background-repeat: no-repeat;
-            background-position: top center; /* 讓頂部貼齊，底部超出邊界被切掉 */
+            background-position: top center; 
             border: 1px solid rgba(255,255,255,0.1); 
             box-sizing: border-box; 
         }
         .ap-card .card-back { 
             background-image: url('https://www.unionarena-tcg.com/tc/images/rules/region-card/img_apcard_jp.png');
-            background-size: 100% 115%; /* 放大高度 */
-            background-position: top center; /* 讓頂部貼齊，底部超出邊界被切掉 */
+            background-size: 100% 115%; 
+            background-position: top center; 
             border: 1px solid rgba(243, 156, 18, 0.5); 
         }
         
         #opp-hand-area .card-inner, #opp-look-area .card-inner { transform: rotateY(180deg) !important; }
 
-        .card.dragging { --scale: 1.15; --rot: 5deg; z-index: 999999 !important; transition: none; box-shadow: -20px 40px 50px rgba(0,0,0,0.6); }
+        /* 🍃 當卡片被拿起來時，給予 5 度的傾斜。放開時會平滑過渡回 0 度，產生果凍感 */
+        .card.dragging { --scale: 1.15; --rot: 15deg; z-index: 999999 !important; transition: none; box-shadow: -20px 40px 50px rgba(0,0,0,0.6); }
         .card.stack-glowing { box-shadow: 0 0 15px 5px #f1c40f !important; }
         
         .card.rest { --rot: 90deg !important; }
@@ -211,9 +213,11 @@
         #card-magnifier img { width: 100%; height: 100%; object-fit: cover; }
 
         #portrait-warning { display: none; }
+        /* 📱 手機版專屬：進入遊戲後的強制橫置提示 */
         @media screen and (orientation: portrait) and (max-width: 850px) {
-            #portrait-warning { display: flex; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.98); z-index: 999999; color: #f1c40f; font-size: 24px; font-weight: bold; justify-content: center; align-items: center; text-align: center; flex-direction: column; padding: 20px; box-sizing: border-box; }
-            body { overflow: hidden; }
+            body.in-game #portrait-warning { display: flex; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.98); z-index: 999999; color: #f1c40f; font-size: 24px; font-weight: bold; justify-content: center; align-items: center; text-align: center; flex-direction: column; padding: 20px; box-sizing: border-box; }
+            body.in-game { overflow: hidden; }
+            body.in-game #game-scene { display: none !important; }
         }
 
         #center-overlay { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(20,20,20,0.95); padding: 30px 50px; border-radius: 20px; border: 4px solid #9b59b6; z-index: 100500; text-align: center; box-shadow: 0 0 50px rgba(155, 89, 182, 0.8); backdrop-filter: blur(5px); }
@@ -713,6 +717,13 @@
                 btn.onclick = () => {
                     if(myDeckData.length === 0) { alert("請先建立主牌組！"); return; }
                     if(myApData.length !== 3) { alert("請挑選剛好 3 張 AP 卡！"); return; }
+                    
+                    // 📱 進入遊戲場景時才加上標籤，觸發橫向鎖定判斷
+                    document.body.classList.add('in-game');
+                    if (screen.orientation && screen.orientation.lock) {
+                        screen.orientation.lock('landscape').catch(err => console.log('螢幕旋轉被拒絕，已降級為視覺提示'));
+                    }
+
                     document.getElementById('builder-scene').style.display = 'none'; 
                     document.getElementById('game-scene').style.display = 'flex';
                     setTimeout(resetCam, 100); 
@@ -751,6 +762,12 @@
         });
 
         function resetBoard() {
+            // 📱 離開對戰時解除橫向鎖定
+            document.body.classList.remove('in-game');
+            if (screen.orientation && screen.orientation.unlock) {
+                screen.orientation.unlock();
+            }
+
             document.querySelectorAll('.card').forEach(c => c.remove());
             document.querySelectorAll('.slot.marked').forEach(s => s.classList.remove('marked'));
             document.querySelectorAll('.phase-step').forEach(btn => btn.classList.remove('active'));
@@ -899,6 +916,7 @@
             apSlots.forEach((slot, i) => {
                 slot.innerHTML = ''; let apData = apDeck[i] || apDeck[0] || {imageUrl: "https://rugiacreation.com/ua/cardlist/small/UA44BT_EVA-1-AP03.jpg"};
                 let apEl = createCardDOM(apData, `p_ap_${i}`, true); apEl.classList.add('ap-card');
+
                 myCardsElements.push(apEl); slot.appendChild(apEl); apEl.style.left = '0px'; apEl.style.top = '0px';
             });
             updateSlotCounts(); broadcastMyState(); showSysMsg("發放起手牌..."); setTimeout(drawInitialHand, 800);
@@ -1041,7 +1059,6 @@
                     if (isTouch && event.cancelable) event.preventDefault();
 
                     if (!isDragging) {
-                        // 🌟 解除隱私標記
                         delete cardElement.dataset.isSecretDrag;
                         
                         if(originalParent) originalParent.querySelectorAll('.card').forEach(c => c.classList.remove('stack-glowing'));
@@ -1107,6 +1124,7 @@
 
         function finalizeDrop(cards, dropZone, action, originalParent, endX) {
             let processCards = (action.startsWith('bottom')) ? [...cards].reverse() : cards;
+
             processCards.forEach(c => {
                 c.classList.remove('dragging', 'stack-glowing');
                 // 🌟 卡片落地瞬間，徹底解除秘密狀態
