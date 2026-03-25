@@ -75,7 +75,6 @@
         .hud-bottom { position: absolute; bottom: 10px; left: 50%; transform: translateX(-50%) scale(0.85); transform-origin: bottom center; width: 90%; max-width: 900px; display: flex; gap: 15px; z-index: 10010; pointer-events: none; align-items: flex-end; justify-content: center; }
         .hand-zone, .look-zone { pointer-events: auto; }
 
-        /* 🌟 修復 3：控制列移至右上角 */
         .hud-sidebar { position: absolute; right: 20px; top: 20px; display: flex; flex-direction: column; gap: 15px; background: rgba(0,0,0,0.4); padding: 15px; border-radius: 12px; border: 2px solid rgba(243, 156, 18, 0.5); width: 130px; box-sizing: border-box; box-shadow: 0 0 30px rgba(0,0,0,0.5); z-index: 10010; pointer-events: auto; backdrop-filter: blur(3px); }
         
         .hand-zone { flex: 8; background-color: rgba(0,0,0,0.25); border: 2px dashed rgba(127,140,141,0.4); border-radius: 10px; padding: 15px; display: flex; flex-direction: column; backdrop-filter: blur(2px);}
@@ -165,7 +164,7 @@
         }
 
         @media (max-height: 600px) {
-            .hud-sidebar { right: 5px; top: 5px; transform: scale(0.65); transform-origin: top right; } /* 🌟 手機版也維持在右上角 */
+            .hud-sidebar { right: 5px; top: 5px; transform: scale(0.65); transform-origin: top right; } 
             .hud-top { transform: translateX(-50%) scale(0.5); top: 2px; } 
             .hud-bottom { transform: translateX(-50%) scale(0.6); bottom: 2px; } 
             .cam-ctrl-box { bottom: 5px; right: 5px; transform: scale(0.7); transform-origin: bottom right; }
@@ -277,6 +276,18 @@
             
         <div class="board-wrapper" id="board-viewport">
             
+            <div id="chat-wrapper" style="position: absolute; top: 20px; left: 20px; z-index: 10010; pointer-events: none; display: flex; flex-direction: column; gap: 10px;">
+                <button id="btn-chat-toggle" class="cam-btn" style="pointer-events: auto; width: 45px; height: 45px; font-size: 18px; border-color: #9b59b6;">💬</button>
+                <div id="chat-panel" style="display: none; width: 280px; height: 220px; background: rgba(0,0,0,0.65); border: 2px solid #9b59b6; border-radius: 12px; pointer-events: auto; flex-direction: column; backdrop-filter: blur(5px); box-shadow: 0 10px 30px rgba(0,0,0,0.8);">
+                    <div style="background: rgba(155, 89, 182, 0.4); padding: 5px 10px; font-size: 12px; font-weight: bold; border-radius: 10px 10px 0 0; text-align: center;">對戰聊天室</div>
+                    <div id="chat-messages" style="flex: 1; overflow-y: auto; padding: 10px; font-size: 13px; display: flex; flex-direction: column; gap: 6px;"></div>
+                    <div style="display: flex; border-top: 2px solid rgba(155, 89, 182, 0.5);">
+                        <input type="text" id="chat-input" placeholder="輸入對話..." style="flex: 1; background: transparent; border: none; color: white; padding: 8px 10px; outline: none; font-size: 14px;">
+                        <button id="btn-chat-send" style="background: #9b59b6; border: none; color: white; cursor: pointer; padding: 0 15px; font-weight: bold; border-radius: 0 0 10px 0; transition: 0.2s;">送出</button>
+                    </div>
+                </div>
+            </div>
+
             <div class="cam-ctrl-box">
                 <button class="cam-btn" onclick="toggle3D()" id="btn-3d" style="font-size: 14px;">3D</button>
                 <button class="cam-btn" onclick="zoomCam(0.15)">➕</button>
@@ -552,6 +563,61 @@
             setTimeout(() => { overlay.style.display = 'none'; }, 2500);
         }
 
+        document.getElementById('btn-chat-toggle').addEventListener('click', function() {
+            let panel = document.getElementById('chat-panel');
+            if(panel.style.display === 'none') {
+                panel.style.display = 'flex';
+                this.innerText = '💬'; 
+            } else {
+                panel.style.display = 'none';
+            }
+        });
+
+        function sendChatMsg() {
+            let input = document.getElementById('chat-input');
+            let text = input.value.trim();
+            if(text && isConnected && conn) {
+                conn.send({ type: 'CHAT_MSG', text: text });
+                appendChatMsg('me', text);
+                input.value = '';
+            }
+        }
+
+        document.getElementById('btn-chat-send').addEventListener('click', sendChatMsg);
+        document.getElementById('chat-input').addEventListener('keydown', e => {
+            if(e.key === 'Enter') sendChatMsg();
+        });
+
+        function appendChatMsg(sender, text) {
+            let msgDiv = document.createElement('div');
+            msgDiv.style.padding = '6px 10px';
+            msgDiv.style.borderRadius = '8px';
+            msgDiv.style.maxWidth = '85%';
+            msgDiv.style.wordBreak = 'break-word';
+            msgDiv.style.lineHeight = '1.3';
+            if (sender === 'me') {
+                msgDiv.style.alignSelf = 'flex-end';
+                msgDiv.style.background = 'rgba(46, 204, 113, 0.25)';
+                msgDiv.style.border = '1px solid rgba(46, 204, 113, 0.5)';
+                msgDiv.style.color = '#2ecc71';
+                msgDiv.innerText = text;
+            } else {
+                msgDiv.style.alignSelf = 'flex-start';
+                msgDiv.style.background = 'rgba(241, 196, 15, 0.25)';
+                msgDiv.style.border = '1px solid rgba(241, 196, 15, 0.5)';
+                msgDiv.style.color = '#f1c40f';
+                msgDiv.innerText = text;
+                
+                let panel = document.getElementById('chat-panel');
+                if(panel.style.display === 'none') {
+                    document.getElementById('btn-chat-toggle').innerText = '💬 🔴';
+                }
+            }
+            let container = document.getElementById('chat-messages');
+            container.appendChild(msgDiv);
+            container.scrollTop = container.scrollHeight;
+        }
+
         window.camScale = 1;
         window.camX = 0; window.camY = 0;
         let isCamDragging = false;
@@ -595,7 +661,7 @@
 
         function startPan(e) {
             if(e.target.closest('.card') || e.target.closest('.slot') || e.target.closest('.cam-btn') || 
-               e.target.closest('.hud-sidebar') || e.target.closest('.hud-top') || e.target.closest('.hud-bottom')) return; 
+               e.target.closest('.hud-sidebar') || e.target.closest('.hud-top') || e.target.closest('.hud-bottom') || e.target.closest('#chat-wrapper')) return; 
                
             isCamDragging = true;
             let clientX = e.type.includes('touch') ? e.touches[0].clientX : e.clientX;
@@ -622,7 +688,7 @@
             updateDeckSelector(); initSeriesFilter(); renderBuilder(); renderDeck(); 
 
             document.addEventListener('pointerdown', e => {
-                if (e.target.closest('.cam-btn') || e.target.closest('.modal-content') || e.target.closest('.hud-sidebar') || e.target.closest('.hud-top') || e.target.closest('.hud-bottom')) return;
+                if (e.target.closest('.cam-btn') || e.target.closest('.modal-content') || e.target.closest('.hud-sidebar') || e.target.closest('.hud-top') || e.target.closest('.hud-bottom') || e.target.closest('#chat-wrapper')) return;
 
                 let slot = e.target.closest('.slot');
                 if (slot && slot.id.includes('opp-') && !slot.id.includes('hand') && !slot.id.includes('look')) {
@@ -640,7 +706,7 @@
             window.addEventListener('touchend', endPan);
 
             wrapper.addEventListener('wheel', e => {
-                if (e.target.closest('.modal-content') || e.target.closest('.hud-sidebar') || e.target.closest('.hud-top') || e.target.closest('.hud-bottom')) return;
+                if (e.target.closest('.modal-content') || e.target.closest('.hud-sidebar') || e.target.closest('.hud-top') || e.target.closest('.hud-bottom') || e.target.closest('#chat-wrapper')) return;
                 e.preventDefault();
                 zoomCam(e.deltaY < 0 ? 0.08 : -0.08);
             }, {passive: false});
@@ -648,13 +714,11 @@
             window.addEventListener('resize', resetCam);
         };
 
-// ================= 🚨 6位數配對 & 究極連線防護引擎 =================
         let myRoomId = Math.floor(100000 + Math.random() * 900000).toString();
         
         let peer = new Peer(myRoomId, { 
             secure: true,
             pingInterval: 5000, 
-            debug: 2, // 開啟除錯模式，方便查看連線狀態
             config: { 
                 'iceServers': [ 
                     { urls: 'stun:stun.l.google.com:19302' }, 
@@ -668,41 +732,12 @@
         
         let conn = null; let isConnected = false;
 
-        // 🌟 魔法邀請連結生成
-        peer.on('open', id => { 
-            document.getElementById('my-peer-id').innerText = id; 
-            document.getElementById('my-peer-id').onclick = () => { 
-                // 產生專屬邀請網址
-                let inviteUrl = window.location.origin + window.location.pathname + '?join=' + id;
-                navigator.clipboard.writeText(inviteUrl); 
-                showSysMsg("🔗 邀請連結已複製！傳給對手即可一鍵加入！"); 
-            }; 
-            
-            // 🌟 檢查是否是點擊邀請連結進來的
-            const urlParams = new URLSearchParams(window.location.search);
-            const joinId = urlParams.get('join');
-            if(joinId && joinId !== id) {
-                document.getElementById('target-id').value = joinId;
-                showSysMsg("偵測到邀請碼，3秒後自動嘗試連線...");
-                setTimeout(() => document.getElementById('btn-connect').click(), 3000);
-            }
-        });
+        peer.on('open', id => { document.getElementById('my-peer-id').innerText = id; document.getElementById('my-peer-id').onclick = () => { navigator.clipboard.writeText(id); showSysMsg("🔗 你的 6 位數 ID 已複製！"); }; });
         
-        // 🌟 究極防護：死纏爛打重連機制
-        peer.on('disconnected', () => {
-            console.warn("⚠️ 與配對伺服器失去聯繫，正在背景自動重連...");
-            if (!peer.destroyed) {
-                peer.reconnect(); // 官方伺服器踢掉我們時，強制擠回去
-            }
-        });
-
         peer.on('error', err => {
             console.error(err);
-            if (err.type === 'peer-unavailable') { 
-                alert("❌ 找不到這個對手！請確認對手網頁沒有關閉，或請對方重新整理給新代碼。"); 
-            } else if (err.type === 'network' || err.type === 'server-error') { 
-                showSysMsg("⚠️ 官方配對伺服器塞車中，系統自動重試...");
-            }
+            if (err.type === 'peer-unavailable') { alert("❌ 找不到這個 6 位數 ID！對手可能已經斷線。"); } 
+            else if (err.type === 'network' || err.type === 'server-error') { alert("⚠️ 官方配對伺服器目前不穩定或塞車中。請雙方 [重整網頁] 再試一次！"); }
         });
 
         peer.on('connection', connection => { conn = connection; setupConnection(); });
@@ -710,27 +745,23 @@
         document.getElementById('btn-connect').addEventListener('click', () => { 
             let targetId = document.getElementById('target-id').value.trim(); 
             if(targetId) { 
-                showSysMsg("🚀 正在發送配對請求..."); 
-                conn = peer.connect(targetId, { reliable: true }); // 強制使用可靠傳輸
+                showSysMsg("正在配對..."); 
+                conn = peer.connect(targetId); 
                 setupConnection(); 
             } 
         });
 
         function setupConnection() {
             conn.on('open', () => {
-                isConnected = true; showSysMsg("✅ 連線成功！盤面已同步！");
-                // 移除網址上的邀請碼，保持網址乾淨
-                window.history.replaceState({}, document.title, window.location.pathname);
-                
+                isConnected = true; showSysMsg("✅ 連線成功！");
                 let btn = document.getElementById('start-game-btn'); btn.disabled = false; btn.innerText = "雙方就緒，進入對戰 ➔";
-                btn.style.background = "#e74c3c"; // 變色提醒
                 btn.onclick = () => {
                     if(myDeckData.length === 0) { alert("請先建立主牌組！"); return; }
                     if(myApData.length !== 3) { alert("請挑選剛好 3 張 AP 卡！"); return; }
                     
                     document.body.classList.add('in-game');
                     if (screen.orientation && screen.orientation.lock) {
-                        screen.orientation.lock('landscape').catch(err => console.log('視覺提示已啟動'));
+                        screen.orientation.lock('landscape').catch(err => console.log('螢幕旋轉被拒絕，已降級為視覺提示'));
                     }
 
                     document.getElementById('builder-scene').style.display = 'none'; 
@@ -745,6 +776,7 @@
                 if(data.type === 'START_GAME') { showSysMsg("對手已進入盤面！"); initOpponentBoard(data.deck, data.ap); }
                 else if(data.type === 'SYNC_BOARD') applyOpponentSync(data);
                 else if(data.type === 'FLIP_CARD') applyOpponentFlip(data.id);
+                else if(data.type === 'CHAT_MSG') appendChatMsg('opp', data.text);
                 else if(data.type === 'DICE_ROLL') showCenterAlert('🎲', '對手擲出了：', data.value, '#e74c3c');
                 else if(data.type === 'SHUFFLE_DECK') showCenterAlert('🔀', '對手洗牌中', 'Shuffling...', '#9b59b6');
                 else if(data.type === 'PHASE_BROADCAST') { 
@@ -758,7 +790,7 @@
             });
             conn.on('close', () => {
                 isConnected = false;
-                alert("⚠️ 與對手連線已中斷。對手可能關閉了網頁或網路不穩。");
+                alert("⚠️ 與對手連線已中斷。");
                 resetBoard();
             });
         }
@@ -834,7 +866,6 @@
                 let yVal = el.style.top;
                 let isGlobalDragging = (pId === 'board-viewport');
                 
-                // 🌟 修復 2：虛擬桌面座標系轉換 (保證 3D 模式下的拖曳完美同步)
                 if (isGlobalDragging) {
                     let px = parseFloat(el.style.left);
                     let py = parseFloat(el.style.top);
@@ -854,10 +885,13 @@
 
                 let tiltVal = el.style.getPropertyValue('--tilt') || '0deg';
 
+                let absoluteZIndex = el.style.zIndex !== '' ? parseInt(el.style.zIndex) : index;
+                if (pId.includes('hand') || pId.includes('look')) absoluteZIndex = index;
+
                 state.push({ 
                     id: el.dataset.networkId, parent: pId, 
                     x: xVal, y: yVal, 
-                    zIndex: el.style.zIndex || index, // 🌟 修復 1：強制發送準確的圖層高度，解決 A 放 B 上順序錯亂
+                    zIndex: absoluteZIndex,
                     isFlipped: isFlipped, isRest: el.classList.contains('rest'), inLife: el.classList.contains('in-life'),
                     isDragging: isGlobalDragging,
                     tilt: tiltVal 
@@ -889,7 +923,6 @@
                         
                         el.style.position = (targetParentId.includes('hand') || targetParentId.includes('look')) && !d.isDragging ? 'relative' : 'absolute';
                         
-                        // 🌟 修復 2：精準接收並鏡像轉換虛擬桌面座標
                         if (d.isDragging && typeof d.x === 'string' && d.x.endsWith('_board')) {
                             let nx = parseFloat(d.x);
                             let ny = parseFloat(d.y);
@@ -930,7 +963,12 @@
                             el.style.top = d.y;
                             el.style.transform = '';
                             el.classList.remove('dragging');
-                            el.style.zIndex = d.zIndex || ''; // 🌟 修復 1：套用對手的精準 Z-Index，解決堆疊顯示錯亂
+                            
+                            if (targetParentId.includes('hand') || targetParentId.includes('look')) {
+                                el.style.zIndex = '';
+                            } else {
+                                el.style.zIndex = (d.zIndex !== undefined && d.zIndex !== null) ? d.zIndex : ''; 
+                            }
                         }
                     }
                     
@@ -1001,7 +1039,7 @@
 
         function drawInitialHand() {
             let deckArea = document.getElementById('my-deck-area'), handArea = document.getElementById('my-hand-area'); let cards = Array.from(deckArea.querySelectorAll('.card'));
-            for(let i=0; i<7; i++) { if(cards.length > 0) { let c = cards.pop(); handArea.appendChild(c); c.style.position = 'relative'; c.style.left = '0'; c.style.top = '0'; c.classList.remove('is-flipped', 'rest'); } }
+            for(let i=0; i<7; i++) { if(cards.length > 0) { let c = cards.pop(); handArea.appendChild(c); c.style.position = 'relative'; c.style.left = '0'; c.style.top = '0'; c.style.zIndex = ''; c.classList.remove('is-flipped', 'rest'); } }
             recalcStacking(deckArea); updateSlotCounts(); broadcastMyState(); document.getElementById('mulligan-modal').style.display = 'block';
         }
 
@@ -1012,7 +1050,7 @@
             shuffleDOMDeck(deckArea); updateSlotCounts(); broadcastMyState(); showSysMsg("重新洗牌中...");
             setTimeout(() => {
                 let cards = Array.from(deckArea.querySelectorAll('.card'));
-                for(let i=0; i<7; i++) { if(cards.length > 0) { let c = cards.pop(); handArea.appendChild(c); c.style.position = 'relative'; c.style.left = '0'; c.style.top = '0'; c.classList.remove('is-flipped', 'rest'); } }
+                for(let i=0; i<7; i++) { if(cards.length > 0) { let c = cards.pop(); handArea.appendChild(c); c.style.position = 'relative'; c.style.left = '0'; c.style.top = '0'; c.style.zIndex = ''; c.classList.remove('is-flipped', 'rest'); } }
                 recalcStacking(deckArea); updateSlotCounts(); broadcastMyState(); setTimeout(setupLifeArea, 800);
             }, 600);
         };
@@ -1232,8 +1270,8 @@
                     }
                     if(dropZone.id.includes('hand') || dropZone.id.includes('look') || dropZone.id.includes('modal-')) { 
                         c.style.position = 'relative'; c.style.left = '0'; c.style.top = '0'; 
-                        if(!dropZone.id.includes('look')) c.classList.remove('is-flipped'); 
-                        c.classList.remove('rest'); 
+                        c.style.zIndex = ''; 
+                        c.classList.remove('is-flipped', 'rest'); 
                     } 
                     else c.style.position = 'absolute'; 
                 } else if (originalParent) {
@@ -1326,12 +1364,13 @@
                     broadcastMyState();
                 }
 
-                if(key === 'c' || key === 'v' || key === 'g') {
+                if(key === 'c' || key === 'v' || key === 'g' || key === 'n') {
                     let targetCard = hoveredCard || (hoveredSlot ? hoveredSlot.querySelectorAll('.card')[hoveredSlot.querySelectorAll('.card').length-1] : null);
                     if(targetCard) {
                         let destId = 'my-outside-area';
                         if (key === 'c') destId = 'my-hand-area';
                         else if (key === 'g') destId = 'my-look-area';
+                        else if (key === 'n') destId = 'my-remove-area'; 
 
                         let dest = document.getElementById(destId);
                         dest.appendChild(targetCard); 
@@ -1340,6 +1379,7 @@
 
                         if(dest.id.includes('hand') || dest.id.includes('look')) {
                             targetCard.style.position = 'relative';
+                            targetCard.style.zIndex = ''; 
                         } else { 
                             targetCard.style.position = 'absolute'; 
                             applyStackingStyle(targetCard, dest, Array.from(dest.querySelectorAll('.card')).indexOf(targetCard)); 
@@ -1366,7 +1406,7 @@
         const modal = document.getElementById('search-modal'), modalContainer = document.getElementById('modal-cards-container'), modalTitle = document.getElementById('modal-title');
         let currentModalSourceSlot = null;
         
-        document.querySelectorAll('#my-deck-area, #my-outside-area, #my-remove-area, #my-life-area, #my-public-area, #opp-deck-area, #opp-outside-area, #opp-remove-area, #opp-life-area, #opp-public-area').forEach(zone => {
+        document.querySelectorAll('#my-deck-area, #my-outside-area, #my-remove-area, #my-life-area, #my-public-area, #opp-deck-area, #opp-outside-area, #opp-remove-area, #opp-life-area, #opp-public-area, #my-front-line .slot, #my-energy-line .slot, #opp-front-line .slot, #opp-energy-line .slot').forEach(zone => {
             zone.addEventListener('contextmenu', e => {
                 e.preventDefault(); 
                 let cards = Array.from(zone.querySelectorAll('.card')); 
@@ -1378,21 +1418,27 @@
                 else if(zone.id.includes('remove')) modalTitle.innerText = `檢索中：移除區 (${cards.length}張)`;
                 else if(zone.id.includes('public')) modalTitle.innerText = `檢索中：公開區 (${cards.length}張)`;
                 else if(zone.id.includes('life')) modalTitle.innerText = `檢索中：生命區 (${cards.length}張) (點擊可翻開)`;
+                else if(zone.id.includes('fl-') || zone.id.includes('en-')) modalTitle.innerText = `檢索中：場上疊牌 (${cards.length}張)`;
                 
-                if(zone.id === 'my-outside-area' || zone.id === 'my-life-area') {
+                // 🌟 現在場上的格子也擁有雙層檢索框的待遇了！
+                let isDualPane = zone.id === 'my-outside-area' || zone.id === 'my-life-area' || (zone.classList.contains('slot') && (zone.id.includes('my-fl-') || zone.id.includes('my-en-')));
+                
+                if(isDualPane) {
                     document.getElementById('secondary-modal-header').style.display = 'flex';
                     document.getElementById('modal-public-container').style.display = 'flex';
                     Array.from(document.getElementById('my-public-area').querySelectorAll('.card')).forEach(c => {
                         document.getElementById('modal-public-container').appendChild(c);
                         c.classList.remove('in-life', 'rest', 'is-flipped'); c.style.position = 'relative'; c.style.left = '0'; c.style.top = '0'; c.style.transform = 'none';
+                        c.style.zIndex = '';
                     });
                 }
                 
                 cards.forEach(card => { 
                     modalContainer.appendChild(card); 
-                    if(!zone.id.includes('life')) card.classList.remove('is-flipped'); else card.classList.add('is-flipped'); 
+                    if(!zone.id.includes('life') && !zone.id.includes('opp-')) card.classList.remove('is-flipped'); else if (zone.id.includes('life')) card.classList.add('is-flipped'); 
                     card.classList.remove('rest', 'in-life'); 
                     card.style.position = 'relative'; card.style.left = '0px'; card.style.top = '0px'; card.style.transform = 'none';
+                    card.style.zIndex = '';
                 });
                 modal.style.display = 'flex';
             });
@@ -1414,7 +1460,10 @@
             Array.from(modalContainer.querySelectorAll('.card')).forEach((card, index) => { 
                 currentModalSourceSlot.appendChild(card); card.style.position = 'absolute'; applyStackingStyle(card, currentModalSourceSlot, index); 
             });
-            if (currentModalSourceSlot && (currentModalSourceSlot.id === 'my-outside-area' || currentModalSourceSlot.id === 'my-life-area')) {
+            
+            let isDualPane = currentModalSourceSlot && (currentModalSourceSlot.id === 'my-outside-area' || currentModalSourceSlot.id === 'my-life-area' || (currentModalSourceSlot.classList.contains('slot') && (currentModalSourceSlot.id.includes('my-fl-') || currentModalSourceSlot.id.includes('my-en-'))));
+            
+            if (isDualPane) {
                 Array.from(document.getElementById('modal-public-container').querySelectorAll('.card')).forEach((card, index) => { 
                     document.getElementById('my-public-area').appendChild(card); card.style.position = 'absolute'; applyStackingStyle(card, document.getElementById('my-public-area'), index); 
                 });
