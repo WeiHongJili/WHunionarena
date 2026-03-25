@@ -2,7 +2,11 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#000000">
     <title>我的 UA 遠端對戰平台</title>
     <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
     <style>
@@ -13,15 +17,27 @@
             --font-size-base: 14px;
         }
 
-        body { background-color: #0a0a0a; margin: 0; min-height: 100vh; overflow-x: hidden; overflow-y: auto; font-family: '微軟正黑體', sans-serif; display: flex; flex-direction: column; align-items: center; padding: 1.5vh 2vw; box-sizing: border-box; color: white; touch-action: auto; -webkit-user-select: none; user-select: none; }
+        /* 🌟 鎖死真實高度，徹底封殺瀏覽器亂跳 */
+        body { 
+            background-color: #0a0a0a; margin: 0; 
+            height: 100vh; height: var(--app-height, 100vh);
+            overflow: hidden; overscroll-behavior: none; 
+            font-family: '微軟正黑體', sans-serif; 
+            display: flex; flex-direction: column; align-items: center; 
+            padding: 1.5vh 2vw; box-sizing: border-box; color: white; 
+            touch-action: none; -webkit-user-select: none; user-select: none; 
+        }
         input, textarea, select { -webkit-user-select: auto; user-select: auto; }
 
         select option { background: #2c3e50; color: white; }
 
         #sys-msg { position: fixed; top: 10px; left: 50%; transform: translateX(-50%); background: #e67e22; padding: 10px 20px; border-radius: 5px; font-weight: bold; display: none; z-index: 100000; box-shadow: 0 4px 10px rgba(0,0,0,0.5); }
         
-        /* 電腦版：加寬至 1600px 讓畫面更舒展 */
-        #builder-scene { width: 98%; max-width: 1600px; display: flex; flex-direction: column; gap: 10px; margin-bottom: 30px; }
+        /* 🌟 讓構築區自己負責滾動 */
+        #builder-scene { 
+            width: 98%; max-width: 1600px; display: flex; flex-direction: column; gap: 10px; margin-bottom: 30px;
+            height: 100%; overflow-y: auto; -webkit-overflow-scrolling: touch;
+        }
         #game-scene { display: none; width: 100%; flex-direction: column; align-items: center; gap: 10px; margin-bottom: 10px; }
 
         .network-panel { background: rgba(41, 128, 185, 0.2); border: 2px solid #3498db; border-radius: 8px; padding: 8px 12px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; }
@@ -31,7 +47,6 @@
 
         .builder-container { display: flex; gap: 15px; flex: 1; min-height: 60vh; flex-wrap: wrap; align-items: stretch; }
         
-        /* 目錄與牌組 1:1 平分寬度 */
         .catalog-panel, .deck-panel { 
             flex: 1; min-width: 320px; 
             background: rgba(0,0,0,0.5); border-radius: 10px; padding: 15px; 
@@ -40,7 +55,6 @@
         }
         .deck-panel { background: rgba(139, 21, 21, 0.5); border: 2px dashed #d32f2f; }
         
-        /* 控制列與標題防護盾 */
         .deck-controls { position: relative; z-index: 99999; display: flex; gap: 8px; margin-bottom: 8px; align-items: center; background: rgba(0,0,0,0.3); padding: 8px; border-radius: 8px; flex-wrap: wrap; transform: translateZ(1px); }
         .deck-selector { flex: 1; padding: 6px; font-size: 14px; border-radius: 5px; background: #2c3e50; color: white; border: 1px solid #34495e; min-width: 120px; }
         
@@ -56,7 +70,6 @@
         .preview-card:hover { transform: scale(1.05); z-index: 10; }
         .preview-card img { width: 100%; height: 100%; object-fit: cover; border-radius: 5px; pointer-events: none; }
 
-        /* 卡片計數器徽章 */
         .card-badge { position: absolute; top: -6px; right: -6px; background: #e74c3c; color: white; border-radius: 50%; width: 22px; height: 22px; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: bold; box-shadow: 0 2px 4px rgba(0,0,0,0.8); pointer-events: none; z-index: 10; border: 2px solid #fff; }
         .in-deck-badge { background: #3498db; border-color: #2980b9; }
 
@@ -65,23 +78,25 @@
         .ctrl-btn { background: #3498db; color: white; border: none; padding: 6px 12px; border-radius: 5px; cursor: pointer; font-weight: bold; font-size: 13px;}
         .ctrl-btn.danger { background: #e74c3c; }
 
-        /* 魔法匯入摺疊區 */
         .import-details { background: rgba(155, 89, 182, 0.15); border: 2px dashed #9b59b6; border-radius: 8px; margin-bottom: 10px; transition: 0.3s;}
         .import-summary { padding: 10px; font-weight: bold; color: #d2b4de; cursor: pointer; outline: none; list-style: none; font-size: 14px; }
         .import-summary::-webkit-details-marker { display: none; }
         .import-content { padding: 10px; border-top: 1px dashed #9b59b6; display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
         .import-textarea { flex: 1 1 120px; height: 32px; background: #2c3e50; color: white; border: 1px solid #34495e; border-radius: 4px; padding: 6px; font-family: monospace; resize: none; outline: none; }
 
-        /* 觀景窗與遊戲桌面 */
         .board-wrapper { width: 100%; height: 92vh; overflow: hidden; position: relative; background: #111; border: 3px solid #333; border-radius: 10px; box-shadow: inset 0 0 50px black; cursor: grab; touch-action: none; }
         .board-wrapper:active { cursor: grabbing; }
+
+        #hotkey-guide { position: absolute; left: 20px; top: 50%; transform: translateY(-50%); background: rgba(0,0,0,0.65); padding: 15px; border-radius: 12px; border: 1px solid rgba(243, 156, 18, 0.5); z-index: 10005; pointer-events: none; display: flex; flex-direction: column; gap: 8px; backdrop-filter: blur(3px); box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+        .hk-title { color: #f39c12; font-weight: bold; margin-bottom: 5px; text-align: center; border-bottom: 1px solid rgba(255,255,255,0.2); padding-bottom: 5px; font-size: 14px;}
+        .hk-item { display: flex; align-items: center; gap: 10px; color: #ddd; font-size: 13px;}
+        .hk-item span { background: #34495e; color: white; padding: 2px 6px; border-radius: 4px; font-weight: bold; min-width: 15px; text-align: center; font-family: monospace; border: 1px solid #7f8c8d;}
 
         .cam-ctrl-box { position: absolute; right: 20px; bottom: 20px; display: flex; flex-direction: column; gap: 12px; z-index: 10005; }
         .cam-btn { width: 45px; height: 45px; border-radius: 50%; background: rgba(0,0,0,0.8); border: 2px solid #f39c12; color: white; font-size: 20px; font-weight: bold; cursor: pointer; display: flex; justify-content: center; align-items: center; box-shadow: 0 4px 10px rgba(0,0,0,0.5); transition: 0.2s; }
         .cam-btn:hover { background: #f39c12; color: black; }
         #btn-3d { background: rgba(0,0,0,0.8); border-color: #3498db; }
 
-        /* HUD 控制區 */
         .hud-top { position: absolute; top: 10px; left: 50%; transform: translateX(-50%) scale(0.65); transform-origin: top center; width: 95%; max-width: 1400px; display: flex; gap: 15px; z-index: 10010; pointer-events: none; }
         .hud-bottom { position: absolute; bottom: 10px; left: 50%; transform: translateX(-50%) scale(0.85); transform-origin: bottom center; width: 90%; max-width: 900px; display: flex; gap: 15px; z-index: 10010; pointer-events: none; align-items: flex-end; justify-content: center; }
         .hand-zone, .look-zone { pointer-events: auto; }
@@ -92,14 +107,8 @@
         .look-zone { flex: 2; background-color: rgba(0,50,100,0.25); border: 2px dashed rgba(52,152,219,0.4); border-radius: 10px; padding: 15px; display: flex; flex-direction: column; backdrop-filter: blur(2px);}
         .hand-area, .look-area { display: flex; flex-wrap: nowrap; overflow: visible; width: 100%; height: var(--card-h); align-items: center; justify-content: center; }
 
-        /* 快捷鍵指南 */
-        #hotkey-guide { position: absolute; left: 20px; top: 50%; transform: translateY(-50%); background: rgba(0,0,0,0.65); padding: 15px; border-radius: 12px; border: 1px solid rgba(243, 156, 18, 0.5); z-index: 10005; pointer-events: none; display: flex; flex-direction: column; gap: 8px; backdrop-filter: blur(3px); box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
-        .hk-title { color: #f39c12; font-weight: bold; margin-bottom: 5px; text-align: center; border-bottom: 1px solid rgba(255,255,255,0.2); padding-bottom: 5px; font-size: 14px;}
-        .hk-item { display: flex; align-items: center; gap: 10px; color: #ddd; font-size: 13px;}
-        .hk-item span { background: #34495e; color: white; padding: 2px 6px; border-radius: 4px; font-weight: bold; min-width: 15px; text-align: center; font-family: monospace; border: 1px solid #7f8c8d;}
-
-        /* 遊戲桌面配置 */
         .game-table { width: 1150px; height: 1000px; position: absolute; left: 0; top: 0; transform-origin: top left; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 50px; box-sizing: border-box; perspective: 1500px; }
+
         .battlefield { display: flex; flex-direction: column; width: max-content; background: linear-gradient(145deg, #1c2833, #2c0e0e); border: 3px solid #d32f2f; border-radius: 15px; box-shadow: inset 0 0 40px rgba(0,0,0,0.9), 0 15px 30px rgba(0,0,0,0.9); position: relative; margin: 0 auto; flex-shrink: 0; transform-origin: center center; transition: transform 0.6s cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow 0.6s ease; transform-style: flat; }
         .mode-3d .battlefield { transform: rotateX(35deg) translateY(-20px); box-shadow: 0 50px 80px rgba(0,0,0,0.9), inset 0 0 40px rgba(0,0,0,0.9); border-bottom: 12px solid #7b241c; border-bottom-left-radius: 20px; border-bottom-right-radius: 20px; }
 
@@ -127,7 +136,6 @@
         .phase-step:hover { background: #34495e; color: white;}
         .phase-step.active { background: #f39c12; color: #000; box-shadow: 0 0 12px #f39c12; border-color: #f1c40f;}
 
-        /* 卡片本體 */
         .card { 
             width: var(--card-w); height: var(--card-h); border-radius: 6px; box-shadow: 0 4px 8px rgba(0,0,0,0.8); 
             cursor: grab; transition: transform 0.2s ease-out, margin 0.2s ease-out; position: absolute; touch-action: none; 
@@ -135,7 +143,7 @@
             pointer-events: auto; 
         }
         
-        .hand-area .card, .look-area .card { position: relative; left: 0 !important; top: 0 !important; margin-left: -45px;} 
+        .hand-area .card, .look-area .card { margin-left: -45px;} 
         .hand-area .card:first-child, .look-area .card:first-child { margin-left: 0; }
         .card:hover { --scale: 1.05; box-shadow: 0 15px 25px rgba(0,0,0,0.8); z-index: 500 !important; }
         .hand-area .card:hover, .look-area .card:hover { --scale: 1.1; --ty: -20px; margin-right: 35px; z-index: 500 !important; }
@@ -154,7 +162,6 @@
         .card.rest { --rot: 90deg !important; }
         .card.in-life { --rot: -90deg !important; }
 
-        /* 各類 Modal 與系統彈窗 */
         #drop-menu { display: none; position: fixed; z-index: 10001; background: rgba(20,20,20,0.95); border: 2px solid #3498db; border-radius: 8px; padding: 10px; flex-direction: column; gap: 8px; box-shadow: 0 0 15px rgba(52,152,219,0.5); }
         .drop-btn { background: #2c3e50; color: white; border: 1px solid #7f8c8d; padding: 8px 15px; cursor: pointer; border-radius: 4px; font-weight: bold; font-size: 12px;}
         .drop-btn:hover { background: #34495e; }
@@ -174,30 +181,21 @@
         #overlay-title { font-size: 24px; font-weight: bold; color: white; margin-top: 15px; }
         #overlay-value { font-size: 50px; color: #f1c40f; font-weight: 900; text-shadow: 0 0 20px rgba(241, 196, 15, 0.8); margin: 10px 0; white-space: nowrap;}
 
-        /* 隱藏過小的快捷鍵指南 */
         @media (max-width: 1100px) {
             #hotkey-guide { display: none !important; }
         }
 
-        /* =========================================================
-           📱 終極 RWD 手機版介面優化 (解決擠壓與圖層 Bug)
-           ========================================================= */
         @media (max-width: 850px) {
             .builder-container { flex-direction: column; flex-wrap: nowrap; }
             .catalog-panel, .deck-panel { width: 100%; flex: none; height: 45vh; max-height: none; }
             .import-content { flex-direction: column; align-items: stretch; }
             #import-series-name, .import-textarea, .import-content button { width: 100%; flex: none; margin-top: 5px; }
-            
-            /* 🚨 沒收手機版 Hover 動畫，避免觸發 GPU 圖層錯亂 */
             .preview-card:hover { transform: none !important; z-index: 1 !important; }
         }
 
         @media (max-height: 600px) and (orientation: landscape) {
-            /* 手機橫向時，讓構築面板並排且允許捲動 */
             .builder-container { flex-direction: row; flex-wrap: nowrap; }
             .catalog-panel, .deck-panel { height: 70vh; }
-            
-            /* 對戰桌面壓縮 */
             .hud-sidebar { right: 5px; top: 5px; transform: scale(0.65); transform-origin: top right; } 
             .hud-top { transform: translateX(-50%) scale(0.5); top: 2px; } 
             .hud-bottom { transform: translateX(-50%) scale(0.6); bottom: 2px; } 
@@ -275,7 +273,7 @@
                         <h4 style="margin: 0; color: #f39c12; font-size: 15px;">🎯 我的 AP 卡</h4>
                         <span id="ap-counter" style="font-weight: bold; font-size: 14px;">0 / 3</span>
                     </div>
-                    <div class="card-grid" id="ap-deck-grid"></div>
+                    <div id="ap-deck-grid" class="card-grid" style="min-height: 120px;"></div>
                 </div>
                 <div style="display: flex; justify-content: space-between; margin-bottom: 5px; margin-top: 10px;">
                     <h4 style="margin: 0; color: #3498db; font-size: 15px;">🃏 主要牌組</h4>
@@ -447,6 +445,22 @@
     <script src="cards.js"></script>
 
     <script>
+        // 🌟 真實視窗高度校正引擎 (解決手機瀏覽器網址列伸縮 Bug)
+        const appHeight = () => {
+            const doc = document.documentElement;
+            doc.style.setProperty('--app-height', `${window.innerHeight}px`);
+        };
+        window.addEventListener('resize', appHeight);
+        appHeight();
+
+        // 🌟 進入遊戲時，強制要求瀏覽器全螢幕
+        function requestFullScreen() {
+            let elem = document.documentElement;
+            if (elem.requestFullscreen) { elem.requestFullscreen(); }
+            else if (elem.webkitRequestFullscreen) { elem.webkitRequestFullscreen(); } // Safari
+            else if (elem.msRequestFullscreen) { elem.msRequestFullscreen(); } // IE11
+        }
+
         const preloadedImages = new Set();
         function preloadCardsInBg(cardsArray) {
             cardsArray.forEach(c => {
@@ -576,7 +590,7 @@
                 groupedCards[series].forEach(card => {
                     if (invalidCardsCache.includes(card.id)) return;
                     let el = document.createElement('div'); el.className = 'preview-card';
-                    el.dataset.cardId = card.id;
+                    el.dataset.cardId = card.id; 
                     el.innerHTML = `<img src="${card.imageUrl}" loading="lazy" onerror="this.closest('.preview-card').style.display='none'; window.markCardInvalid('${card.id}');">`;
                     el.onclick = () => { 
                         if(card.series.includes("AP卡") || card.series.includes("Action Point") || card.id.includes("-AP")) {
@@ -590,7 +604,7 @@
                 });
                 catGrid.appendChild(grid);
             }
-            updateBuilderBadges();
+            updateBuilderBadges(); 
         }
 
         function renderDeck() {
@@ -638,7 +652,7 @@
             document.getElementById('ap-counter').innerText = `${myApData.length} / 3`;
             saveAllDecks();
             
-            updateBuilderBadges();
+            updateBuilderBadges(); 
         }
         
         window.clearDeck = function() { if(confirm("清空當前牌組與AP卡？")) { myDeckData = []; myApData = []; renderDeck(); } };
@@ -862,6 +876,9 @@
                     if(myDeckData.length === 0) { alert("請先建立主牌組！"); return; }
                     if(myApData.length !== 3) { alert("請挑選剛好 3 張 AP 卡！"); return; }
                     
+                    // 🌟 強制全螢幕 (解決 Android 擠壓問題)
+                    requestFullScreen();
+
                     document.body.classList.add('in-game');
                     if (screen.orientation && screen.orientation.lock) {
                         screen.orientation.lock('landscape').catch(err => console.log('螢幕旋轉被拒絕，已降級為視覺提示'));
@@ -1142,7 +1159,7 @@
 
         function drawInitialHand() {
             let deckArea = document.getElementById('my-deck-area'), handArea = document.getElementById('my-hand-area'); let cards = Array.from(deckArea.querySelectorAll('.card'));
-            for(let i=0; i<7; i++) { if(cards.length > 0) { let c = cards.pop(); handArea.appendChild(c); c.style.position = 'relative'; c.style.left = '0'; c.style.top = '0'; c.style.zIndex = ''; c.classList.remove('is-flipped', 'rest'); } }
+            for(let i=0; i<7; i++) { if(cards.length > 0) { let c = cards.pop(); handArea.appendChild(c); c.classList.remove('is-flipped', 'rest'); } }
             recalcStacking(deckArea); updateSlotCounts(); broadcastMyState(); document.getElementById('mulligan-modal').style.display = 'block';
         }
 
@@ -1387,19 +1404,19 @@
                         } else if (dropZone.closest('#my-front-line, #my-energy-line')) { let fromField = originalParent && originalParent.closest('#my-front-line, #my-energy-line'); if (!fromField) c.classList.add('rest'); }
                     }
                     if(dropZone.id.includes('hand') || dropZone.id.includes('look') || dropZone.id.includes('modal-')) { 
+                        c.style.position = 'relative'; c.style.left = '0'; c.style.top = '0'; 
+                        c.style.zIndex = ''; 
                         c.classList.remove('is-flipped', 'rest'); 
                     } 
+                    else c.style.position = 'absolute'; 
                 } else if (originalParent) {
                     originalParent.appendChild(c);
+                    if(originalParent.id.includes('hand') || originalParent.id.includes('look')) { c.style.position = 'relative'; c.style.left = '0'; c.style.top = '0'; } 
+                    else c.style.position = 'absolute';
                 }
             });
-            if (dropZone && action !== 'cancel' && !dropZone.id.includes('modal-')) {
-                recalcStacking(dropZone);
-                if (originalParent && originalParent !== dropZone && !originalParent.id.includes('modal-')) recalcStacking(originalParent);
-            } 
-            else if (originalParent && !originalParent.id.includes('modal-')) {
-                recalcStacking(originalParent);
-            }
+            if (dropZone && action !== 'cancel' && !dropZone.id.includes('modal-')) recalcStacking(dropZone); 
+            else if (originalParent && !originalParent.id.includes('modal-')) recalcStacking(originalParent);
             updateSlotCounts(); broadcastMyState();
         }
 
@@ -1499,6 +1516,13 @@
                         targetCard.classList.remove('rest', 'is-flipped');
                         targetCard.style.setProperty('--tilt', '0deg');
 
+                        if(dest.id.includes('hand') || dest.id.includes('look')) {
+                            targetCard.style.position = 'relative';
+                            targetCard.style.zIndex = ''; 
+                        } else { 
+                            targetCard.style.position = 'absolute'; 
+                            applyStackingStyle(targetCard, dest, Array.from(dest.querySelectorAll('.card')).indexOf(targetCard)); 
+                        }
                         recalcStacking(dest);
                         if(prevParent) recalcStacking(prevParent);
                         updateSlotCounts(); broadcastMyState();
@@ -1515,8 +1539,8 @@
         window.sendToDeck = function(sourceId, destId, toBottom) {
             let source = document.getElementById(sourceId), dest = document.getElementById(destId); 
             let cards = Array.from(source.querySelectorAll('.card')).sort((a,b) => a.getBoundingClientRect().left - b.getBoundingClientRect().left);
-            if(toBottom) cards.reverse().forEach(c => { dest.insertBefore(c, dest.firstChild); c.classList.add('is-flipped'); c.classList.remove('rest'); });
-            else cards.forEach(c => { dest.appendChild(c); c.classList.add('is-flipped'); c.classList.remove('rest'); });
+            if(toBottom) cards.reverse().forEach(c => { dest.insertBefore(c, dest.firstChild); c.classList.add('is-flipped'); c.classList.remove('rest'); c.style.position = 'absolute'; });
+            else cards.forEach(c => { dest.appendChild(c); c.classList.add('is-flipped'); c.classList.remove('rest'); c.style.position = 'absolute'; });
             recalcStacking(dest); recalcStacking(source); updateSlotCounts(); broadcastMyState();
         };
 
@@ -1575,6 +1599,7 @@
         document.getElementById('close-modal-btn').addEventListener('click', () => {
             Array.from(modalContainer.querySelectorAll('.card')).forEach((card, index) => { 
                 currentModalSourceSlot.appendChild(card); 
+                card.style.position = 'absolute'; 
                 card.style.transform = ''; 
                 
                 if (currentModalSourceSlot.classList.contains('slot') && (currentModalSourceSlot.id.includes('my-fl-') || currentModalSourceSlot.id.includes('my-en-'))) {
@@ -1589,6 +1614,7 @@
             if (isDualPane) {
                 Array.from(document.getElementById('modal-public-container').querySelectorAll('.card')).forEach((card, index) => { 
                     document.getElementById('my-public-area').appendChild(card); 
+                    card.style.position = 'absolute'; 
                     card.style.transform = ''; 
                 });
                 recalcStacking(document.getElementById('my-public-area'));
