@@ -7,223 +7,134 @@
     <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
     <style>
         :root {
-            --card-h: 170px; 
+            --card-h: min(10.5vh, 110px); 
             --card-w: calc(var(--card-h) * 0.714); 
-            --gap-size: 10px;
-            --font-size-base: 14px;
+            --gap-size: min(1vh, 6px);
+            --font-size-base: min(1.5vh, 14px);
         }
 
-        body { background-color: #0a0a0a; margin: 0; min-height: 100vh; overflow-x: hidden; overflow-y: auto; font-family: '微軟正黑體', sans-serif; display: flex; flex-direction: column; align-items: center; padding: 1.5vh 2vw; box-sizing: border-box; color: white; touch-action: auto; -webkit-user-select: none; user-select: none; }
+        body { background-color: #0a0a0a; margin: 0; min-height: 100vh; overflow-x: hidden; overflow-y: auto; font-family: '微軟正黑體', sans-serif; display: flex; flex-direction: column; align-items: center; padding: 1.5vh 2vw; box-sizing: border-box; color: white; touch-action: manipulation; -webkit-user-select: none; user-select: none; }
         input, textarea, select { -webkit-user-select: auto; user-select: auto; }
 
-        #sys-msg { position: fixed; top: 10px; left: 50%; transform: translateX(-50%); background: #e67e22; padding: 10px 20px; border-radius: 5px; font-weight: bold; display: none; z-index: 100000; box-shadow: 0 4px 10px rgba(0,0,0,0.5); }
+        #sys-msg { position: fixed; top: 10px; left: 50%; transform: translateX(-50%); background: #e67e22; padding: 10px 20px; border-radius: 5px; font-weight: bold; display: none; z-index: 10000; box-shadow: 0 4px 10px rgba(0,0,0,0.5); }
         
         #builder-scene { width: 100%; max-width: 1200px; display: flex; flex-direction: column; gap: 15px; margin-bottom: 30px; }
-        #game-scene { display: none; width: 100%; flex-direction: column; align-items: center; gap: 10px; margin-bottom: 10px; }
+        #game-scene { display: none; width: 100%; max-width: 1600px; flex-direction: column; align-items: center; gap: var(--gap-size); margin-bottom: 20px; }
 
         .network-panel { background: rgba(41, 128, 185, 0.2); border: 2px solid #3498db; border-radius: 10px; padding: 10px 15px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; }
-        .network-box { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
-        .network-input { padding: 8px; border-radius: 5px; border: none; font-size: 14px; outline: none; width: 180px; letter-spacing: 2px; font-weight: bold; text-align: center;}
-        
-        #my-peer-id { color: #f1c40f; font-weight: 900; font-size: 24px; cursor: pointer; background: rgba(0,0,0,0.5); padding: 5px 15px; border-radius: 5px; letter-spacing: 3px;}
+        .network-box { display: flex; gap: 10px; align-items: center; }
+        .network-input { padding: 8px; border-radius: 5px; border: none; font-size: 16px; outline: none; width: 200px; }
+        #my-peer-id { color: #f1c40f; font-weight: bold; font-size: 18px; cursor: pointer; background: rgba(0,0,0,0.5); padding: 5px 10px; border-radius: 5px; }
 
         .builder-container { display: flex; gap: 20px; flex: 1; min-height: 60vh; flex-wrap: wrap; }
-        .catalog-panel { flex: 6; min-width: 300px; background: rgba(0,0,0,0.5); border-radius: 10px; padding: 15px; display: flex; flex-direction: column; max-height: 75vh; overflow-y: auto; -webkit-overflow-scrolling: touch; }
-        .deck-panel { flex: 4; min-width: 300px; background: rgba(139, 21, 21, 0.5); border-radius: 10px; padding: 15px; display: flex; flex-direction: column; border: 2px dashed #d32f2f; max-height: 75vh; overflow-y: auto; -webkit-overflow-scrolling: touch; }
+        .catalog-panel { flex: 6; min-width: 300px; background: rgba(0,0,0,0.5); border-radius: 10px; padding: 15px; display: flex; flex-direction: column; max-height: 75vh; overflow-y: auto; }
+        .deck-panel { flex: 4; min-width: 300px; background: rgba(139, 21, 21, 0.5); border-radius: 10px; padding: 15px; display: flex; flex-direction: column; border: 2px dashed #d32f2f; max-height: 75vh; overflow-y: auto; }
         
         .deck-controls { display: flex; gap: 10px; margin-bottom: 10px; align-items: center; background: rgba(0,0,0,0.3); padding: 10px; border-radius: 8px; flex-wrap: wrap; }
-        .deck-selector { flex: 1; padding: 5px; font-size: 14px; border-radius: 5px; background: #2c3e50; color: white; border: 1px solid #34495e; min-width: 120px; }
+        .deck-selector { flex: 1; padding: 5px; font-size: 16px; border-radius: 5px; background: #2c3e50; color: white; border: 1px solid #34495e; min-width: 120px; }
         
         .catalog-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; flex-wrap: wrap; gap: 10px;}
-        .series-filter { padding: 5px 10px; font-size: 14px; border-radius: 5px; background: #f39c12; color: #1a1a1a; font-weight: bold; border: none; cursor: pointer; outline: none; }
+        .series-filter { padding: 5px 10px; font-size: 16px; border-radius: 5px; background: #f39c12; color: #1a1a1a; font-weight: bold; border: none; cursor: pointer; outline: none; }
         
-        .series-title { border-left: 5px solid #f39c12; padding-left: 10px; background: rgba(255,255,255,0.1); padding: 5px; margin: 15px 0 10px 0; font-size: 16px; font-weight: bold;}
+        .series-title { border-left: 5px solid #f39c12; padding-left: 10px; background: rgba(255,255,255,0.1); padding: 5px; margin: 15px 0 10px 0; font-size: 18px; }
         .card-grid { display: flex; flex-wrap: wrap; gap: 10px; }
-        .preview-card { width: 120px; height: calc(120px / 0.714); border-radius: 5px; cursor: pointer; transition: transform 0.1s; box-shadow: 0 2px 5px rgba(0,0,0,0.5); }
+        .preview-card { width: var(--card-w); height: var(--card-h); border-radius: 5px; cursor: pointer; transition: transform 0.1s; box-shadow: 0 2px 5px rgba(0,0,0,0.5); }
         .preview-card:hover { transform: scale(1.05); }
         .preview-card img { width: 100%; height: 100%; object-fit: cover; border-radius: 5px; pointer-events: none; }
 
-        .start-btn { background-color: #2ecc71; color: white; font-size: 14px; font-weight: bold; padding: 8px 15px; border: none; border-radius: 8px; cursor: pointer; }
+        .start-btn { background-color: #2ecc71; color: white; font-size: 16px; font-weight: bold; padding: 10px 20px; border: none; border-radius: 8px; cursor: pointer; }
         .start-btn:disabled { background-color: #7f8c8d; cursor: not-allowed; }
-        .ctrl-btn { background: #3498db; color: white; border: none; padding: 6px 12px; border-radius: 5px; cursor: pointer; font-weight: bold; font-size: 13px;}
+        .ctrl-btn { background: #3498db; color: white; border: none; padding: 8px 15px; border-radius: 5px; cursor: pointer; font-weight: bold; }
         .ctrl-btn.danger { background: #e74c3c; }
 
         .import-section { background: rgba(155, 89, 182, 0.2); border: 2px dashed #9b59b6; padding: 10px; border-radius: 8px; margin-bottom: 15px; display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
-        .import-textarea { flex: 1 1 150px; height: 35px; background: #2c3e50; color: white; border: 1px solid #34495e; border-radius: 4px; padding: 8px; font-family: monospace; resize: none; outline: none; }
-        #import-series-name { flex: 0 1 120px; }
+        .import-textarea { flex: 1; min-width: 200px; height: 35px; background: #2c3e50; color: white; border: 1px solid #34495e; border-radius: 4px; padding: 8px; font-family: monospace; resize: none; outline: none; }
 
-        .board-wrapper { 
-            width: 100%; height: 92vh; 
-            overflow: hidden; position: relative; background: #111; 
-            border: 3px solid #333; border-radius: 10px; box-shadow: inset 0 0 50px black;
-            cursor: grab; touch-action: none; 
-        }
-        .board-wrapper:active { cursor: grabbing; }
+        .board-wrapper { width: 100%; overflow-x: auto; overflow-y: hidden; padding-bottom: 10px; scrollbar-width: none; }
+        .board-wrapper::-webkit-scrollbar { display: none; }
 
-        .cam-ctrl-box {
-            position: absolute; right: 20px; bottom: 20px; display: flex; flex-direction: column; gap: 12px; z-index: 10005;
-        }
-        .cam-btn {
-            width: 45px; height: 45px; border-radius: 50%; background: rgba(0,0,0,0.8); border: 2px solid #f39c12; color: white;
-            font-size: 20px; font-weight: bold; cursor: pointer; display: flex; justify-content: center; align-items: center; box-shadow: 0 4px 10px rgba(0,0,0,0.5); transition: 0.2s;
-        }
-        .cam-btn:hover { background: #f39c12; color: black; }
-        #btn-3d { background: rgba(0,0,0,0.8); border-color: #3498db; }
+        .game-table { min-width: 820px; width: 100%; display: flex; flex-direction: column; align-items: center; gap: 0; margin: 0 auto; }
 
-        .hud-top {
-            position: absolute; top: 10px; left: 50%; transform: translateX(-50%) scale(0.65); transform-origin: top center;
-            width: 95%; max-width: 1400px; display: flex; gap: 15px; z-index: 10010; pointer-events: none;
-        }
+        .battlefield { display: flex; flex-direction: column; width: 100%; background: linear-gradient(145deg, #1c2833, #2c0e0e); border: 3px solid #d32f2f; border-radius: 15px; box-shadow: inset 0 0 40px rgba(0,0,0,0.9), 0 15px 30px rgba(0,0,0,0.9); position: relative; overflow: hidden; }
         
-        .hud-bottom {
-            position: absolute; bottom: 10px; left: 50%; transform: translateX(-50%) scale(0.85); transform-origin: bottom center;
-            width: 90%; max-width: 900px; display: flex; gap: 15px; z-index: 10010; pointer-events: none; align-items: flex-end; justify-content: center;
-        }
-        .hand-zone, .look-zone { pointer-events: auto; }
-
-        .hud-sidebar {
-            position: absolute; right: 20px; top: 50%; transform: translateY(-50%);
-            display: flex; flex-direction: column; gap: 15px; 
-            background: rgba(0,0,0,0.4); padding: 15px; border-radius: 12px; 
-            border: 2px solid rgba(243, 156, 18, 0.5); width: 130px; box-sizing: border-box; 
-            box-shadow: 0 0 30px rgba(0,0,0,0.5); z-index: 10010; pointer-events: auto; backdrop-filter: blur(3px);
-        }
+        .playmat { display: grid; grid-template-columns: calc(var(--card-w) + 2vw) auto calc(var(--card-w) + 2vw); gap: 1.5vw; padding: 1.5vh 1.5vw; width: 100%; box-sizing: border-box; }
         
-        .hand-zone { flex: 8; background-color: rgba(0,0,0,0.25); border: 2px dashed rgba(127,140,141,0.4); border-radius: 10px; padding: 15px; display: flex; flex-direction: column; backdrop-filter: blur(2px);}
-        .look-zone { flex: 2; background-color: rgba(0,50,100,0.25); border: 2px dashed rgba(52,152,219,0.4); border-radius: 10px; padding: 15px; display: flex; flex-direction: column; backdrop-filter: blur(2px);}
-        
-        .hand-area, .look-area { 
-            display: flex; flex-wrap: nowrap; overflow: visible; 
-            width: 100%; height: var(--card-h); align-items: center; justify-content: center;
-        }
-
-        .game-table { 
-            width: 1150px; height: 1000px; 
-            position: absolute; left: 0; top: 0; transform-origin: top left;
-            display: flex; flex-direction: column; align-items: center; justify-content: center;
-            padding: 50px; box-sizing: border-box; perspective: 1500px; 
-        }
-
-        .battlefield { 
-            display: flex; flex-direction: column; width: max-content; background: linear-gradient(145deg, #1c2833, #2c0e0e); 
-            border: 3px solid #d32f2f; border-radius: 15px; box-shadow: inset 0 0 40px rgba(0,0,0,0.9), 0 15px 30px rgba(0,0,0,0.9); 
-            position: relative; margin: 0 auto; flex-shrink: 0;
-            transform-origin: center center;
-            transition: transform 0.6s cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow 0.6s ease;
-            transform-style: flat; 
-        }
-        
-        .mode-3d .battlefield {
-            transform: rotateX(35deg) translateY(-20px);
-            box-shadow: 0 50px 80px rgba(0,0,0,0.9), inset 0 0 40px rgba(0,0,0,0.9);
-            border-bottom: 12px solid #7b241c;
-            border-bottom-left-radius: 20px; border-bottom-right-radius: 20px;
-        }
-
-        .playmat { display: flex; justify-content: center; align-items: stretch; gap: 35px; padding: 25px; width: 100%; box-sizing: border-box; }
         .board-divider { width: 100%; height: 2px; background: rgba(241, 196, 15, 0.3); box-shadow: 0 0 10px rgba(241, 196, 15, 0.6); }
 
-        .line-label { color: rgba(255,255,255,0.8); font-size: var(--font-size-base); font-weight: bold; text-align: center; margin: 4px 0; letter-spacing: 1px; text-shadow: 1px 1px 3px black; white-space: nowrap; pointer-events: none; }
+        .line-label { color: rgba(255,255,255,0.8); font-size: var(--font-size-base); font-weight: bold; text-align: center; margin: 0.3vh 0; letter-spacing: 1px; text-shadow: 1px 1px 3px black; z-index: 1;}
         
-        .center-zone { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; }
-        .side-zone { display: flex; flex-direction: column; gap: 15px; height: 100%; justify-content: space-between; align-items: center; } 
-        .slot-group { display: flex; flex-direction: column; align-items: center; }
-        .card-row { display: flex; gap: 12px; }
+        .center-zone { display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 1; gap: 6px; }
+        .side-zone { display: flex; flex-direction: column; gap: var(--gap-size); height: 100%; z-index: 1; justify-content: space-between; } 
+        .card-row { display: flex; gap: calc(var(--gap-size) * 1.2); }
 
-        .slot { width: var(--card-w); height: var(--card-h); background-color: rgba(0,0,0,0.4); border: 2px dashed rgba(241, 196, 15, 0.4); border-radius: 6px; box-shadow: inset 0 0 15px rgba(0,0,0,0.8); position: relative; display: flex; justify-content: center; align-items: center; cursor: pointer; pointer-events: auto;}
-        .slot.life-slot { width: var(--card-h); height: calc(var(--card-w) + 160px); justify-content: flex-start; align-items: flex-start; } 
+        .slot { width: var(--card-w); height: var(--card-h); background-color: rgba(0,0,0,0.5); border: 2px dashed rgba(241, 196, 15, 0.5); border-radius: 6px; box-shadow: inset 0 0 15px rgba(0,0,0,0.8); position: relative; display: flex; justify-content: center; align-items: center; }
+        .slot.life-slot { width: var(--card-h); height: var(--card-w); justify-content: flex-start; align-items: flex-start; } 
         
-        .slot::after { content: attr(data-count); position: absolute; top: -5px; right: -5px; background-color: #e74c3c; color: white; border-radius: 50%; width: 22px; height: 22px; display: flex; justify-content: center; align-items: center; font-size: var(--font-size-base); opacity: 0; transition: opacity 0.2s; font-weight: bold; box-shadow: 0 2px 5px rgba(0,0,0,0.5); z-index: 999; }
+        .slot::after { content: attr(data-count); position: absolute; top: -5px; right: -5px; background-color: #e74c3c; color: white; border-radius: 50%; width: min(2.5vh, 22px); height: min(2.5vh, 22px); display: flex; justify-content: center; align-items: center; font-size: var(--font-size-base); opacity: 0; transition: opacity 0.2s; z-index: 999; font-weight: bold; box-shadow: 0 2px 5px rgba(0,0,0,0.5); }
         .slot:hover::after { opacity: 1; }
         .slot[data-count="0"]::after, .slot[data-count="1"]::after, .slot:not([data-count])::after { display: none; }
 
-        .marker { position: absolute; top: -10px; left: -10px; font-size: 22px; cursor: pointer; opacity: 0.15; transition: 0.2s; z-index: 10000; background: rgba(0,0,0,0.8); border-radius: 50%; width: 32px; height: 32px; display: flex; justify-content: center; align-items: center; border: 2px solid transparent; pointer-events: auto; }
-        .slot:hover .marker { opacity: 0.9; transform: scale(1.1); }
-        .slot.marked .marker { opacity: 1 !important; border-color: #e74c3c; box-shadow: 0 0 15px #e74c3c; filter: drop-shadow(0 0 5px red); transform: scale(1.3); }
-        .slot.marked { outline: 5px solid #e74c3c !important; outline-offset: 3px; box-shadow: 0 0 40px rgba(231, 76, 60, 0.9) !important; background-color: rgba(231, 76, 60, 0.4) !important; border-color: transparent !important; }
+        /* 🎯 指定圖示 (Marker) UI 設計 */
+        .marker { position: absolute; top: -8px; left: -8px; font-size: 18px; cursor: pointer; opacity: 0; transition: 0.2s; z-index: 9999; background: rgba(0,0,0,0.7); border-radius: 50%; width: 26px; height: 26px; display: flex; justify-content: center; align-items: center; border: 2px solid transparent; pointer-events: auto; }
+        #my-board .slot:hover .marker { opacity: 0.4; }
+        .slot.marked .marker { opacity: 1 !important; border-color: #e74c3c; box-shadow: 0 0 10px #e74c3c; filter: drop-shadow(0 0 5px red); transform: scale(1.2); }
+        .slot.marked { box-shadow: inset 0 0 25px rgba(231, 76, 60, 0.7) !important; border-color: #e74c3c !important; }
 
-        .phase-step { padding: 10px; border-radius: 6px; background: rgba(44, 62, 80, 0.8); cursor: pointer; font-weight: bold; font-size: 14px; transition: 0.3s; color: #bdc3c7; text-align: center; border: 1px solid rgba(52, 73, 94, 0.5);}
-        .phase-step:hover { background: #34495e; color: white;}
-        .phase-step.active { background: #f39c12; color: #000; box-shadow: 0 0 12px #f39c12; border-color: #f1c40f;}
+        /* 🔄 階段指示器 UI 移至右側 */
+        .phase-step { padding: 4px; border-radius: 4px; background: #2c3e50; cursor: pointer; font-weight: bold; font-size: 12px; transition: 0.3s; color: #bdc3c7; text-align: center; }
+        .phase-step.active { background: #f39c12; color: #000; box-shadow: 0 0 8px #f39c12; }
 
-        /* 🍃 移除永久傾斜，還原原本的拖曳微傾與落地回彈效果 */
-        .card { 
-            width: var(--card-w); height: var(--card-h); border-radius: 6px; box-shadow: 0 4px 8px rgba(0,0,0,0.8); 
-            cursor: grab; transition: transform 0.2s ease-out, margin 0.2s ease-out; position: absolute; touch-action: none; 
-            transform: translate(var(--tx, 0px), var(--ty, 0px)) rotate(var(--rot, 0deg)) scale(var(--scale, 1));
-            pointer-events: auto;
-        }
-        
-        .hand-area .card, .look-area .card { position: relative; left: 0 !important; top: 0 !important; margin-left: -45px;} 
+        .bottom-container { width: 100%; display: flex; gap: 15px; flex-wrap: wrap; justify-content: center; margin-top: 15px;}
+        .hand-zone { flex: 7; background-color: rgba(0,0,0,0.6); border: 2px dashed #7f8c8d; border-radius: 10px; padding: 1vh; display: flex; flex-direction: column;}
+        .look-zone { flex: 3; background-color: rgba(0,50,100,0.6); border: 2px dashed #3498db; border-radius: 10px; padding: 1vh; display: flex; flex-direction: column;}
+        .hand-area, .look-area { display: flex; flex-wrap: wrap; gap: var(--gap-size); width: 100%; min-height: var(--card-h); align-items: center; justify-content: center;}
+
+        /* 🃏 卡片懸浮立體感 */
+        .card { width: var(--card-w); height: var(--card-h); border-radius: 6px; box-shadow: 0 4px 8px rgba(0,0,0,0.8); cursor: grab; transition: transform 0.2s ease-out; position: absolute; perspective: 1000px; touch-action: none;}
+        .hand-area .card, .look-area .card { position: relative; left: 0 !important; top: 0 !important; margin-left: -20px;}
         .hand-area .card:first-child, .look-area .card:first-child { margin-left: 0; }
-        
-        .card:hover { --scale: 1.05; box-shadow: 0 15px 25px rgba(0,0,0,0.8); z-index: 500 !important; }
-        .hand-area .card:hover, .look-area .card:hover { --scale: 1.1; --ty: -20px; margin-right: 35px; z-index: 500 !important; }
+        .card:hover { transform: translateY(-5px) scale(1.05); z-index: 500 !important; }
         
         .card-inner { position: relative; width: 100%; height: 100%; transition: transform 0.3s; transform-style: preserve-3d; }
         .card.is-flipped .card-inner { transform: rotateY(180deg); }
-        .card-front, .card-back { position: absolute; width: 100%; height: 100%; backface-visibility: hidden; border-radius: 6px; overflow: hidden; background-color: transparent; }
+        .card-front, .card-back { position: absolute; width: 100%; height: 100%; backface-visibility: hidden; border-radius: 6px; overflow: hidden; background-color: #2c3e50; }
         .card-front img { width: 100%; height: 100%; object-fit: cover; pointer-events: none; }
-        
-        /* 🌟 CSS 神級裁切術：放大高度到 115% 並且靠上對齊 */
-        .card-back { 
-            transform: rotateY(180deg); 
-            background-color: #111;
-            background-image: url('https://www.unionarena-tcg.com/tc/images/rules/region-card/img_card_na.png');
-            background-size: 100% 115%; 
-            background-repeat: no-repeat;
-            background-position: top center; 
-            border: 1px solid rgba(255,255,255,0.1); 
-            box-sizing: border-box; 
-        }
-        .ap-card .card-back { 
-            background-image: url('https://www.unionarena-tcg.com/tc/images/rules/region-card/img_apcard_jp.png');
-            background-size: 100% 115%; 
-            background-position: top center; 
-            border: 1px solid rgba(243, 156, 18, 0.5); 
-        }
+        .card-back { transform: rotateY(180deg); background: linear-gradient(135deg, #8b1515, #5c0a0a); border: 2px solid #fff; box-sizing: border-box; display: flex; justify-content: center; align-items: center; color: white; font-weight: bold; font-size: var(--font-size-base); text-align: center; line-height: 1.2; }
+        .ap-card .card-back { background: linear-gradient(135deg, #2c3e50, #1a252f); border-color: #f39c12; }
         
         #opp-hand-area .card-inner, #opp-look-area .card-inner { transform: rotateY(180deg) !important; }
 
-        /* 🍃 當卡片被拿起來時，給予 5 度的傾斜。放開時會平滑過渡回 0 度，產生果凍感 */
-        .card.dragging { --scale: 1.15; --rot: 15deg; z-index: 999999 !important; transition: none; box-shadow: -20px 40px 50px rgba(0,0,0,0.6); }
+        .card.dragging { transform: scale(1.15) rotate(5deg) !important; z-index: 9999 !important; transition: none; box-shadow: 0 15px 30px rgba(0,0,0,0.9); }
         .card.stack-glowing { box-shadow: 0 0 15px 5px #f1c40f !important; }
-        
-        .card.rest { --rot: 90deg !important; }
-        .card.in-life { --rot: -90deg !important; }
+        .card.rest { transform: rotate(90deg); }
+        .card.in-life { transform: rotate(-90deg) !important; }
 
         #drop-menu { display: none; position: fixed; z-index: 10001; background: rgba(20,20,20,0.95); border: 2px solid #3498db; border-radius: 8px; padding: 10px; flex-direction: column; gap: 8px; box-shadow: 0 0 15px rgba(52,152,219,0.5); }
-        .drop-btn { background: #2c3e50; color: white; border: 1px solid #7f8c8d; padding: 8px 15px; cursor: pointer; border-radius: 4px; font-weight: bold; font-size: 12px;}
+        .drop-btn { background: #2c3e50; color: white; border: 1px solid #7f8c8d; padding: 8px 15px; cursor: pointer; border-radius: 4px; font-weight: bold; }
         .drop-btn:hover { background: #34495e; }
         .drop-btn.cancel { background: #c0392b; border-color: #e74c3c; }
 
-        #search-modal { display: none; position: fixed; z-index: 100200; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.85); justify-content: center; align-items: center; flex-direction: column; }
+        #search-modal { display: none; position: fixed; z-index: 10000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.85); justify-content: center; align-items: center; flex-direction: column; }
         .modal-content { background-color: #1a1a1a; border: 4px solid #f39c12; border-radius: 15px; padding: 20px; width: 85%; max-height: 40vh; overflow-y: auto; display: flex; flex-wrap: wrap; gap: 15px; justify-content: center; align-items: center;}
-        .modal-header { width: 85%; display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; font-size: 18px; font-weight: bold; flex-wrap: wrap;}
+        .modal-header { width: 85%; display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; font-size: 20px; font-weight: bold; flex-wrap: wrap;}
 
         #mulligan-modal { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(0,0,0,0.95); border: 3px solid #f39c12; padding: 30px; border-radius: 15px; z-index: 10005; text-align: center; box-shadow: 0 0 30px rgba(243, 156, 18, 0.5); width: 90%; max-width: 400px;}
 
-        #card-magnifier { 
-            position: fixed; left: 20px; bottom: 20px; 
-            width: calc(var(--card-w) * 3.2); height: calc(var(--card-h) * 3.2); 
-            background: #111; border: 4px solid #f39c12; border-radius: 12px; 
-            display: none; z-index: 10010; pointer-events: none; 
-            box-shadow: 0 15px 40px rgba(0,0,0,0.9); overflow: hidden; 
-        }
+        /* 🔍 全局放大鏡 */
+        #card-magnifier { position: fixed; left: 2vw; bottom: 2vh; width: calc(var(--card-w) * 2.5); height: calc(var(--card-h) * 2.5); background: #111; border: 3px solid #f39c12; border-radius: 10px; display: none; z-index: 10010; pointer-events: none; box-shadow: 0 10px 30px rgba(0,0,0,0.9); overflow: hidden; }
         #card-magnifier img { width: 100%; height: 100%; object-fit: cover; }
 
+        /* 📱 手機直立防呆提示 */
         #portrait-warning { display: none; }
-        /* 📱 手機版專屬：進入遊戲後的強制橫置提示 */
         @media screen and (orientation: portrait) and (max-width: 850px) {
-            body.in-game #portrait-warning { display: flex; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.98); z-index: 999999; color: #f1c40f; font-size: 24px; font-weight: bold; justify-content: center; align-items: center; text-align: center; flex-direction: column; padding: 20px; box-sizing: border-box; }
-            body.in-game { overflow: hidden; }
-            body.in-game #game-scene { display: none !important; }
+            #portrait-warning { display: flex; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.98); z-index: 999999; color: #f1c40f; font-size: 24px; font-weight: bold; justify-content: center; align-items: center; text-align: center; flex-direction: column; padding: 20px; box-sizing: border-box; }
+            body { overflow: hidden; }
         }
 
-        #center-overlay { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(20,20,20,0.95); padding: 30px 50px; border-radius: 20px; border: 4px solid #9b59b6; z-index: 100500; text-align: center; box-shadow: 0 0 50px rgba(155, 89, 182, 0.8); backdrop-filter: blur(5px); }
-        #overlay-icon { font-size: 60px; margin-bottom: 10px; }
-        #overlay-title { font-size: 24px; font-weight: bold; color: white; margin-top: 15px; }
-        #overlay-value { font-size: 50px; color: #f1c40f; font-weight: 900; text-shadow: 0 0 20px rgba(241, 196, 15, 0.8); margin: 10px 0; white-space: nowrap;}
+        /* 🎲 霸氣立體擲骰子面板 */
+        #dice-overlay { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(20,20,20,0.95); padding: 40px 60px; border-radius: 20px; border: 4px solid #9b59b6; z-index: 100000; text-align: center; box-shadow: 0 0 50px rgba(155, 89, 182, 0.8); backdrop-filter: blur(5px); }
+        #dice-result-text { font-size: 32px; font-weight: bold; color: white; margin-top: 15px; }
+        #dice-value { font-size: 80px; color: #f1c40f; font-weight: 900; text-shadow: 0 0 20px rgba(241, 196, 15, 0.8); margin: 10px 0; }
     </style>
 </head>
 <body>
@@ -231,13 +142,13 @@
     <div id="portrait-warning">
         <div style="font-size: 50px; margin-bottom: 20px;">📱🔄</div>
         <div>請將手機轉為「橫向」<br>以獲得最佳對戰體驗！</div>
-        <div style="font-size: 14px; color: #aaa; margin-top: 10px;">(使用兩指或右鍵來平移縮放)</div>
+        <div style="font-size: 14px; color: #aaa; margin-top: 10px;">(卡牌對戰需要較寬的畫面空間)</div>
     </div>
 
-    <div id="center-overlay">
-        <div id="overlay-icon">🎲</div>
-        <div id="overlay-title">標題</div>
-        <div id="overlay-value">內容</div>
+    <div id="dice-overlay">
+        <div style="font-size: 80px; margin-bottom: 10px;">🎲</div>
+        <div id="dice-result-text">擲出點數</div>
+        <div id="dice-value">6</div>
     </div>
 
     <div id="sys-msg">系統訊息</div>
@@ -246,11 +157,11 @@
         <div class="network-panel">
             <div class="network-box">
                 <span>🟢 你的連線 ID：</span>
-                <span id="my-peer-id">產生密碼中...</span>
+                <span id="my-peer-id">連線伺服器中...</span>
                 <span style="font-size: 12px; color: #bdc3c7;">(點擊複製)</span>
             </div>
             <div class="network-box">
-                <input type="text" id="target-id" class="network-input" placeholder="輸入6位數代碼">
+                <input type="text" id="target-id" class="network-input" placeholder="貼上朋友的 ID">
                 <button class="ctrl-btn" id="btn-connect" style="background: #e67e22;">連線加入</button>
             </div>
         </div>
@@ -265,7 +176,7 @@
             <div class="catalog-panel">
                 <div class="import-section">
                     <h4 style="margin: 0; color: #9b59b6; width: 100%;">✨ 魔法一鍵匯入</h4>
-                    <input type="text" id="import-series-name" placeholder="作品名稱" class="network-input" style="width: 130px; letter-spacing: normal;">
+                    <input type="text" id="import-series-name" placeholder="作品名稱" class="network-input" style="width: 150px;">
                     <textarea id="import-raw-text" class="import-textarea" placeholder="貼上包含卡片編號的文字"></textarea>
                     <button class="ctrl-btn" style="background: #9b59b6;" onclick="executeBatchImport()">萃取匯入</button>
                 </div>
@@ -286,7 +197,7 @@
                         <h4 style="margin: 0; color: #f39c12;">🎯 我的 AP 卡</h4>
                         <span id="ap-counter" style="font-weight: bold;">0 / 3</span>
                     </div>
-                    <div class="card-grid" id="ap-deck-grid" style="min-height: 120px;"></div>
+                    <div class="card-grid" id="ap-deck-grid" style="min-height: var(--card-h);"></div>
                 </div>
                 <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
                     <h4 style="margin: 0; color: #3498db;">🃏 主要牌組</h4>
@@ -300,12 +211,11 @@
     <div id="card-magnifier"><img src="" id="magnifier-img"></div>
 
     <div id="game-scene">
-        <div style="width: 100%; display: flex; justify-content: space-between; align-items: center; background: rgba(0,0,0,0.8); padding: 1vh 2vw; border-radius: 8px; box-sizing: border-box; margin-bottom: 10px; z-index: 10010;">
-            <div style="color: #f1c40f; font-weight: bold; font-size: 16px;">UA 遠端對戰平台</div>
-            <div style="display: flex; gap: 10px; align-items: center;">
-                <span style="font-size: 12px; color: #aaa;">(拖曳底板平移，滾輪縮放)</span>
-                <button onclick="rollDice()" class="ctrl-btn" style="background: #9b59b6;">🎲 擲骰子</button>
-                <button id="btn-back-builder" class="ctrl-btn danger">🔙 投降並返回</button>
+        <div style="width: 100%; display: flex; justify-content: space-between; align-items: center; background: rgba(0,0,0,0.8); padding: 1vh 2vw; border-radius: 8px; box-sizing: border-box; margin-bottom: 10px;">
+            <div style="color: #f1c40f; font-weight: bold; font-size: 18px;">UA 遠端對戰平台</div>
+            <div style="display: flex; gap: 15px;">
+                <button onclick="rollDice()" class="ctrl-btn" style="background: #9b59b6; font-size: 16px;">🎲 擲骰子</button>
+                <button id="btn-back-builder" class="ctrl-btn danger" style="font-size: 16px;">🔙 投降並返回</button>
             </div>
         </div>
 
@@ -316,53 +226,21 @@
             <button id="btn-bottom-faceup" class="drop-btn">正表放下 (墊底下)</button>
             <button id="btn-cancel-drop" class="drop-btn cancel">取消放置</button>
         </div>
+
+        <div style="width: 100%; max-width: 900px; display: flex; gap: 15px; margin-bottom: 10px;">
+            <div class="look-zone" id="opp-look-zone"><div class="line-label">檢索區</div><div class="look-area" id="opp-look-area"></div></div>
+            <div class="hand-zone" style="flex:7;"><div class="line-label" style="color:#e74c3c;">對手手牌區</div><div class="hand-area" id="opp-hand-area"></div></div>
+        </div>
             
-        <div class="board-wrapper" id="board-viewport">
-            
-            <div class="cam-ctrl-box">
-                <button class="cam-btn" onclick="toggle3D()" id="btn-3d" style="font-size: 14px;">3D</button>
-                <button class="cam-btn" onclick="zoomCam(0.15)">➕</button>
-                <button class="cam-btn" onclick="resetCam()">🎯</button>
-                <button class="cam-btn" onclick="zoomCam(-0.15)">➖</button>
-            </div>
-
-            <div class="hud-top">
-                <div class="look-zone" id="opp-look-zone"><div class="line-label">檢索區</div><div class="look-area" id="opp-look-area"></div></div>
-                <div class="hand-zone" style="flex:7;"><div class="line-label" style="color:#e74c3c;">對手手牌區</div><div class="hand-area" id="opp-hand-area"></div></div>
-            </div>
-
-            <div class="hud-sidebar">
-                <div style="color: #3498db; font-size: 13px; font-weight: bold; background: rgba(52,152,219,0.2); padding: 5px 8px; border-radius: 5px; text-align: center; border: none;">對手階段<br><span id="opp-phase-display" style="color: white; font-size: 16px;">等待中</span></div>
-                <hr style="width: 100%; border: 1px solid rgba(255,255,255,0.2); margin: 0;">
-                <div style="display: flex; flex-direction: column; gap: 8px;">
-                    <div class="phase-step active" onclick="setPhase(this, '起始')">起始階段</div>
-                    <div class="phase-step" onclick="setPhase(this, '移動')">移動階段</div>
-                    <div class="phase-step" onclick="setPhase(this, '主要')">主要階段</div>
-                    <div class="phase-step" onclick="setPhase(this, '戰鬥')">戰鬥階段</div>
-                </div>
-                <button id="btn-end-turn" onclick="endTurn()" class="start-btn" style="padding: 12px; font-size: 16px; width: 100%; border: 1px solid #c0392b; background: #e74c3c;">⛔ 結束回合</button>
-            </div>
-
-            <div class="hud-bottom">
-                <div class="hand-zone"><div class="line-label" style="color:#2ecc71;">YOUR HAND (我方手牌)</div><div class="hand-area" id="my-hand-area"></div></div>
-                <div class="look-zone">
-                    <div class="line-label" style="display: flex; justify-content: space-between; align-items: center;">
-                        <span>檢索確認區</span>
-                        <div><button class="ctrl-btn" style="padding: 2px 5px;" onclick="sendToDeck('my-look-area', 'my-deck-area', false)">置頂</button> <button class="ctrl-btn" style="padding: 2px 5px;" onclick="sendToDeck('my-look-area', 'my-deck-area', true)">置底</button></div>
-                    </div>
-                    <div class="look-area" id="my-look-area"></div>
-                </div>
-            </div>
-
-            <div class="game-table" id="game-table-inner">
-
+        <div class="board-wrapper">
+            <div class="game-table">
                 <div class="battlefield">
                     
                     <div id="opp-board" class="playmat">
                         <div class="side-zone left-side">
-                            <div class="slot-group"><div class="line-label">卡組</div><div class="slot" id="opp-deck-area"></div></div>
-                            <div class="slot-group"><div class="line-label">公開</div><div class="slot" id="opp-public-area"></div></div>
-                            <div class="slot-group"><div class="line-label">場外</div><div class="slot" id="opp-outside-area"></div></div>
+                            <div><div class="line-label">卡組</div><div class="slot" id="opp-deck-area"></div></div>
+                            <div><div class="line-label">公開</div><div class="slot" id="opp-public-area"></div></div>
+                            <div><div class="line-label">場外</div><div class="slot" id="opp-outside-area"></div></div>
                         </div>
                         <div class="center-zone">
                             <div class="line-label">ACTION POINT</div>
@@ -372,9 +250,9 @@
                             <div class="line-label">FRONT LINE</div>
                             <div class="card-row" id="opp-front-line"><div class="slot" id="opp-fl-4"></div><div class="slot" id="opp-fl-3"></div><div class="slot" id="opp-fl-2"></div><div class="slot" id="opp-fl-1"></div></div>
                         </div>
-                        <div class="side-zone right-side">
-                            <div class="slot-group"><div class="line-label">生命區</div><div class="slot life-slot" id="opp-life-area"></div></div>
-                            <div class="slot-group"><div class="line-label">移除區</div><div class="slot" id="opp-remove-area"></div></div>
+                        <div class="side-zone right-side" style="width: calc(var(--card-h) * 1.1);">
+                            <div><div class="line-label">生命區</div><div class="slot life-slot" id="opp-life-area"></div></div>
+                            <div><div class="line-label">移除區</div><div class="slot" id="opp-remove-area"></div></div>
                         </div>
                     </div>
 
@@ -382,8 +260,8 @@
 
                     <div id="my-board" class="playmat">
                         <div class="side-zone left-side">
-                            <div class="slot-group"><div class="line-label">生命區</div><div class="slot life-slot" id="my-life-area"></div></div>
-                            <div class="slot-group"><div class="line-label">移除區</div><div class="slot" id="my-remove-area"></div></div>
+                            <div><div class="line-label">生命區</div><div class="slot life-slot" id="my-life-area"></div></div>
+                            <div><div class="line-label">移除區</div><div class="slot" id="my-remove-area"></div></div>
                         </div>
                         
                         <div class="center-zone">
@@ -395,14 +273,36 @@
                             <div class="card-row ap-row" id="my-ap-area"><div class="slot" id="my-ap-1"></div><div class="slot" id="my-ap-2"></div><div class="slot" id="my-ap-3"></div></div>
                         </div>
                         
-                        <div class="side-zone right-side">
-                            <div class="slot-group"><div class="line-label">卡組</div><div class="slot" id="my-deck-area"></div></div>
-                            <div class="slot-group"><div class="line-label">公開</div><div class="slot" id="my-public-area"></div></div>
-                            <div class="slot-group"><div class="line-label">場外</div><div class="slot" id="my-outside-area"></div></div>
+                        <div class="side-zone right-side" style="width: calc(var(--card-h) * 1.1);">
+                            <div><div class="line-label">卡組</div><div class="slot" id="my-deck-area"></div></div>
+                            <div><div class="line-label">公開</div><div class="slot" id="my-public-area"></div></div>
+                            
+                            <div style="width: 100%; display: flex; flex-direction: column; gap: 5px;">
+                                <div><div class="line-label">場外</div><div class="slot" id="my-outside-area" style="margin-bottom: 5px;"></div></div>
+                                
+                                <div style="color: #3498db; font-size: 11px; font-weight: bold; text-align: center; background: rgba(52,152,219,0.2); padding: 3px; border-radius: 4px;">對手階段：<span id="opp-phase-display">等待中</span></div>
+                                <div class="phase-bar" style="display: grid; grid-template-columns: 1fr 1fr; gap: 4px; background: rgba(0,0,0,0.8); padding: 5px; border-radius: 6px; border: 1px solid #f39c12; width: 100%; box-sizing: border-box;">
+                                    <div class="phase-step active" onclick="setPhase(this, '起始')">起始</div>
+                                    <div class="phase-step" onclick="setPhase(this, '移動')">移動</div>
+                                    <div class="phase-step" onclick="setPhase(this, '主要')">主要</div>
+                                    <div class="phase-step" onclick="setPhase(this, '戰鬥')">戰鬥</div>
+                                </div>
+                                <button id="btn-end-turn" onclick="endTurn()" class="start-btn" style="padding: 6px; font-size: 13px; width: 100%; border: 1px solid #c0392b; background: #e74c3c;">⛔ 結束回合</button>
+                            </div>
                         </div>
                     </div>
                 </div>
+            </div>
+        </div>
 
+        <div class="bottom-container" style="max-width: 900px;">
+            <div class="hand-zone"><div class="line-label" style="color:#2ecc71;">YOUR HAND (我方手牌)</div><div class="hand-area" id="my-hand-area"></div></div>
+            <div class="look-zone">
+                <div class="line-label" style="display: flex; justify-content: space-between; align-items: center;">
+                    <span>檢索確認區</span>
+                    <div><button class="ctrl-btn" style="padding: 2px 5px;" onclick="sendToDeck('my-look-area', 'my-deck-area', false)">置頂</button> <button class="ctrl-btn" style="padding: 2px 5px;" onclick="sendToDeck('my-look-area', 'my-deck-area', true)">置底</button></div>
+                </div>
+                <div class="look-area" id="my-look-area"></div>
             </div>
         </div>
     </div>
@@ -417,7 +317,7 @@
         <div class="modal-header" id="secondary-modal-header" style="display:none; margin-top:20px; font-size: 18px;">
             <span style="color: #3498db;">⬇️ 公開區 (可從上方拖曳加入)</span>
         </div>
-        <div class="modal-content" id="modal-public-container" style="display:none; border-color: #3498db; min-height: 140px;"></div>
+        <div class="modal-content" id="modal-public-container" style="display:none; border-color: #3498db; min-height: var(--card-h);"></div>
     </div>
 
     <div id="mulligan-modal">
@@ -433,6 +333,7 @@
 
     <script>
         let invalidCardsCache = JSON.parse(localStorage.getItem('ua_invalid_cards')) || [];
+        
         window.markCardInvalid = function(cardId) {
             if (!invalidCardsCache.includes(cardId)) {
                 invalidCardsCache.push(cardId);
@@ -561,154 +462,35 @@
             sysMsgTimer = setTimeout(() => { box.style.display = 'none'; }, 4000); 
         }
 
-        function showCenterAlert(icon, title, value, color) {
-            let overlay = document.getElementById('center-overlay');
-            document.getElementById('overlay-icon').innerText = icon;
-            document.getElementById('overlay-title').innerText = title;
-            let valEl = document.getElementById('overlay-value');
-            valEl.innerText = value;
-            valEl.style.color = color;
-            valEl.style.textShadow = `0 0 20px ${color}`;
-            overlay.style.border = `4px solid ${color}`;
-            overlay.style.boxShadow = `0 0 50px ${color}`;
-            overlay.style.display = 'block';
-            setTimeout(() => { overlay.style.display = 'none'; }, 2500);
-        }
-
-        // ================= 🎥 虛擬攝影機引擎核心 =================
-        window.camScale = 1;
-        window.camX = 0; window.camY = 0;
-        let isCamDragging = false;
-        let camStartX = 0, camStartY = 0;
-
-        function updateCamera() {
-            let gameTable = document.getElementById('game-table-inner');
-            if(gameTable) gameTable.style.transform = `translate(${window.camX}px, ${window.camY}px) scale(${window.camScale})`;
-        }
-
-        window.zoomCam = function(delta) {
-            window.camScale += delta;
-            if(window.camScale < 0.3) window.camScale = 0.3;
-            if(window.camScale > 2) window.camScale = 2;
-            updateCamera();
-        };
-
-        window.resetCam = function() {
-            let wrapper = document.getElementById('board-viewport');
-            if(!wrapper) return;
-            let w = wrapper.clientWidth;
-            let h = wrapper.clientHeight;
-            
-            window.camScale = Math.min(w / 1150, h / 1000) * 0.95; 
-            if(window.camScale > 1.2) window.camScale = 1.2;
-            
-            window.camX = (w - (1150 * window.camScale)) / 2;
-            window.camY = (h - (1000 * window.camScale)) / 2;
-            updateCamera();
-        };
-
-        window.is3D = false;
-        window.toggle3D = function() {
-            window.is3D = !window.is3D;
-            let btn = document.getElementById('btn-3d');
-            btn.style.background = window.is3D ? '#e74c3c' : 'rgba(0,0,0,0.8)';
-            let table = document.getElementById('game-table-inner');
-            if(window.is3D) table.classList.add('mode-3d');
-            else table.classList.remove('mode-3d');
-        };
-
-        function startPan(e) {
-            if(e.target.closest('.card') || e.target.closest('.slot') || e.target.closest('.cam-btn') || 
-               e.target.closest('.hud-sidebar') || e.target.closest('.hud-top') || e.target.closest('.hud-bottom')) return; 
-               
-            isCamDragging = true;
-            let clientX = e.type.includes('touch') ? e.touches[0].clientX : e.clientX;
-            let clientY = e.type.includes('touch') ? e.touches[0].clientY : e.clientY;
-            camStartX = clientX - window.camX;
-            camStartY = clientY - window.camY;
-        }
-
-        function doPan(e) {
-            if(!isCamDragging) return;
-            e.preventDefault();
-            let clientX = e.type.includes('touch') ? e.touches[0].clientX : e.clientX;
-            let clientY = e.type.includes('touch') ? e.touches[0].clientY : e.clientY;
-            window.camX = clientX - camStartX;
-            window.camY = clientY - camStartY;
-            updateCamera();
-        }
-
-        function endPan() { isCamDragging = false; }
-
         window.onload = () => { 
             let savedCustom = JSON.parse(localStorage.getItem('ua_custom_cards')) || [];
             if(typeof masterCardCatalog !== 'undefined') masterCardCatalog.push(...savedCustom);
             updateDeckSelector(); initSeriesFilter(); renderBuilder(); renderDeck(); 
 
-            document.addEventListener('pointerdown', e => {
-                if (e.target.closest('.cam-btn') || e.target.closest('.modal-content') || e.target.closest('.hud-sidebar') || e.target.closest('.hud-top') || e.target.closest('.hud-bottom')) return;
-
-                let slot = e.target.closest('.slot');
-                if (slot && slot.id.includes('opp-') && !slot.id.includes('hand') && !slot.id.includes('look')) {
-                    slot.classList.toggle('marked');
-                    broadcastMyState();
-                }
+            // 🎯 動態生成戰鬥場地的「標記圖示 (Marker)」
+            document.querySelectorAll('#my-front-line .slot, #my-energy-line .slot, #opp-front-line .slot, #opp-energy-line .slot').forEach(slot => {
+                let marker = document.createElement('div');
+                marker.className = 'marker';
+                marker.innerText = '🎯';
+                marker.onclick = (e) => {
+                    e.stopPropagation(); 
+                    if(slot.id.startsWith('my-')) {
+                        slot.classList.toggle('marked');
+                        broadcastMyState();
+                    }
+                };
+                slot.appendChild(marker);
             });
-
-            let wrapper = document.getElementById('board-viewport');
-            wrapper.addEventListener('mousedown', startPan);
-            wrapper.addEventListener('touchstart', startPan, {passive: false});
-            window.addEventListener('mousemove', doPan);
-            window.addEventListener('touchmove', doPan, {passive: false});
-            window.addEventListener('mouseup', endPan);
-            window.addEventListener('touchend', endPan);
-
-            wrapper.addEventListener('wheel', e => {
-                if (e.target.closest('.modal-content') || e.target.closest('.hud-sidebar') || e.target.closest('.hud-top') || e.target.closest('.hud-bottom')) return;
-                e.preventDefault();
-                zoomCam(e.deltaY < 0 ? 0.08 : -0.08);
-            }, {passive: false});
-
-            window.addEventListener('resize', resetCam);
         };
 
-        // ================= 🚨 6位數配對 & 連線防護升級引擎 =================
-        let myRoomId = Math.floor(100000 + Math.random() * 900000).toString();
-        
-        let peer = new Peer(myRoomId, { 
-            secure: true,
-            pingInterval: 5000, 
-            config: { 
-                'iceServers': [ 
-                    { urls: 'stun:stun.l.google.com:19302' }, 
-                    { urls: 'stun:stun1.l.google.com:19302' },
-                    { urls: 'turn:openrelay.metered.ca:80', username: 'openrelayproject', credential: 'openrelayproject' }, 
-                    { urls: 'turn:openrelay.metered.ca:443', username: 'openrelayproject', credential: 'openrelayproject' },
-                    { urls: 'turn:openrelay.metered.ca:443?transport=tcp', username: 'openrelayproject', credential: 'openrelayproject' }
-                ] 
-            } 
-        });
-        
+        // ================= 網路連線引擎 =================
+        let peer = new Peer({ config: { 'iceServers': [ { urls: 'stun:stun.l.google.com:19302' }, { urls: 'stun:stun1.l.google.com:19302' }, { urls: 'stun:stun2.l.google.com:19302' }, { urls: 'turn:openrelay.metered.ca:80', username: 'openrelayproject', credential: 'openrelayproject' }, { urls: 'turn:openrelay.metered.ca:443', username: 'openrelayproject', credential: 'openrelayproject' } ] } });
         let conn = null; let isConnected = false;
 
-        peer.on('open', id => { document.getElementById('my-peer-id').innerText = id; document.getElementById('my-peer-id').onclick = () => { navigator.clipboard.writeText(id); showSysMsg("🔗 你的 6 位數 ID 已複製！"); }; });
-        
-        peer.on('error', err => {
-            console.error(err);
-            if (err.type === 'peer-unavailable') { alert("❌ 找不到這個 6 位數 ID！對手可能已經斷線。"); } 
-            else if (err.type === 'network' || err.type === 'server-error') { alert("⚠️ 官方配對伺服器目前不穩定或塞車中。請雙方 [重整網頁] 再試一次！"); }
-        });
-
+        peer.on('open', id => { document.getElementById('my-peer-id').innerText = id; document.getElementById('my-peer-id').onclick = () => { navigator.clipboard.writeText(id); showSysMsg("🔗 你的 ID 已複製！"); }; });
         peer.on('connection', connection => { conn = connection; setupConnection(); });
-        
-        document.getElementById('btn-connect').addEventListener('click', () => { 
-            let targetId = document.getElementById('target-id').value.trim(); 
-            if(targetId) { 
-                showSysMsg("正在配對..."); 
-                conn = peer.connect(targetId); 
-                setupConnection(); 
-            } 
-        });
+
+        document.getElementById('btn-connect').addEventListener('click', () => { let targetId = document.getElementById('target-id').value.trim(); if(targetId) { showSysMsg("正在連線..."); conn = peer.connect(targetId); setupConnection(); } });
 
         function setupConnection() {
             conn.on('open', () => {
@@ -717,16 +499,7 @@
                 btn.onclick = () => {
                     if(myDeckData.length === 0) { alert("請先建立主牌組！"); return; }
                     if(myApData.length !== 3) { alert("請挑選剛好 3 張 AP 卡！"); return; }
-                    
-                    // 📱 進入遊戲場景時才加上標籤，觸發橫向鎖定判斷
-                    document.body.classList.add('in-game');
-                    if (screen.orientation && screen.orientation.lock) {
-                        screen.orientation.lock('landscape').catch(err => console.log('螢幕旋轉被拒絕，已降級為視覺提示'));
-                    }
-
-                    document.getElementById('builder-scene').style.display = 'none'; 
-                    document.getElementById('game-scene').style.display = 'flex';
-                    setTimeout(resetCam, 100); 
+                    document.getElementById('builder-scene').style.display = 'none'; document.getElementById('game-scene').style.display = 'flex';
                     
                     let shuffledDeck = shuffleArray([...myDeckData]);
                     initMyBoard(shuffledDeck, myApData); conn.send({ type: 'START_GAME', deck: shuffledDeck, ap: myApData });
@@ -736,24 +509,15 @@
                 if(data.type === 'START_GAME') { showSysMsg("對手已進入盤面！"); initOpponentBoard(data.deck, data.ap); }
                 else if(data.type === 'SYNC_BOARD') applyOpponentSync(data);
                 else if(data.type === 'FLIP_CARD') applyOpponentFlip(data.id);
-                else if(data.type === 'DICE_ROLL') showCenterAlert('🎲', '對手擲出了：', data.value, '#e74c3c');
-                else if(data.type === 'SHUFFLE_DECK') showCenterAlert('🔀', '對手洗牌中', 'Shuffling...', '#9b59b6');
-                else if(data.type === 'PHASE_BROADCAST') { 
-                    if (data.phase === '結束') showCenterAlert('⚠️', '對手回合結束', '輪到你了！', '#2ecc71');
-                    else showCenterAlert('⚠️', '對手進入了', data.phase + '階段', '#f39c12');
-                }
+                else if(data.type === 'DICE_ROLL') showDiceOverlay(`對手擲出了：`, data.value, false);
                 else if(data.type === 'SURRENDER') {
                     alert("對手已投降並返回構築區！\n點擊確定後將同步返回大廳。");
                     resetBoard();
                 }
             });
-            conn.on('close', () => {
-                isConnected = false;
-                alert("⚠️ 與對手連線已中斷。");
-                resetBoard();
-            });
         }
 
+        // 🛡️ 無限重開局：退回大廳並徹底重置
         document.getElementById('btn-back-builder').addEventListener('click', () => {
             if(confirm("確定要投降並返回構築區嗎？")) {
                 if(conn && isConnected) conn.send({ type: 'SURRENDER' });
@@ -762,14 +526,8 @@
         });
 
         function resetBoard() {
-            // 📱 離開對戰時解除橫向鎖定
-            document.body.classList.remove('in-game');
-            if (screen.orientation && screen.orientation.unlock) {
-                screen.orientation.unlock();
-            }
-
             document.querySelectorAll('.card').forEach(c => c.remove());
-            document.querySelectorAll('.slot.marked').forEach(s => s.classList.remove('marked'));
+            document.querySelectorAll('.slot').forEach(s => s.classList.remove('marked'));
             document.querySelectorAll('.phase-step').forEach(btn => btn.classList.remove('active'));
             document.querySelector('.phase-step:first-child').classList.add('active');
             document.getElementById('game-scene').style.display = 'none'; 
@@ -777,30 +535,41 @@
             myCardsElements = []; oppCardsElements = [];
         }
 
+        // 🎲 全螢幕霸氣擲骰子功能
         window.rollDice = function() {
             let result = Math.floor(Math.random() * 6) + 1;
-            showCenterAlert('🎲', '你擲出了：', result, '#2ecc71');
+            showDiceOverlay(`你擲出了：`, result, true);
             if (conn) conn.send({ type: 'DICE_ROLL', value: result });
         };
 
+        function showDiceOverlay(title, value, isMe) {
+            let overlay = document.getElementById('dice-overlay');
+            document.getElementById('dice-result-text').innerText = title;
+            let valEl = document.getElementById('dice-value');
+            valEl.innerText = value;
+            valEl.style.color = isMe ? '#2ecc71' : '#e74c3c';
+            valEl.style.textShadow = `0 0 20px ${isMe ? 'rgba(46, 204, 113, 0.8)' : 'rgba(231, 76, 60, 0.8)'}`;
+            overlay.style.display = 'block';
+            setTimeout(() => { overlay.style.display = 'none'; }, 3000);
+        }
+
+        // 🔄 階段指示器功能
         window.setPhase = function(el, phaseName) {
             document.querySelectorAll('.phase-step').forEach(btn => btn.classList.remove('active'));
             el.classList.add('active');
             broadcastMyState();
-            showCenterAlert('🔄', '進入階段', phaseName + '階段', '#3498db');
-            if(conn && isConnected) conn.send({ type: 'PHASE_BROADCAST', phase: phaseName });
         };
 
         window.endTurn = function() {
             document.querySelectorAll('.phase-step').forEach(btn => btn.classList.remove('active'));
             document.querySelector('.phase-step:first-child').classList.add('active'); 
             
+            // 🌟 回合結束：所有卡片轉正，所有標記清除
             document.querySelectorAll('#my-board .card.rest').forEach(c => c.classList.remove('rest'));
-            document.querySelectorAll('.slot.marked').forEach(s => s.classList.remove('marked'));
+            document.querySelectorAll('#my-board .slot.marked').forEach(s => s.classList.remove('marked'));
             
             broadcastMyState();
-            showCenterAlert('⛔', '回合結束', '換對手回合', '#e74c3c');
-            if(conn && isConnected) conn.send({ type: 'PHASE_BROADCAST', phase: '結束' });
+            showSysMsg("🔄 回合結束，卡片已全數轉正！");
         };
 
         let myCardsElements = []; let oppCardsElements = [];
@@ -811,34 +580,18 @@
             document.querySelectorAll('.card').forEach((el, index) => {
                 if (el.dataset.networkId && el.dataset.networkId.startsWith('p_')) {
                     let pId = (el.parentElement && el.parentElement.id) ? el.parentElement.id : 'none';
-                    let isFlipped = el.classList.contains('is-flipped');
-                    
-                    if (pId.includes('hand') || pId.includes('look') || el.dataset.isSecretDrag === 'true') {
-                        isFlipped = true;
-                    }
-
-                    let xVal = el.style.left;
-                    let yVal = el.style.top;
-                    let isGlobalDragging = (el.parentElement && el.parentElement.id === 'board-viewport');
-                    
-                    if (isGlobalDragging) {
-                        let vp = document.getElementById('board-viewport');
-                        xVal = (parseFloat(el.style.left) / vp.clientWidth).toString() + '_vp';
-                        yVal = (parseFloat(el.style.top) / vp.clientHeight).toString() + '_vp';
-                    }
-
                     state.push({ 
                         id: el.dataset.networkId, parent: pId, 
-                        x: xVal, y: yVal, zIndex: index, 
-                        isFlipped: isFlipped, isRest: el.classList.contains('rest'), inLife: el.classList.contains('in-life'),
-                        isDragging: isGlobalDragging
+                        x: el.style.left, y: el.style.top, zIndex: index, 
+                        isFlipped: el.classList.contains('is-flipped'), isRest: el.classList.contains('rest'), inLife: el.classList.contains('in-life') 
                     });
                 }
             });
 
+            // 打包階段與標記狀態
             let activePhaseEl = document.querySelector('.phase-step.active');
             let myPhase = activePhaseEl ? activePhaseEl.innerText : '等待中';
-            let markedSlots = Array.from(document.querySelectorAll('.slot.marked')).map(el => el.id);
+            let markedSlots = Array.from(document.querySelectorAll('#my-board .slot.marked')).map(el => el.id);
 
             conn.send({ type: 'SYNC_BOARD', state: state, phase: myPhase, markedSlots: markedSlots });
         }
@@ -852,26 +605,11 @@
                     el.style.opacity = '1';
 
                     let targetParentId = d.parent.replace('my-', 'opp-');
-                    let actualParentEl = d.isDragging ? document.getElementById('board-viewport') : document.getElementById(targetParentId);
-                    if(actualParentEl && el.parentElement !== actualParentEl) actualParentEl.appendChild(el);
+                    let parentEl = document.getElementById(targetParentId);
+                    if(parentEl && el.parentElement !== parentEl) parentEl.appendChild(el);
                     
-                    el.style.position = (targetParentId.includes('hand') || targetParentId.includes('look')) && !d.isDragging ? 'relative' : 'absolute';
-                    
-                    if (d.isDragging && typeof d.x === 'string' && d.x.endsWith('_vp')) {
-                        let px = parseFloat(d.x);
-                        let py = parseFloat(d.y);
-                        let vp = document.getElementById('board-viewport');
-                        el.style.left = ((1 - px) * vp.clientWidth - el.offsetWidth) + 'px';
-                        el.style.top = ((1 - py) * vp.clientHeight - el.offsetHeight) + 'px';
-                        el.style.transform = `scale(${window.camScale * 1.05})`;
-                        el.classList.add('dragging'); 
-                        el.style.zIndex = 999999;
-                    } else {
-                        el.style.left = d.x; 
-                        el.style.top = d.y;
-                        el.style.transform = '';
-                        el.classList.remove('dragging');
-                    }
+                    el.style.position = (targetParentId.includes('hand') || targetParentId.includes('look')) ? 'relative' : 'absolute';
+                    el.style.left = d.x; el.style.top = d.y; el.style.zIndex = d.zIndex; 
                     
                     if(d.isFlipped) el.classList.add('is-flipped'); else el.classList.remove('is-flipped');
                     if(d.isRest) el.classList.add('rest'); else el.classList.remove('rest');
@@ -879,13 +617,14 @@
                 }
             });
 
+            // 應用對手的標記與階段
             if(data.phase) document.getElementById('opp-phase-display').innerText = data.phase;
             
-            document.querySelectorAll('.slot').forEach(el => el.classList.remove('marked'));
+            document.querySelectorAll('#opp-board .slot').forEach(el => el.classList.remove('marked'));
             if(data.markedSlots) {
                 data.markedSlots.forEach(id => {
-                    let localId = id.startsWith('my-') ? id.replace('my-', 'opp-') : id.replace('opp-', 'my-');
-                    let slot = document.getElementById(localId);
+                    let oppId = id.replace('my-', 'opp-');
+                    let slot = document.getElementById(oppId);
                     if(slot) slot.classList.add('marked');
                 });
             }
@@ -903,7 +642,7 @@
 
         function createCardDOM(cardData, networkId, isMine) {
             let el = document.createElement("div"); el.className = "card is-flipped"; el.dataset.networkId = networkId;
-            el.innerHTML = `<div class="card-inner"><div class="card-front"><img src="${cardData.imageUrl}"></div><div class="card-back"></div></div>`;
+            el.innerHTML = `<div class="card-inner"><div class="card-front"><img src="${cardData.imageUrl}"></div><div class="card-back">UNION<br>ARENA</div></div>`;
             if(isMine) attachMyDragEvents(el); return el;
         }
 
@@ -915,8 +654,7 @@
             let apSlots = document.querySelectorAll('#my-ap-area .slot');
             apSlots.forEach((slot, i) => {
                 slot.innerHTML = ''; let apData = apDeck[i] || apDeck[0] || {imageUrl: "https://rugiacreation.com/ua/cardlist/small/UA44BT_EVA-1-AP03.jpg"};
-                let apEl = createCardDOM(apData, `p_ap_${i}`, true); apEl.classList.add('ap-card');
-
+                let apEl = createCardDOM(apData, `p_ap_${i}`, true); apEl.querySelector('.card-back').innerHTML = "ACTION<br>POINT"; apEl.classList.add('ap-card');
                 myCardsElements.push(apEl); slot.appendChild(apEl); apEl.style.left = '0px'; apEl.style.top = '0px';
             });
             updateSlotCounts(); broadcastMyState(); showSysMsg("發放起手牌..."); setTimeout(drawInitialHand, 800);
@@ -926,7 +664,7 @@
             oppCardsElements = []; document.getElementById('opp-deck-area').innerHTML = '';
             deck.forEach((card, i) => { let el = createCardDOM(card, `p_card_${i}`, false); oppCardsElements.push(el); document.getElementById('opp-deck-area').appendChild(el); });
             let apSlots = document.querySelectorAll('#opp-ap-area .slot');
-            apSlots.forEach((slot, i) => { slot.innerHTML = ''; let apData = apDeck[i] || apDeck[0]; let apEl = createCardDOM(apData, `p_ap_${i}`, false); apEl.classList.add('ap-card'); oppCardsElements.push(apEl); slot.appendChild(apEl); });
+            apSlots.forEach((slot, i) => { slot.innerHTML = ''; let apData = apDeck[i] || apDeck[0]; let apEl = createCardDOM(apData, `p_ap_${i}`, false); apEl.querySelector('.card-back').innerHTML = "ACTION<br>POINT"; apEl.classList.add('ap-card'); oppCardsElements.push(apEl); slot.appendChild(apEl); });
             updateSlotCounts();
         }
 
@@ -957,34 +695,24 @@
         function applyStackingStyle(card, slotBelow, myIndex) {
             if (!slotBelow) return;
             card.style.zIndex = myIndex;
-            
-            if (slotBelow.id.includes('deck') || slotBelow.id.includes('outside') || slotBelow.id.includes('remove') || slotBelow.id.includes('public') || slotBelow.id.includes('ap')) { 
-                card.style.left='0px'; card.style.top='0px'; 
-                card.classList.remove('in-life');
-            }
+            if (slotBelow.id.includes('deck') || slotBelow.id.includes('outside') || slotBelow.id.includes('remove') || slotBelow.id.includes('public') || slotBelow.id.includes('ap')) { card.style.left='0px'; card.style.top='0px'; }
             else if (slotBelow.id.includes('life')) { 
                 card.style.left = 'calc((var(--card-h) - var(--card-w)) / 2)'; 
-                card.style.top = `calc((var(--card-w) - var(--card-h)) / -2 + ${myIndex * 26}px)`; 
+                card.style.top = `calc((var(--card-w) - var(--card-h)) / 2 + ${myIndex * 2.5}vh)`; 
                 card.classList.add('in-life'); 
                 card.classList.remove('rest');
             }
-            else if (slotBelow.classList.contains('slot')) { 
-                card.style.left=(myIndex*4)+'px'; card.style.top=(myIndex*12)+'px'; 
-                card.classList.remove('in-life');
-            } 
+            else if (slotBelow.classList.contains('slot')) { card.style.left=(myIndex*4)+'px'; card.style.top=(myIndex*12)+'px'; } 
         }
         function recalcStacking(areaElement) { if(!areaElement || areaElement.id.includes('hand') || areaElement.id.includes('look')) return; Array.from(areaElement.querySelectorAll('.card')).forEach((c, idx) => applyStackingStyle(c, areaElement, idx)); }
 
         function attachMyDragEvents(cardElement) {
             cardElement.clickTimeout = null;
-            let viewportLayer = document.getElementById('board-viewport');
 
             function dragStart(event) {
                 if (event.type === 'mousedown' && window.isTouchDevice) return;
                 if (event.type === 'touchstart') window.isTouchDevice = true;
                 if (event.type === 'mousedown' && event.button !== 0) return; 
-
-                event.stopPropagation();
                 
                 let isDragging = false, isStackDrag = false, stackCardsData = [];
                 let originalParent = cardElement.parentElement;
@@ -999,54 +727,39 @@
                 }, 300);
 
                 let isTouch = event.type.includes('touch');
-                let clientX = isTouch ? event.touches[0].clientX : event.clientX;
-                let clientY = isTouch ? event.touches[0].clientY : event.clientY;
-                
-                cardElement.dataset.isSecretDrag = (originalParent && (originalParent.id.includes('hand') || originalParent.id.includes('look'))) ? 'true' : 'false';
-
-                let dragThreshold = isTouch ? 15 : 6;
-                let startClientX = clientX;
-                let startClientY = clientY;
+                let startPageX = isTouch ? event.touches[0].pageX : event.pageX;
+                let startPageY = isTouch ? event.touches[0].pageY : event.pageY;
+                let rect = cardElement.getBoundingClientRect();
+                let shiftX = startPageX - (rect.left + window.scrollX);
+                let shiftY = startPageY - (rect.top + window.scrollY);
 
                 function onMove(event) {
-                    let curClientX = isTouch ? event.touches[0].clientX : event.clientX;
-                    let curClientY = isTouch ? event.touches[0].clientY : event.clientY;
+                    let curPageX = isTouch ? event.touches[0].pageX : event.pageX;
+                    let curPageY = isTouch ? event.touches[0].pageY : event.pageY;
 
-                    if (!isDragging && (Math.abs(curClientX - startClientX) > dragThreshold || Math.abs(curClientY - startClientY) > dragThreshold)) {
+                    let dragThreshold = isTouch ? 15 : 6;
+
+                    if (!isDragging && (Math.abs(curPageX - startPageX) > dragThreshold || Math.abs(curPageY - startPageY) > dragThreshold)) {
                         isDragging = true; if(typeof longPressTimer !== 'undefined') clearTimeout(longPressTimer);
-                        
                         if (isStackDrag) {
                             if (stackCardsData.length === 0) {
                                 Array.from(originalParent.querySelectorAll('.card')).forEach(c => {
-                                    stackCardsData.push({ el: c });
-                                    viewportLayer.appendChild(c); 
-                                    c.style.position = 'absolute'; c.classList.add('dragging'); c.classList.remove('in-life', 'stack-glowing'); 
+                                    let r = c.getBoundingClientRect(); 
+                                    let sX = startPageX - (r.left + window.scrollX);
+                                    let sY = startPageY - (r.top + window.scrollY);
+                                    stackCardsData.push({ el: c, shiftX: sX, shiftY: sY });
+                                    document.body.appendChild(c); c.style.position = 'absolute'; c.classList.add('dragging'); c.classList.remove('in-life', 'stack-glowing'); 
                                 });
                             }
                         } else {
-                            viewportLayer.appendChild(cardElement); 
-                            cardElement.style.position = 'absolute';
+                            document.body.appendChild(cardElement); cardElement.style.position = 'absolute';
                             cardElement.classList.add('dragging'); cardElement.classList.remove('in-life'); 
                         }
                     }
                     if (isDragging) {
                         if (event.type.includes('touch') && event.cancelable) event.preventDefault(); 
-                        
-                        let viewportRect = viewportLayer.getBoundingClientRect();
-                        
-                        if (isStackDrag) {
-                            stackCardsData.forEach((item, index) => { 
-                                let localX = (curClientX - viewportRect.left) - (item.el.offsetWidth / 2) + (index * 8);
-                                let localY = (curClientY - viewportRect.top) - (item.el.offsetHeight / 2) + (index * 8);
-                                item.el.style.left = localX + 'px'; item.el.style.top = localY + 'px'; 
-                                item.el.style.transform = `scale(${window.camScale * 1.05})`; 
-                            });
-                        } else { 
-                            let localX = (curClientX - viewportRect.left) - (cardElement.offsetWidth / 2);
-                            let localY = (curClientY - viewportRect.top) - (cardElement.offsetHeight / 2);
-                            cardElement.style.left = localX + 'px'; cardElement.style.top = localY + 'px'; 
-                            cardElement.style.transform = `scale(${window.camScale * 1.05})`; 
-                        }
+                        if (isStackDrag) stackCardsData.forEach(item => { item.el.style.left = (curPageX - item.shiftX) + 'px'; item.el.style.top = (curPageY - item.shiftY) + 'px'; });
+                        else { cardElement.style.left = (curPageX - shiftX) + 'px'; cardElement.style.top = (curPageY - shiftY) + 'px'; }
                         broadcastMyState(); 
                     }
                 }
@@ -1059,8 +772,6 @@
                     if (isTouch && event.cancelable) event.preventDefault();
 
                     if (!isDragging) {
-                        delete cardElement.dataset.isSecretDrag;
-                        
                         if(originalParent) originalParent.querySelectorAll('.card').forEach(c => c.classList.remove('stack-glowing'));
                         
                         let noRestZones = ['hand', 'look', 'outside', 'deck', 'remove', 'public'];
@@ -1094,8 +805,7 @@
                         let endY = event.type.includes('touch') ? event.changedTouches[0].clientY : event.clientY;
                         
                         let cardsToDrop = isStackDrag ? stackCardsData.map(item => item.el) : [cardElement];
-                        
-                        cardsToDrop.forEach(c => { c.style.display = 'none'; c.style.transform = ''; }); 
+                        cardsToDrop.forEach(c => c.style.display = 'none');
                         let elemBelow = document.elementFromPoint(endX, endY);
                         cardsToDrop.forEach(c => c.style.display = 'block'); 
                         
@@ -1124,12 +834,8 @@
 
         function finalizeDrop(cards, dropZone, action, originalParent, endX) {
             let processCards = (action.startsWith('bottom')) ? [...cards].reverse() : cards;
-
             processCards.forEach(c => {
                 c.classList.remove('dragging', 'stack-glowing');
-                // 🌟 卡片落地瞬間，徹底解除秘密狀態
-                delete c.dataset.isSecretDrag; 
-
                 if (dropZone && action !== 'cancel') {
                     if (action === 'top-faceup') { dropZone.appendChild(c); c.classList.remove('is-flipped', 'rest'); dropZone.querySelectorAll('.card').forEach(cardInSlot => cardInSlot.classList.remove('rest')); } 
                     else if (action === 'bottom-facedown') { dropZone.insertBefore(c, dropZone.firstChild); c.classList.add('is-flipped'); c.classList.remove('rest'); } 
@@ -1201,74 +907,15 @@
 
         document.addEventListener('keydown', e => {
             if(document.getElementById('game-scene').style.display === 'none') return;
-            if(e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
-
-            let key = e.key.toLowerCase();
-            
-            if (key === 'r' && !hoveredCard) {
-                let deckArea = document.getElementById('my-deck-area');
-                let cards = Array.from(deckArea.querySelectorAll('.card'));
-                if(cards.length > 1) {
-                    cards.forEach(c => {
-                        let rx = (Math.random() - 0.5) * 60;
-                        let ry = (Math.random() - 0.5) * 60;
-                        let rr = (Math.random() - 0.5) * 45;
-                        c.style.transition = 'transform 0.2s ease-out';
-                        c.style.transform = `translate(${rx}px, ${ry}px) rotate(${rr}deg)`;
-                    });
-                    showCenterAlert('🔀', '洗牌中', 'Shuffling', '#3498db');
-                    if(conn && isConnected) conn.send({ type: 'SHUFFLE_DECK' });
-                    
-                    setTimeout(() => {
-                        cards.forEach(c => c.style.transform = '');
-                        shuffleDOMDeck(deckArea);
-                        broadcastMyState();
-                    }, 400);
-                }
-                return;
-            }
-
             if(hoveredCard && !hoveredCard.parentElement.id.includes('opp-')) {
-                if(key === 'f') { hoveredCard.classList.toggle('is-flipped'); broadcastMyState(); }
-                
-                if(key === 'r') { 
-                    let pId = hoveredCard.parentElement ? hoveredCard.parentElement.id : '';
-                    let noRestZones = ['hand', 'look', 'outside', 'deck', 'remove', 'public'];
-                    if (!hoveredCard.classList.contains('in-life') && !noRestZones.some(z => pId.includes(z))) {
-                        hoveredCard.classList.toggle('rest'); broadcastMyState(); 
-                    }
-                }
-
-                if(key === 'b' || key === 't') {
-                    let dest = document.getElementById('my-deck-area');
-                    if (key === 'b') dest.insertBefore(hoveredCard, dest.firstChild); 
-                    else dest.appendChild(hoveredCard); 
-                    
-                    hoveredCard.classList.add('is-flipped');
-                    hoveredCard.classList.remove('rest', 'in-life');
-                    hoveredCard.style.position = 'absolute';
-                    recalcStacking(dest);
-                    updateSlotCounts();
-                    broadcastMyState();
-                }
-
-                if(key === 'c' || key === 'v' || key === 'g') {
+                if(e.key.toLowerCase() === 'f') { hoveredCard.classList.toggle('is-flipped'); broadcastMyState(); }
+                if(e.key.toLowerCase() === 'c' || e.key.toLowerCase() === 'v') {
                     let targetCard = hoveredCard || (hoveredSlot ? hoveredSlot.querySelectorAll('.card')[hoveredSlot.querySelectorAll('.card').length-1] : null);
                     if(targetCard) {
-                        let destId = 'my-outside-area';
-                        if (key === 'c') destId = 'my-hand-area';
-                        else if (key === 'g') destId = 'my-look-area';
-
-                        let dest = document.getElementById(destId);
-                        dest.appendChild(targetCard); 
-                        targetCard.classList.remove('rest', 'is-flipped');
-
-                        if(dest.id.includes('hand') || dest.id.includes('look')) {
-                            targetCard.style.position = 'relative';
-                        } else { 
-                            targetCard.style.position = 'absolute'; 
-                            applyStackingStyle(targetCard, dest, Array.from(dest.querySelectorAll('.card')).indexOf(targetCard)); 
-                        }
+                        let dest = document.getElementById(e.key.toLowerCase() === 'c' ? 'my-hand-area' : 'my-outside-area');
+                        dest.appendChild(targetCard); targetCard.classList.remove('rest', 'is-flipped');
+                        if(dest.id.includes('hand')) targetCard.style.position = 'relative';
+                        else { targetCard.style.position = 'absolute'; applyStackingStyle(targetCard, dest, Array.from(dest.querySelectorAll('.card')).indexOf(targetCard)); }
                         updateSlotCounts(); broadcastMyState();
                     }
                 }
@@ -1291,15 +938,14 @@
         const modal = document.getElementById('search-modal'), modalContainer = document.getElementById('modal-cards-container'), modalTitle = document.getElementById('modal-title');
         let currentModalSourceSlot = null;
         
-        document.querySelectorAll('#my-deck-area, #my-outside-area, #my-remove-area, #my-life-area, #my-public-area, #opp-deck-area, #opp-outside-area, #opp-remove-area, #opp-life-area, #opp-public-area').forEach(zone => {
+        document.querySelectorAll('#my-outside-area, #my-remove-area, #my-life-area, #my-public-area, #opp-outside-area, #opp-remove-area, #opp-life-area, #opp-public-area').forEach(zone => {
             zone.addEventListener('contextmenu', e => {
                 e.preventDefault(); 
                 let cards = Array.from(zone.querySelectorAll('.card')); 
                 if (cards.length === 0 && !zone.id.includes('outside') && !zone.id.includes('public') && !zone.id.includes('life')) return; 
                 currentModalSourceSlot = zone;
                 
-                if(zone.id.includes('deck')) modalTitle.innerText = `檢索中：卡組 (${cards.length}張)`;
-                else if(zone.id.includes('outside')) modalTitle.innerText = `檢索中：場外 (${cards.length}張)`;
+                if(zone.id.includes('outside')) modalTitle.innerText = `檢索中：場外 (${cards.length}張)`;
                 else if(zone.id.includes('remove')) modalTitle.innerText = `檢索中：移除區 (${cards.length}張)`;
                 else if(zone.id.includes('public')) modalTitle.innerText = `檢索中：公開區 (${cards.length}張)`;
                 else if(zone.id.includes('life')) modalTitle.innerText = `檢索中：生命區 (${cards.length}張) (點擊可翻開)`;
@@ -1349,3 +995,5 @@
     </script>
 </body>
 </html>
+
+
