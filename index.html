@@ -648,12 +648,13 @@
             window.addEventListener('resize', resetCam);
         };
 
-        // ================= 🚨 6位數配對 & 連線防護升級引擎 =================
+// ================= 🚨 6位數配對 & 究極連線防護引擎 =================
         let myRoomId = Math.floor(100000 + Math.random() * 900000).toString();
         
         let peer = new Peer(myRoomId, { 
             secure: true,
             pingInterval: 5000, 
+            debug: 2, // 開啟除錯模式，方便查看連線狀態
             config: { 
                 'iceServers': [ 
                     { urls: 'stun:stun.l.google.com:19302' }, 
@@ -667,12 +668,41 @@
         
         let conn = null; let isConnected = false;
 
-        peer.on('open', id => { document.getElementById('my-peer-id').innerText = id; document.getElementById('my-peer-id').onclick = () => { navigator.clipboard.writeText(id); showSysMsg("🔗 你的 6 位數 ID 已複製！"); }; });
+        // 🌟 魔法邀請連結生成
+        peer.on('open', id => { 
+            document.getElementById('my-peer-id').innerText = id; 
+            document.getElementById('my-peer-id').onclick = () => { 
+                // 產生專屬邀請網址
+                let inviteUrl = window.location.origin + window.location.pathname + '?join=' + id;
+                navigator.clipboard.writeText(inviteUrl); 
+                showSysMsg("🔗 邀請連結已複製！傳給對手即可一鍵加入！"); 
+            }; 
+            
+            // 🌟 檢查是否是點擊邀請連結進來的
+            const urlParams = new URLSearchParams(window.location.search);
+            const joinId = urlParams.get('join');
+            if(joinId && joinId !== id) {
+                document.getElementById('target-id').value = joinId;
+                showSysMsg("偵測到邀請碼，3秒後自動嘗試連線...");
+                setTimeout(() => document.getElementById('btn-connect').click(), 3000);
+            }
+        });
         
+        // 🌟 究極防護：死纏爛打重連機制
+        peer.on('disconnected', () => {
+            console.warn("⚠️ 與配對伺服器失去聯繫，正在背景自動重連...");
+            if (!peer.destroyed) {
+                peer.reconnect(); // 官方伺服器踢掉我們時，強制擠回去
+            }
+        });
+
         peer.on('error', err => {
             console.error(err);
-            if (err.type === 'peer-unavailable') { alert("❌ 找不到這個 6 位數 ID！對手可能已經斷線。"); } 
-            else if (err.type === 'network' || err.type === 'server-error') { alert("⚠️ 官方配對伺服器目前不穩定或塞車中。請雙方 [重整網頁] 再試一次！"); }
+            if (err.type === 'peer-unavailable') { 
+                alert("❌ 找不到這個對手！請確認對手網頁沒有關閉，或請對方重新整理給新代碼。"); 
+            } else if (err.type === 'network' || err.type === 'server-error') { 
+                showSysMsg("⚠️ 官方配對伺服器塞車中，系統自動重試...");
+            }
         });
 
         peer.on('connection', connection => { conn = connection; setupConnection(); });
@@ -680,23 +710,27 @@
         document.getElementById('btn-connect').addEventListener('click', () => { 
             let targetId = document.getElementById('target-id').value.trim(); 
             if(targetId) { 
-                showSysMsg("正在配對..."); 
-                conn = peer.connect(targetId); 
+                showSysMsg("🚀 正在發送配對請求..."); 
+                conn = peer.connect(targetId, { reliable: true }); // 強制使用可靠傳輸
                 setupConnection(); 
             } 
         });
 
         function setupConnection() {
             conn.on('open', () => {
-                isConnected = true; showSysMsg("✅ 連線成功！");
+                isConnected = true; showSysMsg("✅ 連線成功！盤面已同步！");
+                // 移除網址上的邀請碼，保持網址乾淨
+                window.history.replaceState({}, document.title, window.location.pathname);
+                
                 let btn = document.getElementById('start-game-btn'); btn.disabled = false; btn.innerText = "雙方就緒，進入對戰 ➔";
+                btn.style.background = "#e74c3c"; // 變色提醒
                 btn.onclick = () => {
                     if(myDeckData.length === 0) { alert("請先建立主牌組！"); return; }
                     if(myApData.length !== 3) { alert("請挑選剛好 3 張 AP 卡！"); return; }
                     
                     document.body.classList.add('in-game');
                     if (screen.orientation && screen.orientation.lock) {
-                        screen.orientation.lock('landscape').catch(err => console.log('螢幕旋轉被拒絕，已降級為視覺提示'));
+                        screen.orientation.lock('landscape').catch(err => console.log('視覺提示已啟動'));
                     }
 
                     document.getElementById('builder-scene').style.display = 'none'; 
@@ -724,7 +758,7 @@
             });
             conn.on('close', () => {
                 isConnected = false;
-                alert("⚠️ 與對手連線已中斷。");
+                alert("⚠️ 與對手連線已中斷。對手可能關閉了網頁或網路不穩。");
                 resetBoard();
             });
         }
