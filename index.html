@@ -17,60 +17,57 @@
             --font-size-base: 14px;
         }
 
-        /* 鎖死真實高度，封殺瀏覽器原生捲動 */
+        /* 🌟 終極大絕招：把 body 死死釘在螢幕四個角，徹底封殺瀏覽器底列擠壓畫面的 Bug！ */
         body { 
             background-color: #0a0a0a; margin: 0; 
-            height: 100vh; height: var(--app-height, 100vh);
+            position: fixed; top: 0; left: 0; right: 0; bottom: 0; /* 物理鎖死視窗 */
+            padding: 10px; box-sizing: border-box;
             overflow: hidden; overscroll-behavior: none; 
             font-family: '微軟正黑體', sans-serif; 
             display: flex; flex-direction: column; align-items: center; 
-            padding: 1.5vh 2vw; box-sizing: border-box; color: white; 
-            touch-action: none; -webkit-user-select: none; user-select: none; 
+            color: white; touch-action: none; -webkit-user-select: none; user-select: none; 
         }
+        
         input, textarea, select { -webkit-user-select: auto; user-select: auto; }
-
         select option { background: #2c3e50; color: white; }
-
         #sys-msg { position: fixed; top: 10px; left: 50%; transform: translateX(-50%); background: #e67e22; padding: 10px 20px; border-radius: 5px; font-weight: bold; display: none; z-index: 100000; box-shadow: 0 4px 10px rgba(0,0,0,0.5); }
         
-        #builder-scene { width: 98%; max-width: 1600px; display: flex; flex-direction: column; gap: 10px; margin-bottom: 30px; height: 100%; overflow-y: auto; -webkit-overflow-scrolling: touch; }
-        #game-scene { display: none; width: 100%; flex-direction: column; align-items: center; gap: 10px; margin-bottom: 10px; }
+        /* 🌟 構築中心 100% 填滿固定的 Body 空間 */
+        #builder-scene { width: 100%; height: 100%; max-width: 1600px; display: flex; flex-direction: column; gap: 8px; }
+        #game-scene { display: none; width: 100%; height: 100%; flex-direction: column; align-items: center; gap: 10px; margin-bottom: 10px; }
 
-        /* 🌟 MD魔法 2：可摺疊的連線面板 */
-        .network-details { background: rgba(41, 128, 185, 0.15); border: 2px dashed #3498db; border-radius: 8px; margin-bottom: 5px; transition: 0.3s; }
+        .network-panel { background: rgba(41, 128, 185, 0.15); border: 2px dashed #3498db; border-radius: 8px; margin-bottom: 5px; transition: 0.3s; flex-shrink: 0; }
         .network-summary { padding: 10px; font-weight: bold; color: #3498db; cursor: pointer; outline: none; list-style: none; font-size: 15px; text-align: center; }
         .network-summary::-webkit-details-marker { display: none; }
         .network-content { padding: 10px; border-top: 1px dashed #3498db; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; }
-        
         .network-box { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; justify-content: center;}
         .network-input { padding: 6px; border-radius: 5px; border: none; font-size: 13px; outline: none; width: 140px; letter-spacing: 1px; font-weight: bold; text-align: center;}
         #my-peer-id { color: #f1c40f; font-weight: 900; font-size: 18px; cursor: pointer; background: rgba(0,0,0,0.5); padding: 4px 10px; border-radius: 5px; letter-spacing: 2px;}
 
-        /* 🌟 MD魔法 1：手機版專屬分頁按鈕 (預設隱藏) */
-        .mobile-tabs { display: none; width: 100%; gap: 10px; margin-bottom: 5px; }
+        /* 分頁按鈕 */
+        .mobile-tabs { display: none; width: 100%; gap: 10px; margin-bottom: 5px; flex-shrink: 0;}
         .tab-btn { flex: 1; padding: 10px; background: #2c3e50; color: white; border: 2px solid #34495e; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 15px; transition: 0.2s;}
         .tab-btn.active { background: #e67e22; border-color: #d35400; box-shadow: 0 0 10px rgba(230, 126, 34, 0.5);}
 
-        .builder-container { display: flex; gap: 15px; flex: 1; min-height: 60vh; flex-wrap: wrap; align-items: stretch; }
+        .builder-container { display: flex; gap: 15px; flex: 1; flex-wrap: wrap; align-items: stretch; min-height: 0; overflow: hidden; }
         
-        /* 預設電腦版面板 */
         .catalog-panel, .deck-panel { 
             flex: 1; min-width: 320px; 
-            background: rgba(0,0,0,0.5); border-radius: 10px; padding: 15px; 
+            background: rgba(0,0,0,0.5); border-radius: 10px; padding: 10px 15px; 
             display: flex; flex-direction: column; 
-            max-height: 75vh; overflow-y: auto; -webkit-overflow-scrolling: touch; 
+            height: 100%; box-sizing: border-box; overflow-y: auto; -webkit-overflow-scrolling: touch; 
         }
         .deck-panel { background: rgba(139, 21, 21, 0.5); border: 2px dashed #d32f2f; }
         
-        .deck-controls { position: relative; z-index: 99999; display: flex; gap: 8px; margin-bottom: 8px; align-items: center; background: rgba(0,0,0,0.3); padding: 8px; border-radius: 8px; flex-wrap: wrap; transform: translateZ(1px); }
+        .deck-controls { position: relative; z-index: 99999; display: flex; gap: 8px; margin-bottom: 8px; align-items: center; background: rgba(0,0,0,0.3); padding: 8px; border-radius: 8px; flex-wrap: wrap; transform: translateZ(1px); flex-shrink: 0;}
         .deck-selector { flex: 1; padding: 6px; font-size: 14px; border-radius: 5px; background: #2c3e50; color: white; border: 1px solid #34495e; min-width: 120px; }
         
-        .catalog-header { position: relative; z-index: 99999; display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; flex-wrap: wrap; gap: 10px; transform: translateZ(1px); }
+        .catalog-header { position: relative; z-index: 99999; display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; flex-wrap: wrap; gap: 10px; transform: translateZ(1px); flex-shrink: 0;}
         .series-filter { padding: 6px 10px; font-size: 14px; border-radius: 5px; background: #f39c12; color: #1a1a1a; font-weight: bold; border: none; cursor: pointer; outline: none; flex: 1; min-width: 150px;}
         
         .series-title { border-left: 4px solid #f39c12; padding-left: 8px; background: rgba(255,255,255,0.1); padding: 4px; margin: 10px 0 8px 0; font-size: 15px; font-weight: bold;}
         
-        #catalog-grid, #deck-grid-inner, #ap-deck-grid { flex: 1; overflow-y: auto; padding-right: 5px; min-height: 150px; }
+        #catalog-grid, #deck-grid-inner, #ap-deck-grid { flex: 1; overflow-y: auto; padding-right: 5px; min-height: 120px; }
         .card-grid { display: flex; flex-wrap: wrap; gap: 8px; align-content: flex-start;}
         
         .preview-card { position: relative; z-index: 1; width: 110px; height: calc(110px / 0.714); border-radius: 5px; cursor: pointer; transition: transform 0.1s; box-shadow: 0 2px 5px rgba(0,0,0,0.5); }
@@ -85,13 +82,13 @@
         .ctrl-btn { background: #3498db; color: white; border: none; padding: 6px 12px; border-radius: 5px; cursor: pointer; font-weight: bold; font-size: 13px;}
         .ctrl-btn.danger { background: #e74c3c; }
 
-        .import-details { background: rgba(155, 89, 182, 0.15); border: 2px dashed #9b59b6; border-radius: 8px; margin-bottom: 10px; transition: 0.3s;}
+        .import-details { background: rgba(155, 89, 182, 0.15); border: 2px dashed #9b59b6; border-radius: 8px; margin-bottom: 10px; transition: 0.3s; flex-shrink: 0;}
         .import-summary { padding: 10px; font-weight: bold; color: #d2b4de; cursor: pointer; outline: none; list-style: none; font-size: 14px; }
         .import-summary::-webkit-details-marker { display: none; }
         .import-content { padding: 10px; border-top: 1px dashed #9b59b6; display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
         .import-textarea { flex: 1 1 120px; height: 32px; background: #2c3e50; color: white; border: 1px solid #34495e; border-radius: 4px; padding: 6px; font-family: monospace; resize: none; outline: none; }
 
-        .board-wrapper { width: 100%; height: 92vh; overflow: hidden; position: relative; background: #111; border: 3px solid #333; border-radius: 10px; box-shadow: inset 0 0 50px black; cursor: grab; touch-action: none; }
+        .board-wrapper { width: 100%; flex: 1; overflow: hidden; position: relative; background: #111; border: 3px solid #333; border-radius: 10px; box-shadow: inset 0 0 50px black; cursor: grab; touch-action: none; }
         .board-wrapper:active { cursor: grabbing; }
 
         #hotkey-guide { position: absolute; left: 20px; top: 50%; transform: translateY(-50%); background: rgba(0,0,0,0.65); padding: 15px; border-radius: 12px; border: 1px solid rgba(243, 156, 18, 0.5); z-index: 10005; pointer-events: none; display: flex; flex-direction: column; gap: 8px; backdrop-filter: blur(3px); box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
@@ -192,25 +189,17 @@
             #hotkey-guide { display: none !important; }
         }
 
-        /* =========================================================
-           🌟 終極 MD 級手機介面 RWD
-           ========================================================= */
+        /* 🌟 手機終極鎖定：分頁排版，強制填滿固定高度 */
         @media (max-width: 850px), (max-height: 600px) {
-            /* 顯示分頁按鈕 */
             .mobile-tabs { display: flex; }
-            .builder-container { flex-direction: column; flex-wrap: nowrap; }
+            .builder-container { flex-direction: column; flex-wrap: nowrap; flex: 1; overflow: hidden; min-height: 0; }
             
-            /* 分頁機制：隱藏非活動的面板 */
-            .catalog-panel, .deck-panel { width: 100%; flex: none; height: 60vh; max-height: none; display: none; }
+            .catalog-panel, .deck-panel { width: 100%; flex: 1; height: 100%; max-height: none; display: none; margin: 0; }
             .catalog-panel.active, .deck-panel.active { display: flex; }
             
-            /* MD魔法 3：縮小手機版預覽卡，一排塞更多 */
             .preview-card { width: 75px !important; height: calc(75px / 0.714) !important; }
-            
-            /* 沒收 Hover 動畫，避免 GPU 圖層穿透 */
             .preview-card:hover { transform: none !important; z-index: 1 !important; }
             
-            /* 對戰桌面壓縮 */
             .hud-sidebar { right: 5px; top: 5px; transform: scale(0.65); transform-origin: top right; } 
             .hud-top { transform: translateX(-50%) scale(0.5); top: 2px; } 
             .hud-bottom { transform: translateX(-50%) scale(0.6); bottom: 2px; } 
@@ -313,7 +302,7 @@
     <div id="card-magnifier"><img src="" id="magnifier-img"></div>
 
     <div id="game-scene">
-        <div style="width: 100%; display: flex; justify-content: space-between; align-items: center; background: rgba(0,0,0,0.8); padding: 1vh 2vw; border-radius: 8px; box-sizing: border-box; margin-bottom: 10px; z-index: 10010;">
+        <div style="width: 100%; display: flex; justify-content: space-between; align-items: center; background: rgba(0,0,0,0.8); padding: 1vh 2vw; border-radius: 8px; box-sizing: border-box; margin-bottom: 10px; z-index: 10010; flex-shrink: 0;">
             <div style="color: #f1c40f; font-weight: bold; font-size: 16px;">UA 遠端對戰平台</div>
             <div style="display: flex; gap: 10px; align-items: center;">
                 <span style="font-size: 12px; color: #aaa;">(拖曳底板平移，滾輪縮放)</span>
@@ -469,7 +458,7 @@
     <script src="cards.js"></script>
 
     <script>
-        // 🌟 真實視窗高度校正引擎
+        // 🌟 手機瀏覽器真實視窗高度校正引擎
         const appHeight = () => {
             const doc = document.documentElement;
             doc.style.setProperty('--app-height', `${window.innerHeight}px`);
@@ -477,7 +466,7 @@
         window.addEventListener('resize', appHeight);
         appHeight();
 
-        // 🌟 強制進入全螢幕
+        // 🌟 進入遊戲時強制全螢幕
         function requestFullScreen() {
             let elem = document.documentElement;
             if (elem.requestFullscreen) { elem.requestFullscreen(); }
@@ -485,7 +474,6 @@
             else if (elem.msRequestFullscreen) { elem.msRequestFullscreen(); } // IE11
         }
 
-        // 🌟 分頁切換功能
         window.switchBuilderTab = function(tabName) {
             document.getElementById('btn-tab-catalog').classList.remove('active');
             document.getElementById('btn-tab-deck').classList.remove('active');
@@ -685,7 +673,7 @@
 
             document.getElementById('deck-counter').innerText = `${myDeckData.length} / 50`;
             document.getElementById('ap-counter').innerText = `${myApData.length} / 3`;
-            document.getElementById('tab-deck-count').innerText = myDeckData.length; // 🌟 更新手機版分頁上的數量
+            document.getElementById('tab-deck-count').innerText = myDeckData.length; 
             saveAllDecks();
             
             updateBuilderBadges(); 
@@ -888,13 +876,11 @@
         peer.on('open', id => { 
             document.getElementById('my-peer-id').innerText = id; 
             document.getElementById('my-peer-id').onclick = () => { 
-                // 產生一鍵邀請網址
                 let inviteUrl = window.location.origin + window.location.pathname + '?join=' + id;
                 navigator.clipboard.writeText(inviteUrl); 
                 showSysMsg("🔗 邀請連結已複製！傳給對手即可一鍵加入！"); 
             }; 
             
-            // 檢查是否是點擊邀請連結進來的
             const urlParams = new URLSearchParams(window.location.search);
             const joinId = urlParams.get('join');
             if(joinId && joinId !== id) {
@@ -904,7 +890,6 @@
             }
         });
         
-        // 死纏爛打自動重連防護
         peer.on('disconnected', () => {
             console.warn("⚠️ 與配對伺服器失去聯繫，自動重連...");
             if (!peer.destroyed) peer.reconnect(); 
@@ -930,13 +915,14 @@
         function setupConnection() {
             conn.on('open', () => {
                 isConnected = true; showSysMsg("✅ 連線成功！");
-                window.history.replaceState({}, document.title, window.location.pathname); // 清理網址
+                window.history.replaceState({}, document.title, window.location.pathname); 
                 
                 let btn = document.getElementById('start-game-btn'); btn.disabled = false; btn.innerText = "雙方就緒，進入對戰 ➔";
                 btn.onclick = () => {
                     if(myDeckData.length === 0) { alert("請先建立主牌組！"); return; }
                     if(myApData.length !== 3) { alert("請挑選剛好 3 張 AP 卡！"); return; }
                     
+                    // 🌟 進入對戰前，再次呼叫全螢幕
                     requestFullScreen();
 
                     document.body.classList.add('in-game');
@@ -1064,9 +1050,7 @@
                 }
 
                 let tiltVal = el.style.getPropertyValue('--tilt') || '0deg';
-
                 let absoluteZIndex = el.style.zIndex !== '' ? parseInt(el.style.zIndex) : index;
-                if (pId.includes('hand') || pId.includes('look')) absoluteZIndex = index;
 
                 state.push({ 
                     id: el.dataset.networkId, parent: pId, 
@@ -1143,12 +1127,7 @@
                             el.style.top = d.y;
                             el.style.transform = '';
                             el.classList.remove('dragging');
-                            
-                            if (targetParentId.includes('hand') || targetParentId.includes('look')) {
-                                el.style.zIndex = '';
-                            } else {
-                                el.style.zIndex = (d.zIndex !== undefined && d.zIndex !== null) ? d.zIndex : ''; 
-                            }
+                            el.style.zIndex = (d.zIndex !== undefined && d.zIndex !== null) ? d.zIndex : ''; 
                         }
                     }
                     
@@ -1219,7 +1198,7 @@
 
         function drawInitialHand() {
             let deckArea = document.getElementById('my-deck-area'), handArea = document.getElementById('my-hand-area'); let cards = Array.from(deckArea.querySelectorAll('.card'));
-            for(let i=0; i<7; i++) { if(cards.length > 0) { let c = cards.pop(); handArea.appendChild(c); c.style.position = 'relative'; c.style.left = '0'; c.style.top = '0'; c.style.zIndex = ''; c.classList.remove('is-flipped', 'rest'); } }
+            for(let i=0; i<7; i++) { if(cards.length > 0) { let c = cards.pop(); handArea.appendChild(c); c.classList.remove('is-flipped', 'rest'); } }
             recalcStacking(deckArea); updateSlotCounts(); broadcastMyState(); document.getElementById('mulligan-modal').style.display = 'block';
         }
 
@@ -1230,7 +1209,7 @@
             shuffleDOMDeck(deckArea); updateSlotCounts(); broadcastMyState(); showSysMsg("重新洗牌中...");
             setTimeout(() => {
                 let cards = Array.from(deckArea.querySelectorAll('.card'));
-                for(let i=0; i<7; i++) { if(cards.length > 0) { let c = cards.pop(); handArea.appendChild(c); c.style.position = 'relative'; c.style.left = '0'; c.style.top = '0'; c.style.zIndex = ''; c.classList.remove('is-flipped', 'rest'); } }
+                for(let i=0; i<7; i++) { if(cards.length > 0) { let c = cards.pop(); handArea.appendChild(c); c.classList.remove('is-flipped', 'rest'); } }
                 recalcStacking(deckArea); updateSlotCounts(); broadcastMyState(); setTimeout(setupLifeArea, 800);
             }, 600);
         };
@@ -1241,8 +1220,11 @@
             recalcStacking(deckArea); recalcStacking(lifeArea); updateSlotCounts(); broadcastMyState(); showSysMsg("🎯 對戰開始！");
         }
 
+        // 🌟 絕對獨裁的圖層管理系統
         function applyStackingStyle(card, slotBelow, myIndex) {
             if (!slotBelow) return;
+            
+            // 強制綁定圖層高度，解決 GPU 渲染導致的金字塔問題
             card.style.zIndex = myIndex; 
             
             if (slotBelow.id.includes('hand') || slotBelow.id.includes('look') || slotBelow.id.includes('modal')) { 
@@ -1462,19 +1444,19 @@
                         } else if (dropZone.closest('#my-front-line, #my-energy-line')) { let fromField = originalParent && originalParent.closest('#my-front-line, #my-energy-line'); if (!fromField) c.classList.add('rest'); }
                     }
                     if(dropZone.id.includes('hand') || dropZone.id.includes('look') || dropZone.id.includes('modal-')) { 
-                        c.style.position = 'relative'; c.style.left = '0'; c.style.top = '0'; 
-                        c.style.zIndex = ''; 
                         c.classList.remove('is-flipped', 'rest'); 
                     } 
-                    else c.style.position = 'absolute'; 
                 } else if (originalParent) {
                     originalParent.appendChild(c);
-                    if(originalParent.id.includes('hand') || originalParent.id.includes('look')) { c.style.position = 'relative'; c.style.left = '0'; c.style.top = '0'; } 
-                    else c.style.position = 'absolute';
                 }
             });
-            if (dropZone && action !== 'cancel' && !dropZone.id.includes('modal-')) recalcStacking(dropZone); 
-            else if (originalParent && !originalParent.id.includes('modal-')) recalcStacking(originalParent);
+            if (dropZone && action !== 'cancel' && !dropZone.id.includes('modal-')) {
+                recalcStacking(dropZone);
+                if (originalParent && originalParent !== dropZone && !originalParent.id.includes('modal-')) recalcStacking(originalParent);
+            } 
+            else if (originalParent && !originalParent.id.includes('modal-')) {
+                recalcStacking(originalParent);
+            }
             updateSlotCounts(); broadcastMyState();
         }
 
@@ -1574,13 +1556,6 @@
                         targetCard.classList.remove('rest', 'is-flipped');
                         targetCard.style.setProperty('--tilt', '0deg');
 
-                        if(dest.id.includes('hand') || dest.id.includes('look')) {
-                            targetCard.style.position = 'relative';
-                            targetCard.style.zIndex = ''; 
-                        } else { 
-                            targetCard.style.position = 'absolute'; 
-                            applyStackingStyle(targetCard, dest, Array.from(dest.querySelectorAll('.card')).indexOf(targetCard)); 
-                        }
                         recalcStacking(dest);
                         if(prevParent) recalcStacking(prevParent);
                         updateSlotCounts(); broadcastMyState();
@@ -1597,8 +1572,8 @@
         window.sendToDeck = function(sourceId, destId, toBottom) {
             let source = document.getElementById(sourceId), dest = document.getElementById(destId); 
             let cards = Array.from(source.querySelectorAll('.card')).sort((a,b) => a.getBoundingClientRect().left - b.getBoundingClientRect().left);
-            if(toBottom) cards.reverse().forEach(c => { dest.insertBefore(c, dest.firstChild); c.classList.add('is-flipped'); c.classList.remove('rest'); c.style.position = 'absolute'; });
-            else cards.forEach(c => { dest.appendChild(c); c.classList.add('is-flipped'); c.classList.remove('rest'); c.style.position = 'absolute'; });
+            if(toBottom) cards.reverse().forEach(c => { dest.insertBefore(c, dest.firstChild); c.classList.add('is-flipped'); c.classList.remove('rest'); });
+            else cards.forEach(c => { dest.appendChild(c); c.classList.add('is-flipped'); c.classList.remove('rest'); });
             recalcStacking(dest); recalcStacking(source); updateSlotCounts(); broadcastMyState();
         };
 
@@ -1627,7 +1602,6 @@
                     Array.from(document.getElementById('my-public-area').querySelectorAll('.card')).forEach(c => {
                         document.getElementById('modal-public-container').appendChild(c);
                         c.classList.remove('in-life', 'rest', 'is-flipped'); c.style.position = 'relative'; c.style.left = '0'; c.style.top = '0'; c.style.transform = 'none';
-                        c.style.zIndex = '';
                     });
                 }
                 
@@ -1636,7 +1610,6 @@
                     if(!zone.id.includes('life') && !zone.id.includes('opp-')) card.classList.remove('is-flipped'); else if (zone.id.includes('life')) card.classList.add('is-flipped'); 
                     card.classList.remove('rest', 'in-life'); 
                     card.style.position = 'relative'; card.style.left = '0px'; card.style.top = '0px'; card.style.transform = 'none';
-                    card.style.zIndex = '';
                 });
                 modal.style.display = 'flex';
             });
@@ -1657,7 +1630,6 @@
         document.getElementById('close-modal-btn').addEventListener('click', () => {
             Array.from(modalContainer.querySelectorAll('.card')).forEach((card, index) => { 
                 currentModalSourceSlot.appendChild(card); 
-                card.style.position = 'absolute'; 
                 card.style.transform = ''; 
                 
                 if (currentModalSourceSlot.classList.contains('slot') && (currentModalSourceSlot.id.includes('my-fl-') || currentModalSourceSlot.id.includes('my-en-'))) {
@@ -1672,7 +1644,6 @@
             if (isDualPane) {
                 Array.from(document.getElementById('modal-public-container').querySelectorAll('.card')).forEach((card, index) => { 
                     document.getElementById('my-public-area').appendChild(card); 
-                    card.style.position = 'absolute'; 
                     card.style.transform = ''; 
                 });
                 recalcStacking(document.getElementById('my-public-area'));
