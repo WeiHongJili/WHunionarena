@@ -8,7 +8,6 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="theme-color" content="#000000">
     <title>我的 UA 遠端對戰平台</title>
-    <link rel="manifest" href="manifest.json">
     <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
     <style>
         :root {
@@ -18,18 +17,22 @@
             --font-size-base: 14px;
         }
 
-        /* 🌟 解除全域 touch-action: none 封印，恢復手機原生的滾動生命力 */
+        /* 鎖死最外層，不受網址列干擾 */
         body { 
             background-color: #000; margin: 0; 
             position: fixed; top: 0; left: 0; right: 0; bottom: 0; 
             overflow: hidden; overscroll-behavior: none; 
             font-family: '微軟正黑體', sans-serif; 
-            color: white; -webkit-user-select: none; user-select: none; 
+            color: white; touch-action: none; -webkit-user-select: none; user-select: none; 
         }
 
+        /* 🌟 MD 級遊戲引擎核心：使用負邊距絕對置中，徹底解決手機位移 Bug */
         #app-canvas {
-            position: absolute; top: 50%; left: 50%;
+            position: absolute; 
+            top: 50%; left: 50%;
             width: 1600px; height: 900px;
+            margin-top: -450px; /* 高度的一半 */
+            margin-left: -800px; /* 寬度的一半 */
             transform-origin: center center;
             background-color: #0a0a0a;
             display: flex; flex-direction: column; align-items: center; 
@@ -53,6 +56,10 @@
         .network-input { padding: 6px; border-radius: 5px; border: none; font-size: 13px; outline: none; width: 140px; letter-spacing: 1px; font-weight: bold; text-align: center;}
         #my-peer-id { color: #f1c40f; font-weight: 900; font-size: 18px; cursor: pointer; background: rgba(0,0,0,0.5); padding: 4px 10px; border-radius: 5px; letter-spacing: 2px;}
 
+        .mobile-tabs { display: none; width: 100%; gap: 10px; margin-bottom: 5px; flex-shrink: 0;}
+        .tab-btn { flex: 1; padding: 10px; background: #2c3e50; color: white; border: 2px solid #34495e; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 15px; transition: 0.2s;}
+        .tab-btn.active { background: #e67e22; border-color: #d35400; box-shadow: 0 0 10px rgba(230, 126, 34, 0.5);}
+
         .builder-container { display: flex; gap: 15px; flex: 1; align-items: stretch; min-height: 0; overflow: hidden; }
         
         .catalog-panel { flex: 5.5; background: rgba(0,0,0,0.5); border-radius: 10px; padding: 15px; display: flex; flex-direction: column; height: 100%; box-sizing: border-box; }
@@ -66,7 +73,6 @@
         
         .series-title { border-left: 4px solid #f39c12; padding-left: 8px; background: rgba(255,255,255,0.1); padding: 4px; margin: 10px 0 8px 0; font-size: 15px; font-weight: bold;}
         
-        /* 內部獨立滾動區，確保手機滑動順暢 */
         #catalog-grid, #deck-grid-inner, #ap-deck-grid { flex: 1; overflow-y: auto; padding-right: 5px; -webkit-overflow-scrolling: touch; touch-action: pan-y;}
         #ap-deck-grid { flex: none; min-height: 140px; margin-bottom: 10px; }
         
@@ -79,9 +85,9 @@
         .card-badge { position: absolute; top: -6px; right: -6px; background: #e74c3c; color: white; border-radius: 50%; width: 22px; height: 22px; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: bold; box-shadow: 0 2px 4px rgba(0,0,0,0.8); pointer-events: none; z-index: 10; border: 2px solid #fff; }
         .in-deck-badge { background: #3498db; border-color: #2980b9; }
 
-        .start-btn { background-color: #2ecc71; color: white; font-size: 14px; font-weight: bold; padding: 8px 15px; border: none; border-radius: 8px; cursor: pointer; }
+        .start-btn { background-color: #2ecc71; color: white; font-size: 14px; font-weight: bold; padding: 8px 15px; border: none; border-radius: 8px; cursor: pointer; transition: 0.2s;}
         .start-btn:disabled { background-color: #7f8c8d; cursor: not-allowed; }
-        .ctrl-btn { background: #3498db; color: white; border: none; padding: 6px 12px; border-radius: 5px; cursor: pointer; font-weight: bold; font-size: 13px;}
+        .ctrl-btn { background: #3498db; color: white; border: none; padding: 6px 12px; border-radius: 5px; cursor: pointer; font-weight: bold; font-size: 13px; transition: 0.2s;}
         .ctrl-btn.danger { background: #e74c3c; }
 
         .import-details { background: rgba(155, 89, 182, 0.15); border: 2px dashed #9b59b6; border-radius: 8px; margin-bottom: 10px; transition: 0.3s; flex-shrink: 0;}
@@ -90,7 +96,6 @@
         .import-content { padding: 10px; border-top: 1px dashed #9b59b6; display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
         .import-textarea { flex: 1 1 120px; height: 32px; background: #2c3e50; color: white; border: 1px solid #34495e; border-radius: 4px; padding: 6px; font-family: monospace; resize: none; outline: none; }
 
-        /* 🌟 只封殺遊戲背景的觸控滑動，其餘地方釋放 */
         .board-wrapper { width: 100%; flex: 1; overflow: hidden; position: relative; background: #111; border: 3px solid #333; border-radius: 10px; box-shadow: inset 0 0 50px black; cursor: grab; touch-action: none; }
         .board-wrapper:active { cursor: grabbing; }
 
@@ -146,7 +151,7 @@
         .card { 
             width: var(--card-w); height: var(--card-h); border-radius: 6px; box-shadow: 0 4px 8px rgba(0,0,0,0.8); 
             cursor: grab; transition: transform 0.2s ease-out, margin 0.2s ease-out; position: absolute; 
-            touch-action: none; /* 卡片本身維持鎖死，方便拖曳 */
+            touch-action: none; 
             transform: translate(var(--tx, 0px), var(--ty, 0px)) rotate(calc(var(--rot, 0deg) + var(--tilt, 0deg))) scale(var(--scale, 1)); 
             pointer-events: auto; 
         }
@@ -189,15 +194,10 @@
         #overlay-title { font-size: 24px; font-weight: bold; color: white; margin-top: 15px; }
         #overlay-value { font-size: 50px; color: #f1c40f; font-weight: 900; text-shadow: 0 0 20px rgba(241, 196, 15, 0.8); margin: 10px 0; white-space: nowrap;}
 
-        .mobile-tabs { display: none; width: 100%; gap: 10px; margin-bottom: 5px; flex-shrink: 0;}
-        .tab-btn { flex: 1; padding: 10px; background: #2c3e50; color: white; border: 2px solid #34495e; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 15px; transition: 0.2s;}
-        .tab-btn.active { background: #e67e22; border-color: #d35400; box-shadow: 0 0 10px rgba(230, 126, 34, 0.5);}
-
         @media (max-width: 1100px) {
             #hotkey-guide { display: none !important; }
         }
 
-        /* 手機版：啟動分頁與極限壓縮 */
         @media (max-width: 850px), (max-height: 600px) {
             .mobile-tabs { display: flex; }
             .builder-container { flex-direction: column; flex-wrap: nowrap; flex: 1; overflow: hidden; min-height: 0; }
@@ -226,7 +226,7 @@
     <div id="portrait-warning">
         <div style="font-size: 50px; margin-bottom: 20px;">📱🔄</div>
         <div>請將手機轉為「橫向」<br>以獲得最佳對戰體驗！</div>
-        <div style="font-size: 14px; color: #aaa; margin-top: 10px;">(使用兩指或右鍵來平移縮放)</div>
+        <div style="font-size: 14px; color: #aaa; margin-top: 10px;">(為確保畫面不被擠壓，請橫置設備)</div>
     </div>
 
     <div id="app-canvas">
@@ -257,7 +257,10 @@
 
             <div class="builder-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
                 <h2 style="margin: 0; font-size: 18px;">🛠️ 牌組構築中心</h2>
-                <button class="start-btn" id="start-game-btn" disabled>等待連線成功後開始 ➔</button>
+                <div style="display: flex; gap: 10px;">
+                    <button class="ctrl-btn" onclick="requestFullScreen()" style="background: #8e44ad;">📱 進入全螢幕</button>
+                    <button class="start-btn" id="start-game-btn" disabled>等待連線後開始 ➔</button>
+                </div>
             </div>
             
             <div class="mobile-tabs" id="builder-tabs">
@@ -301,7 +304,9 @@
                         <h4 style="margin: 0; color: #3498db; font-size: 15px;">🃏 主要牌組</h4>
                         <span id="deck-counter" style="font-weight: bold; font-size: 14px;">0 / 50</span>
                     </div>
-                    <div id="deck-grid-inner" class="card-grid"></div>
+                    <div id="deck-grid">
+                        <div class="card-grid" id="deck-grid-inner"></div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -462,24 +467,39 @@
             </div>
         </div>
 
-    </div>
-
-    <script src="cards.js"></script>
+    </div> <script src="cards.js"></script>
 
     <script>
-        // 🌟 真實視窗高度校正引擎
-        const appHeight = () => {
-            const doc = document.documentElement;
-            doc.style.setProperty('--app-height', `${window.innerHeight}px`);
-        };
-        window.addEventListener('resize', appHeight);
-        appHeight();
+        // 🌟 遊戲引擎縮放核心 (完美負邊距置中版)
+        window.appScale = 1;
+        function resizeApp() {
+            const canvas = document.getElementById('app-canvas');
+            const targetW = 1600;
+            const targetH = 900;
+            const windowW = window.innerWidth;
+            const windowH = window.innerHeight;
+            
+            if(windowW === 0 || windowH === 0) return; // 防呆機制
+            
+            // 計算可以完美塞入螢幕的等比例縮放率
+            window.appScale = Math.min(windowW / targetW, windowH / targetH);
+            
+            // 🚨 移除了 translate，改用 CSS 的 margin 進行最純粹的物理置中
+            canvas.style.transform = `scale(${window.appScale})`;
+        }
+        window.addEventListener('resize', resizeApp);
+        // 延遲呼叫，確保手機瀏覽器在旋轉後抓到正確的高度
+        setTimeout(resizeApp, 100);
+        setTimeout(resizeApp, 500);
+        resizeApp();
 
+        // 🌟 強制全螢幕函數
         function requestFullScreen() {
             let elem = document.documentElement;
             if (elem.requestFullscreen) { elem.requestFullscreen(); }
-            else if (elem.webkitRequestFullscreen) { elem.webkitRequestFullscreen(); } 
-            else if (elem.msRequestFullscreen) { elem.msRequestFullscreen(); } 
+            else if (elem.webkitRequestFullscreen) { elem.webkitRequestFullscreen(); } // Safari
+            else if (elem.msRequestFullscreen) { elem.msRequestFullscreen(); } // IE11
+            setTimeout(resizeApp, 300); // 進入全螢幕後重新校正比例
         }
 
         window.switchBuilderTab = function(tabName) {
@@ -767,7 +787,6 @@
             container.scrollTop = container.scrollHeight;
         }
 
-        window.camScale = 1;
         window.camX = 0; window.camY = 0;
         let isCamDragging = false;
         let camStartX = 0, camStartY = 0;
@@ -806,7 +825,6 @@
             else table.classList.remove('mode-3d');
         };
 
-        // 🌟 修正攝影機綁架事件：把彈出視窗通通排除！
         function startPan(e) {
             if(e.target.closest('.card') || e.target.closest('.slot') || e.target.closest('.cam-btn') || 
                e.target.closest('.hud-sidebar') || e.target.closest('.hud-top') || e.target.closest('.hud-bottom') || 
@@ -817,6 +835,7 @@
             let clientX = e.type.includes('touch') ? e.touches[0].clientX : e.clientX;
             let clientY = e.type.includes('touch') ? e.touches[0].clientY : e.clientY;
             
+            // 🌟 將真實滑鼠座標除以畫布縮放比例，讓拖曳手感完美還原
             clientX = clientX / (window.appScale || 1);
             clientY = clientY / (window.appScale || 1);
 
@@ -826,7 +845,7 @@
 
         function doPan(e) {
             if(!isCamDragging) return;
-            if (e.cancelable) e.preventDefault(); // 🌟 安全阻止預設事件
+            if (e.cancelable) e.preventDefault(); 
             let clientX = e.type.includes('touch') ? e.touches[0].clientX : e.clientX;
             let clientY = e.type.includes('touch') ? e.touches[0].clientY : e.clientY;
             
@@ -862,7 +881,7 @@
             window.addEventListener('touchmove', doPan, {passive: false});
             window.addEventListener('mouseup', endPan);
             window.addEventListener('touchend', endPan);
-            window.addEventListener('touchcancel', endPan); // 🌟 新增 touchcancel 防呆
+            window.addEventListener('touchcancel', endPan); 
 
             window.addEventListener('resize', resetCam);
         };
@@ -934,13 +953,7 @@
                     if(myDeckData.length === 0) { alert("請先建立主牌組！"); return; }
                     if(myApData.length !== 3) { alert("請挑選剛好 3 張 AP 卡！"); return; }
                     
-                    requestFullScreen();
-
                     document.body.classList.add('in-game');
-                    if (screen.orientation && screen.orientation.lock) {
-                        screen.orientation.lock('landscape').catch(err => console.log('視覺提示已啟動'));
-                    }
-
                     document.getElementById('builder-scene').style.display = 'none'; 
                     document.getElementById('game-scene').style.display = 'flex';
                     setTimeout(resetCam, 100); 
@@ -1062,7 +1075,6 @@
 
                 let tiltVal = el.style.getPropertyValue('--tilt') || '0deg';
 
-                // 🌟 強制發送絕對 Z-Index，解決同步重疊錯亂
                 let absoluteZIndex = el.style.zIndex !== '' ? parseInt(el.style.zIndex) : index;
                 if (pId.includes('hand') || pId.includes('look')) absoluteZIndex = index;
 
@@ -1212,7 +1224,7 @@
 
         function drawInitialHand() {
             let deckArea = document.getElementById('my-deck-area'), handArea = document.getElementById('my-hand-area'); let cards = Array.from(deckArea.querySelectorAll('.card'));
-            for(let i=0; i<7; i++) { if(cards.length > 0) { let c = cards.pop(); handArea.appendChild(c); c.style.position = 'relative'; c.style.left = '0'; c.style.top = '0'; c.style.zIndex = ''; c.classList.remove('is-flipped', 'rest'); } }
+            for(let i=0; i<7; i++) { if(cards.length > 0) { let c = cards.pop(); handArea.appendChild(c); c.classList.remove('is-flipped', 'rest'); } }
             recalcStacking(deckArea); recalcStacking(handArea); updateSlotCounts(); broadcastMyState(); document.getElementById('mulligan-modal').style.display = 'block';
         }
 
@@ -1234,11 +1246,8 @@
             recalcStacking(deckArea); recalcStacking(lifeArea); updateSlotCounts(); broadcastMyState(); showSysMsg("🎯 對戰開始！");
         }
 
-        // 🌟 絕對獨裁的圖層管理系統
         function applyStackingStyle(card, slotBelow, myIndex) {
             if (!slotBelow) return;
-            
-            // 🌟 強制綁定絕對 Z-Index，解決手牌與檢索區的金字塔重疊 Bug
             card.style.zIndex = myIndex; 
             
             if (slotBelow.id.includes('hand') || slotBelow.id.includes('look') || slotBelow.id.includes('modal')) { 
@@ -1298,8 +1307,10 @@
                 let clientX = isTouch ? event.touches[0].clientX : event.clientX;
                 let clientY = isTouch ? event.touches[0].clientY : event.clientY;
                 
-                clientX = clientX / (window.appScale || 1);
-                clientY = clientY / (window.appScale || 1);
+                // 🌟 核心修正：將滑鼠螢幕座標精準換算為「虛擬畫布內的實際像素距離」
+                let canvasRect = viewportLayer.getBoundingClientRect();
+                let logicalStartX = (clientX - canvasRect.left) / (window.appScale || 1);
+                let logicalStartY = (clientY - canvasRect.top) / (window.appScale || 1);
                 
                 cardElement.dataset.isSecretDrag = (originalParent && (originalParent.id.includes('hand') || originalParent.id.includes('look'))) ? 'true' : 'false';
 
@@ -1311,9 +1322,6 @@
                     let curClientX = isTouch ? event.touches[0].clientX : event.clientX;
                     let curClientY = isTouch ? event.touches[0].clientY : event.clientY;
                     
-                    curClientX = curClientX / (window.appScale || 1);
-                    curClientY = curClientY / (window.appScale || 1);
-
                     if (!isDragging && (Math.abs(curClientX - startClientX) > dragThreshold || Math.abs(curClientY - startClientY) > dragThreshold)) {
                         isDragging = true; if(typeof longPressTimer !== 'undefined') clearTimeout(longPressTimer);
                         
@@ -1336,18 +1344,21 @@
                     if (isDragging) {
                         if (event.type.includes('touch') && event.cancelable) event.preventDefault(); 
                         
-                        let viewportRect = viewportLayer.getBoundingClientRect();
+                        // 🌟 核心修正：完美追蹤縮放後的滑鼠位置
+                        let curCanvasRect = viewportLayer.getBoundingClientRect();
+                        let logicalCurX = (curClientX - curCanvasRect.left) / (window.appScale || 1);
+                        let logicalCurY = (curClientY - curCanvasRect.top) / (window.appScale || 1);
                         
                         if (isStackDrag) {
                             stackCardsData.forEach((item, index) => { 
-                                let localX = (curClientX - viewportRect.left/(window.appScale || 1)) - (item.el.offsetWidth / 2) + (index * 8);
-                                let localY = (curClientY - viewportRect.top/(window.appScale || 1)) - (item.el.offsetHeight / 2) + (index * 8);
+                                let localX = logicalCurX - (item.el.offsetWidth / 2) + (index * 8);
+                                let localY = logicalCurY - (item.el.offsetHeight / 2) + (index * 8);
                                 item.el.style.left = localX + 'px'; item.el.style.top = localY + 'px'; 
                                 item.el.style.transform = `scale(${window.boardScale * 1.05})`; 
                             });
                         } else { 
-                            let localX = (curClientX - viewportRect.left/(window.appScale || 1)) - (cardElement.offsetWidth / 2);
-                            let localY = (curClientY - viewportRect.top/(window.appScale || 1)) - (cardElement.offsetHeight / 2);
+                            let localX = logicalCurX - (cardElement.offsetWidth / 2);
+                            let localY = logicalCurY - (cardElement.offsetHeight / 2);
                             cardElement.style.left = localX + 'px'; cardElement.style.top = localY + 'px'; 
                             cardElement.style.transform = `scale(${window.boardScale * 1.05})`; 
                         }
@@ -1464,18 +1475,19 @@
                         } else if (dropZone.closest('#my-front-line, #my-energy-line')) { let fromField = originalParent && originalParent.closest('#my-front-line, #my-energy-line'); if (!fromField) c.classList.add('rest'); }
                     }
                     if(dropZone.id.includes('hand') || dropZone.id.includes('look') || dropZone.id.includes('modal-')) { 
-                        c.style.position = 'relative'; c.style.left = '0'; c.style.top = '0'; 
                         c.classList.remove('is-flipped', 'rest'); 
                     } 
-                    else c.style.position = 'absolute'; 
                 } else if (originalParent) {
                     originalParent.appendChild(c);
-                    if(originalParent.id.includes('hand') || originalParent.id.includes('look')) { c.style.position = 'relative'; c.style.left = '0'; c.style.top = '0'; } 
-                    else c.style.position = 'absolute';
                 }
             });
-            if (dropZone && action !== 'cancel' && !dropZone.id.includes('modal-')) recalcStacking(dropZone); 
-            else if (originalParent && !originalParent.id.includes('modal-')) recalcStacking(originalParent);
+            if (dropZone && action !== 'cancel' && !dropZone.id.includes('modal-')) {
+                recalcStacking(dropZone);
+                if (originalParent && originalParent !== dropZone && !originalParent.id.includes('modal-')) recalcStacking(originalParent);
+            } 
+            else if (originalParent && !originalParent.id.includes('modal-')) {
+                recalcStacking(originalParent);
+            }
             updateSlotCounts(); broadcastMyState();
         }
 
@@ -1577,6 +1589,7 @@
 
                         if(dest.id.includes('hand') || dest.id.includes('look')) {
                             targetCard.style.position = 'relative';
+                            targetCard.style.zIndex = ''; 
                         } else { 
                             targetCard.style.position = 'absolute'; 
                             applyStackingStyle(targetCard, dest, Array.from(dest.querySelectorAll('.card')).indexOf(targetCard)); 
