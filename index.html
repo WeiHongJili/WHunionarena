@@ -7,7 +7,7 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="theme-color" content="#000000">
-    <title>我的 UA 遠端對戰平台</title>
+    <title> UA 遠端對戰平台</title>
     <link rel="manifest" href="manifest.json">
     <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
     <style>
@@ -19,46 +19,66 @@
         }
 
         body { 
-            background-color: #0a0a0a; margin: 0; 
-            height: 100vh; height: var(--app-height, 100vh);
+            background-color: #000; margin: 0; 
+            position: fixed; top: 0; left: 0; right: 0; bottom: 0; 
             overflow: hidden; overscroll-behavior: none; 
             font-family: '微軟正黑體', sans-serif; 
-            display: flex; flex-direction: column; align-items: center; 
-            padding: 1.5vh 2vw; box-sizing: border-box; color: white; 
-            touch-action: none; -webkit-user-select: none; user-select: none; 
+            color: white; touch-action: none; -webkit-user-select: none; user-select: none; 
         }
+
+        #app-canvas {
+            position: absolute; 
+            top: 50%; left: 50%;
+            width: 1600px; height: 900px;
+            margin-top: -450px; 
+            margin-left: -800px; 
+            transform-origin: center center;
+            background-color: #0a0a0a;
+            display: flex; flex-direction: column; align-items: center; 
+            padding: 15px 20px; box-sizing: border-box;
+            overflow: hidden;
+            box-shadow: 0 0 50px rgba(0,0,0,1);
+        }
+        
         input, textarea, select { -webkit-user-select: auto; user-select: auto; }
-
         select option { background: #2c3e50; color: white; }
-
         #sys-msg { position: fixed; top: 10px; left: 50%; transform: translateX(-50%); background: #e67e22; padding: 10px 20px; border-radius: 5px; font-weight: bold; display: none; z-index: 100000; box-shadow: 0 4px 10px rgba(0,0,0,0.5); }
         
-        #builder-scene { width: 98%; max-width: 1600px; display: flex; flex-direction: column; gap: 10px; margin-bottom: 30px; height: 100%; overflow-y: auto; -webkit-overflow-scrolling: touch; }
-        #game-scene { display: none; width: 100%; flex-direction: column; align-items: center; gap: 10px; margin-bottom: 10px; flex: 1;}
+        #builder-scene { width: 100%; height: 100%; display: flex; flex-direction: column; gap: 10px; }
+        #game-scene { display: none; width: 100%; height: 100%; flex-direction: column; align-items: center; gap: 10px; }
 
-        .network-panel { background: rgba(41, 128, 185, 0.2); border: 2px solid #3498db; border-radius: 8px; padding: 8px 12px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; }
-        .network-box { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+        .top-sys-bar { display: flex; width: 100%; justify-content: space-between; align-items: flex-start; gap: 15px; flex-shrink: 0; }
+        
+        .network-details { background: rgba(41, 128, 185, 0.15); border: 2px dashed #3498db; border-radius: 8px; transition: 0.3s; flex: 1; margin-bottom: 0;}
+        .network-summary { padding: 8px 10px; font-weight: bold; color: #3498db; cursor: pointer; outline: none; list-style: none; font-size: 14px; text-align: left; }
+        .network-summary::-webkit-details-marker { display: none; }
+        .network-content { padding: 10px; border-top: 1px dashed #3498db; display: flex; align-items: center; flex-wrap: wrap; gap: 15px; }
+        .network-box { display: flex; gap: 8px; align-items: center; flex-wrap: wrap;}
         .network-input { padding: 6px; border-radius: 5px; border: none; font-size: 13px; outline: none; width: 140px; letter-spacing: 1px; font-weight: bold; text-align: center;}
         #my-peer-id { color: #f1c40f; font-weight: 900; font-size: 18px; cursor: pointer; background: rgba(0,0,0,0.5); padding: 4px 10px; border-radius: 5px; letter-spacing: 2px;}
 
-        .builder-container { display: flex; gap: 15px; flex: 1; align-items: stretch; min-height: 0; }
+        .header-actions { display: flex; gap: 10px; align-items: center; height: 35px;}
+
+        .builder-container { display: flex; gap: 15px; flex: 1; align-items: stretch; min-height: 0; overflow: hidden; width: 100%; }
         
-        .deck-panel { flex: 4; background: rgba(139, 21, 21, 0.2); border: 2px dashed #d32f2f; border-radius: 10px; padding: 15px; display: flex; flex-direction: column; height: 100%; box-sizing: border-box; }
-        .catalog-panel { flex: 6; background: rgba(0,0,0,0.5); border-radius: 10px; padding: 15px; display: flex; flex-direction: column; height: 100%; box-sizing: border-box; }
+        .deck-panel { flex: 4; background: rgba(139, 21, 21, 0.2); border: 2px solid #d32f2f; border-radius: 10px; padding: 15px; display: flex; flex-direction: column; height: 100%; box-sizing: border-box; }
+        .catalog-panel { flex: 6; background: rgba(0,0,0,0.5); border: 2px solid #555; border-radius: 10px; padding: 15px; display: flex; flex-direction: column; height: 100%; box-sizing: border-box; }
         
-        .deck-controls { position: relative; z-index: 99999; display: flex; gap: 8px; margin-bottom: 8px; align-items: center; background: rgba(0,0,0,0.3); padding: 8px; border-radius: 8px; flex-wrap: wrap; transform: translateZ(1px); }
+        .deck-controls { position: relative; z-index: 99999; display: flex; gap: 8px; margin-bottom: 10px; align-items: center; background: rgba(0,0,0,0.4); padding: 8px; border-radius: 8px; flex-wrap: wrap; transform: translateZ(1px); flex-shrink: 0;}
         .deck-selector { flex: 1; padding: 6px; font-size: 14px; border-radius: 5px; background: #2c3e50; color: white; border: 1px solid #34495e; min-width: 120px; }
         
-        .catalog-header { position: relative; z-index: 99999; display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; flex-wrap: wrap; gap: 10px; transform: translateZ(1px); }
-        .series-filter { padding: 6px 10px; font-size: 14px; border-radius: 5px; background: #f39c12; color: #1a1a1a; font-weight: bold; border: none; cursor: pointer; outline: none; }
+        .catalog-header { position: relative; z-index: 99999; display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; flex-wrap: wrap; gap: 10px; transform: translateZ(1px); flex-shrink: 0;}
+        .series-filter { padding: 6px 10px; font-size: 14px; border-radius: 5px; background: #f39c12; color: #1a1a1a; font-weight: bold; border: none; cursor: pointer; outline: none; flex: 1; min-width: 150px;}
         
         .series-title { border-left: 4px solid #f39c12; padding-left: 8px; background: rgba(255,255,255,0.1); padding: 4px; margin: 10px 0 8px 0; font-size: 15px; font-weight: bold;}
         
-        #catalog-grid, #deck-grid-inner, #ap-deck-grid { flex: 1; overflow-y: auto; padding-right: 5px; min-height: 120px; -webkit-overflow-scrolling: touch; touch-action: pan-y; }
+        #catalog-grid, #deck-grid-inner, #ap-deck-grid { flex: 1; overflow-y: auto; padding-right: 5px; -webkit-overflow-scrolling: touch; touch-action: pan-y;}
+        #ap-deck-grid { flex: none; min-height: 120px; margin-bottom: 10px; }
+        
         .card-grid { display: flex; flex-wrap: wrap; gap: 8px; align-content: flex-start;}
         
-        .catalog-panel .preview-card { width: 110px; height: calc(110px / 0.714); }
-        .deck-panel .preview-card { width: 90px; height: calc(90px / 0.714); }
+        .catalog-panel .preview-card { width: 105px; height: calc(105px / 0.714); }
+        .deck-panel .preview-card { width: 85px; height: calc(85px / 0.714); }
         
         .preview-card { position: relative; z-index: 1; border-radius: 5px; cursor: pointer; transition: transform 0.1s; box-shadow: 0 2px 5px rgba(0,0,0,0.5); }
         .preview-card:hover { transform: scale(1.05); z-index: 10; }
@@ -69,10 +89,10 @@
 
         .start-btn { background-color: #2ecc71; color: white; font-size: 14px; font-weight: bold; padding: 8px 15px; border: none; border-radius: 8px; cursor: pointer; transition: 0.2s;}
         .start-btn:disabled { background-color: #7f8c8d; cursor: not-allowed; }
-        .ctrl-btn { background: #3498db; color: white; border: none; padding: 6px 12px; border-radius: 5px; cursor: pointer; font-weight: bold; font-size: 13px;}
+        .ctrl-btn { background: #3498db; color: white; border: none; padding: 6px 12px; border-radius: 5px; cursor: pointer; font-weight: bold; font-size: 13px; transition: 0.2s;}
         .ctrl-btn.danger { background: #e74c3c; }
 
-        .import-details { background: rgba(155, 89, 182, 0.15); border: 2px dashed #9b59b6; border-radius: 8px; margin-bottom: 10px; transition: 0.3s;}
+        .import-details { background: rgba(155, 89, 182, 0.15); border: 2px dashed #9b59b6; border-radius: 8px; margin-bottom: 10px; transition: 0.3s; flex-shrink: 0;}
         .import-summary { padding: 10px; font-weight: bold; color: #d2b4de; cursor: pointer; outline: none; list-style: none; font-size: 14px; }
         .import-summary::-webkit-details-marker { display: none; }
         .import-content { padding: 10px; border-top: 1px dashed #9b59b6; display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
@@ -91,49 +111,30 @@
         .cam-btn:hover { background: #f39c12; color: black; }
         #btn-3d { background: rgba(0,0,0,0.8); border-color: #3498db; }
 
-        .hud-top { position: absolute; top: 10px; left: 50%; transform: translateX(-50%) scale(0.65); transform-origin: top center; width: 95%; max-width: 1400px; display: flex; gap: 15px; z-index: 10010; pointer-events: none; }
-        .hud-bottom { position: absolute; bottom: 10px; left: 50%; transform: translateX(-50%) scale(0.85); transform-origin: bottom center; width: 90%; max-width: 900px; display: flex; gap: 15px; z-index: 10010; pointer-events: none; align-items: flex-end; justify-content: center; }
+        .hud-top { position: absolute; top: 0px; left: 50%; transform: translateX(-50%) scale(0.65); transform-origin: top center; width: 95%; max-width: 1400px; display: flex; gap: 15px; z-index: 10010; pointer-events: none; }
+        .hud-bottom { position: absolute; bottom: 0px; left: 50%; transform: translateX(-50%) scale(0.75); transform-origin: bottom center; width: 90%; max-width: 900px; display: flex; gap: 15px; z-index: 10010; pointer-events: none; align-items: flex-end; justify-content: center; }
         .hand-zone, .look-zone { pointer-events: auto; }
 
         .hud-sidebar { position: absolute; right: 20px; top: 20px; display: flex; flex-direction: column; gap: 15px; background: rgba(0,0,0,0.4); padding: 15px; border-radius: 12px; border: 2px solid rgba(243, 156, 18, 0.5); width: 130px; box-sizing: border-box; box-shadow: 0 0 30px rgba(0,0,0,0.5); z-index: 10010; pointer-events: auto; backdrop-filter: blur(3px); }
         
-        .hand-zone { flex: 8; background-color: rgba(0,0,0,0.25); border: 2px dashed rgba(127,140,141,0.4); border-radius: 10px; padding: 15px; display: flex; flex-direction: column; backdrop-filter: blur(2px);}
-        .look-zone { flex: 2; background-color: rgba(0,50,100,0.25); border: 2px dashed rgba(52,152,219,0.4); border-radius: 10px; padding: 15px; display: flex; flex-direction: column; backdrop-filter: blur(2px);}
+        .hand-zone { flex: 8; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; }
+        .look-zone { flex: 2; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; }
         .hand-area, .look-area { display: flex; flex-wrap: nowrap; overflow: visible; width: 100%; height: var(--card-h); align-items: center; justify-content: center; }
 
         .game-table { width: 1150px; height: 1000px; position: absolute; left: 0; top: 0; transform-origin: top left; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 50px; box-sizing: border-box; perspective: 1500px; }
 
         .battlefield { display: flex; flex-direction: column; width: max-content; background: linear-gradient(145deg, #1c2833, #2c0e0e); border: 3px solid #d32f2f; border-radius: 15px; box-shadow: inset 0 0 40px rgba(0,0,0,0.9), 0 15px 30px rgba(0,0,0,0.9); position: relative; margin: 0 auto; flex-shrink: 0; transform-origin: center center; transition: transform 0.6s cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow 0.6s ease; transform-style: flat; }
-        .mode-3d .battlefield { transform: rotateX(35deg) translateY(-20px); box-shadow: 0 50px 80px rgba(0,0,0,0.9), inset 0 0 40px rgba(0,0,0,0.9); border-bottom: 12px solid #7b241c; border-bottom-left-radius: 20px; border-bottom-right-radius: 20px; }
+        
+        .playmat { display: flex; justify-content: center; align-items: stretch; gap: 15px; padding: 10px 25px; width: 100%; box-sizing: border-box; }
+        .center-zone { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; }
+        .card-row { display: flex; gap: 8px; }
+        .side-zone { display: flex; flex-direction: column; gap: 8px; height: 100%; justify-content: space-between; align-items: center; } 
+        .mode-3d .battlefield { transform: rotateX(25deg) translateY(-10px); box-shadow: 0 30px 60px rgba(0,0,0,0.9), inset 0 0 30px rgba(0,0,0,0.9); border-bottom: 12px solid #7b241c; border-bottom-left-radius: 20px; border-bottom-right-radius: 20px; }
 
-        .playmat { display: flex; justify-content: center; align-items: stretch; gap: 35px; padding: 25px; width: 100%; box-sizing: border-box; }
         .board-divider { width: 100%; height: 2px; background: rgba(241, 196, 15, 0.3); box-shadow: 0 0 10px rgba(241, 196, 15, 0.6); }
 
-        .line-label { color: rgba(255,255,255,0.8); font-size: var(--font-size-base); font-weight: bold; text-align: center; margin: 4px 0; letter-spacing: 1px; text-shadow: 1px 1px 3px black; white-space: nowrap; pointer-events: none; }
-        .center-zone { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; }
-        .side-zone { display: flex; flex-direction: column; gap: 15px; height: 100%; justify-content: space-between; align-items: center; } 
+        .line-label { background: rgba(0,0,0,0.65); padding: 4px 12px; border-radius: 12px; color: rgba(255,255,255,0.9); font-size: 13px; font-weight: bold; text-align: center; margin-bottom: 8px; letter-spacing: 1px; white-space: nowrap; pointer-events: none; border: 1px solid rgba(255,255,255,0.1); }
         .slot-group { display: flex; flex-direction: column; align-items: center; }
-        .card-row { display: flex; gap: 12px; }
-
-        /* 🌟 前線 BP 控制按鈕樣式 (功能 2) */
-        .bp-ctrl { 
-            display: none; position: absolute; top: -30px; left: 50%; transform: translateX(-50%); 
-            background: rgba(20,20,20,0.95); border: 2px solid #3498db; border-radius: 8px; padding: 4px; 
-            z-index: 10000; white-space: nowrap; gap: 4px; pointer-events: auto; box-shadow: 0 4px 10px rgba(0,0,0,0.8);
-        }
-        .slot:hover .bp-ctrl { display: flex; }
-        
-        .bp-btn { background: #2c3e50; color: white; border: 1px solid #7f8c8d; border-radius: 4px; font-size: 11px; font-weight: bold; cursor: pointer; padding: 4px 8px; transition: 0.2s;}
-        .bp-btn:hover { background: #34495e; }
-        .bp-btn.b-plus { background: #27ae60; border-color: #2ecc71;}
-        .bp-btn.b-minus { background: #c0392b; border-color: #e74c3c;}
-        .bp-btn.b-zero { background: #7f8c8d; border-color: #95a5a6;}
-        
-        .bp-tag { 
-            display: none; position: absolute; bottom: -12px; left: 50%; transform: translateX(-50%); 
-            background: #f1c40f; color: #000; font-weight: 900; font-size: 14px; padding: 2px 8px; 
-            border-radius: 10px; z-index: 100; box-shadow: 0 4px 8px rgba(0,0,0,0.8); pointer-events: none; border: 2px solid #fff;
-        }
 
         .slot { width: var(--card-w); height: var(--card-h); background-color: rgba(0,0,0,0.4); border: 2px dashed rgba(241, 196, 15, 0.4); border-radius: 6px; box-shadow: inset 0 0 15px rgba(0,0,0,0.8); position: relative; display: flex; justify-content: center; align-items: center; cursor: pointer; pointer-events: auto;}
         .slot.life-slot { width: var(--card-h); height: calc(var(--card-w) + 160px); justify-content: flex-start; align-items: flex-start; } 
@@ -141,9 +142,9 @@
         .slot:hover::after { opacity: 1; }
         .slot[data-count="0"]::after, .slot[data-count="1"]::after, .slot:not([data-count])::after { display: none; }
 
-        .marker { position: absolute; top: -10px; left: -10px; font-size: 22px; cursor: pointer; opacity: 0.15; transition: 0.2s; z-index: 10000; background: rgba(0,0,0,0.8); border-radius: 50%; width: 32px; height: 32px; display: flex; justify-content: center; align-items: center; border: 2px solid transparent; pointer-events: auto; }
-        .slot:hover .marker { opacity: 0.9; transform: scale(1.1); }
-        .slot.marked .marker { opacity: 1 !important; border-color: #e74c3c; box-shadow: 0 0 15px #e74c3c; filter: drop-shadow(0 0 5px red); transform: scale(1.3); }
+        .marker { position: absolute; top: -5px; left: -5px; cursor: pointer; opacity: 0.3; transition: 0.2s; z-index: 999; background-color: #e74c3c; border-radius: 50%; width: 16px; height: 16px; pointer-events: auto; }
+        .slot:hover .marker { opacity: 0.8; transform: scale(1.2); }
+        .slot.marked .marker { opacity: 1 !important; box-shadow: 0 0 12px #e74c3c; transform: scale(1.4); }
         .slot.marked { outline: 5px solid #e74c3c !important; outline-offset: 3px; box-shadow: 0 0 40px rgba(231, 76, 60, 0.9) !important; background-color: rgba(231, 76, 60, 0.4) !important; border-color: transparent !important; }
 
         .phase-step { padding: 10px; border-radius: 6px; background: rgba(44, 62, 80, 0.8); cursor: pointer; font-weight: bold; font-size: 14px; transition: 0.3s; color: #bdc3c7; text-align: center; border: 1px solid rgba(52, 73, 94, 0.5);}
@@ -157,10 +158,10 @@
             pointer-events: auto; 
         }
         
-        .hand-area .card, .look-area .card { margin-left: -45px;} 
+        .hand-area .card, .look-area .card { margin-left: -75px;}
         .hand-area .card:first-child, .look-area .card:first-child { margin-left: 0; }
         .card:hover { --scale: 1.05; box-shadow: 0 15px 25px rgba(0,0,0,0.8); z-index: 500 !important; }
-        .hand-area .card:hover, .look-area .card:hover { --scale: 1.1; --ty: -20px; margin-right: 35px; z-index: 500 !important; }
+        .hand-area .card:hover, .look-area .card:hover { --scale: 1.2; --ty: -30px; margin-right: 65px; z-index: 500 !important; }
         
         .card-inner { position: relative; width: 100%; height: 100%; transition: transform 0.3s; transform-style: preserve-3d; }
         .card.is-flipped .card-inner { transform: rotateY(180deg); }
@@ -176,10 +177,39 @@
         .card.rest { --rot: 90deg !important; }
         .card.in-life { --rot: -90deg !important; }
 
-        #drop-menu { display: none; position: fixed; z-index: 10001; background: rgba(20,20,20,0.95); border: 2px solid #3498db; border-radius: 8px; padding: 10px; flex-direction: column; gap: 8px; box-shadow: 0 0 15px rgba(52,152,219,0.5); }
+        #drop-menu { display: none; position: fixed; z-index: 9999999; background: rgba(20,20,20,0.95); border: 2px solid #3498db; border-radius: 8px; padding: 10px; flex-direction: column; gap: 8px; box-shadow: 0 0 15px rgba(52,152,219,0.5); }
         .drop-btn { background: #2c3e50; color: white; border: 1px solid #7f8c8d; padding: 8px 15px; cursor: pointer; border-radius: 4px; font-weight: bold; font-size: 12px;}
         .drop-btn:hover { background: #34495e; }
         .drop-btn.cancel { background: #c0392b; border-color: #e74c3c; }
+
+        .bp-tracker {
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            background: rgba(0,0,0,0.85); border: 3px solid #e74c3c; color: #fff;
+            padding: 5px 15px; border-radius: 10px; font-weight: 900; font-size: 24px;
+            z-index: 1000; display: none; white-space: nowrap; pointer-events: none;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.9); text-shadow: 2px 2px 0 #000;
+        }
+        .bp-tracker.active { display: block; animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+        .bp-tracker.positive { color: #2ecc71; border-color: #2ecc71; }
+        .bp-tracker.negative { color: #e74c3c; border-color: #c0392b; }
+        @keyframes popIn { 0% { transform: translate(-50%, -50%) scale(0); } 100% { transform: translate(-50%, -50%) scale(1); } }
+        
+        .bp-badge {
+            position: absolute; bottom: -12px; right: -12px; background: #2c3e50; color: #f1c40f;
+            border: 2px solid #f39c12; border-radius: 6px; padding: 3px 8px; font-size: 13px;
+            font-weight: bold; cursor: pointer; z-index: 1000; box-shadow: 0 2px 8px rgba(0,0,0,0.9);
+            pointer-events: auto; transition: 0.2s;
+        }
+        .bp-badge:hover { background: #f39c12; color: #000; transform: scale(1.1); }
+
+        #bp-menu {
+            display: none; position: fixed; z-index: 100500; background: rgba(20,20,20,0.95);
+            border: 2px solid #f39c12; border-radius: 8px; padding: 10px; flex-wrap: wrap; 
+            gap: 5px; width: 170px; justify-content: center; box-shadow: 0 0 15px rgba(243,156,18,0.5);
+        }
+        .bp-btn { background: #34495e; color: white; border: none; padding: 8px; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 13px; width: 45%; transition: 0.2s;}
+        .bp-btn:hover { background: #e74c3c; }
+        .bp-btn.positive:hover { background: #2ecc71; }
 
         #search-modal { display: none; position: fixed; z-index: 100200; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.85); justify-content: center; align-items: center; flex-direction: column; }
         .modal-content { background-color: #1a1a1a; border: 4px solid #f39c12; border-radius: 15px; padding: 20px; width: 85%; max-height: 40vh; overflow-y: auto; display: flex; flex-wrap: wrap; gap: 15px; justify-content: center; align-items: center; -webkit-overflow-scrolling: touch; touch-action: pan-y;}
@@ -198,21 +228,14 @@
         @media (max-width: 1100px) {
             #hotkey-guide { display: none !important; }
         }
-
+        
         @media (max-width: 850px) {
-            .deck-panel { flex: 4; padding: 5px; }
-            .catalog-panel { flex: 6; padding: 5px; }
-            .deck-panel .preview-card { width: 60px; height: calc(60px / 0.714); }
-            .catalog-panel .preview-card { width: 70px; height: calc(70px / 0.714); }
-            
-            .cam-ctrl-box { bottom: 5px; right: 5px; transform: scale(0.7); transform-origin: bottom right; }
-            .hud-sidebar { right: 5px; top: 5px; transform: scale(0.65); transform-origin: top right; }
-            .hud-top { transform: translateX(-50%) scale(0.5); top: 2px; } 
-            .hud-bottom { transform: translateX(-50%) scale(0.6); bottom: 2px; } 
+            .preview-card:hover { transform: none !important; z-index: 1 !important; }
         }
 
         @media screen and (orientation: portrait) {
-            body #portrait-warning { display: flex; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; height: 100dvh; background: rgba(0,0,0,0.98); z-index: 999999; color: #f1c40f; font-size: 24px; font-weight: bold; justify-content: center; align-items: center; text-align: center; flex-direction: column; padding: 20px; box-sizing: border-box; }
+            body #portrait-warning { display: flex; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.98); z-index: 999999; color: #f1c40f; font-size: 24px; font-weight: bold; justify-content: center; align-items: center; text-align: center; flex-direction: column; padding: 20px; box-sizing: border-box; }
+            #app-canvas { display: none !important; }
         }
     </style>
 </head>
@@ -221,215 +244,195 @@
     <div id="portrait-warning">
         <div style="font-size: 50px; margin-bottom: 20px;">📱🔄</div>
         <div>請將手機轉為「橫向」<br>以獲得最佳對戰體驗！</div>
+        <div style="font-size: 14px; color: #aaa; margin-top: 10px;">(為確保畫面不被擠壓，請橫置設備)</div>
     </div>
 
-    <div id="center-overlay">
-        <div id="overlay-icon">🎲</div>
-        <div id="overlay-title">標題</div>
-        <div id="overlay-value">內容</div>
-    </div>
+    <div id="app-canvas">
 
-    <div id="sys-msg">系統訊息</div>
-
-    <div id="builder-scene">
-        
-        <div class="top-sys-bar">
-            <details class="network-details">
-                <summary class="network-summary">🌐 展開連線與配對設定</summary>
-                <div class="network-content">
-                    <div class="network-box">
-                        <span style="font-size:14px;">🟢 你的 ID：</span>
-                        <span id="my-peer-id">產生中...</span>
-                    </div>
-                    <div class="network-box">
-                        <input type="text" id="target-id" class="network-input" placeholder="輸入對手代碼">
-                        <button class="ctrl-btn" id="btn-connect" style="background: #e67e22;">連線加入</button>
-                    </div>
-                </div>
-            </details>
-
-            <div class="header-actions">
-                <button class="start-btn" id="start-game-btn" disabled>進入對戰 ➔</button>
-            </div>
+        <div id="center-overlay">
+            <div id="overlay-icon">🎲</div>
+            <div id="overlay-title">標題</div>
+            <div id="overlay-value">內容</div>
         </div>
-        
-        <div class="builder-container">
-            
-            <div id="panel-deck" class="deck-panel">
-                <div class="deck-controls">
-                    <select id="deck-selector" class="deck-selector"></select>
-                    <button id="btn-new-deck" class="ctrl-btn">➕ 新增</button>
-                    <button class="ctrl-btn danger" onclick="clearDeck()">清空</button>
-                </div>
-                <div class="ap-deck-section">
-                    <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
-                        <h4 style="margin: 0; color: #f39c12; font-size: 14px;">🎯 AP 卡</h4>
-                        <span id="ap-counter" style="font-weight: bold; font-size: 13px;">0 / 3</span>
-                    </div>
-                    <div id="ap-deck-grid" class="card-grid"></div>
-                </div>
-                <div style="display: flex; justify-content: space-between; margin-bottom: 5px; margin-top: 5px;">
-                    <h4 style="margin: 0; color: #3498db; font-size: 14px;">🃏 主要牌組</h4>
-                    <span id="deck-counter" style="font-weight: bold; font-size: 13px;">0 / 50</span>
-                </div>
-                <div id="deck-grid-inner" class="card-grid"></div>
-            </div>
 
-            <div id="panel-catalog" class="catalog-panel">
-                <details class="import-details">
-                    <summary class="import-summary">✨ 一鍵匯入 (點擊展開)</summary>
-                    <div class="import-content">
-                        <input type="text" id="import-series-name" placeholder="作品名稱" class="network-input" style="flex: 1; min-width: 100px;">
-                        <textarea id="import-raw-text" class="import-textarea" placeholder="貼上編號，逗號或空白分隔"></textarea>
-                        <button class="ctrl-btn" style="background: #9b59b6;" onclick="executeBatchImport()">匯入</button>
+        <div id="sys-msg">系統訊息</div>
+
+        <div id="builder-scene">
+            
+            <div class="top-sys-bar">
+                <details class="network-details">
+                    <summary class="network-summary">🌐 展開連線與配對設定</summary>
+                    <div class="network-content">
+                        <div class="network-box">
+                            <span style="font-size:14px;">🟢 你的 ID：</span>
+                            <span id="my-peer-id">產生中...</span>
+                        </div>
+                        <div class="network-box">
+                            <input type="text" id="target-id" class="network-input" placeholder="輸入對手代碼">
+                            <button class="ctrl-btn" id="btn-connect" style="background: #e67e22;">連線加入</button>
+                        </div>
                     </div>
                 </details>
 
-                <div class="catalog-header">
-                    <h3 style="margin: 0; font-size: 15px;">卡片目錄 (懸停/長按 1秒放大)</h3>
-                    <select id="series-filter" class="series-filter"><option value="ALL">全部作品 (All)</option></select>
-                </div>
-                <div id="catalog-grid" class="card-grid"></div>
-            </div>
-
-        </div>
-    </div>
-
-    <div id="card-magnifier"><img src="" id="magnifier-img"></div>
-
-    <div id="game-scene">
-        
-        <div style="position: absolute; top: 15px; left: 15px; z-index: 10020; display: flex; gap: 10px; pointer-events: auto;">
-            <button onclick="rollDice()" class="ctrl-btn" style="background: rgba(155, 89, 182, 0.8); border: 2px solid #9b59b6; backdrop-filter: blur(5px); box-shadow: 0 4px 10px rgba(0,0,0,0.5);">🎲 擲骰</button>
-            <button id="btn-back-builder" class="ctrl-btn danger" style="background: rgba(231, 76, 60, 0.8); border: 2px solid #c0392b; backdrop-filter: blur(5px); box-shadow: 0 4px 10px rgba(0,0,0,0.5);">🔙 投降</button>
-        </div>
-
-        <div id="chat-wrapper" style="position: absolute; top: 15px; left: 180px; z-index: 10010; pointer-events: none; display: flex; flex-direction: column; gap: 10px;">
-            <button id="btn-chat-toggle" class="cam-btn" style="pointer-events: auto; width: 40px; height: 40px; font-size: 16px; border-color: #9b59b6;">💬</button>
-            <div id="chat-panel" style="display: none; width: 260px; height: 200px; background: rgba(0,0,0,0.65); border: 2px solid #9b59b6; border-radius: 12px; pointer-events: auto; flex-direction: column; backdrop-filter: blur(5px); box-shadow: 0 10px 30px rgba(0,0,0,0.8);">
-                <div style="background: rgba(155, 89, 182, 0.4); padding: 5px; font-size: 12px; font-weight: bold; border-radius: 10px 10px 0 0; text-align: center;">對戰聊天室</div>
-                <div id="chat-messages" style="flex: 1; overflow-y: auto; padding: 10px; font-size: 13px; display: flex; flex-direction: column; gap: 6px;"></div>
-                <div style="display: flex; border-top: 2px solid rgba(155, 89, 182, 0.5);">
-                    <input type="text" id="chat-input" placeholder="輸入對話..." style="flex: 1; background: transparent; border: none; color: white; padding: 8px; outline: none; font-size: 13px;">
-                    <button id="btn-chat-send" style="background: #9b59b6; border: none; color: white; cursor: pointer; padding: 0 15px; font-weight: bold; border-radius: 0 0 10px 0;">送出</button>
+                <div class="header-actions">
+                    <select id="game-mode-selector" class="network-input" style="background: #2c3e50; color: white; display: none;">
+                        <option value="sandbox">🛠️ 沙盒模式 (全手動)</option>
+                        <option value="auto">⚡ 全自動模式 (測試中)</option>
+                    </select>
+                    <button class="ctrl-btn" onclick="requestFullScreen()" style="background: #8e44ad;">📱 進入全螢幕</button>
+                    <button class="start-btn" id="start-game-btn" disabled>等待連線成功後開始 ➔</button>
                 </div>
             </div>
-        </div>
-
-        <div id="hotkey-guide">
-            <div class="hk-title">⌨️ 快捷鍵指南</div>
-            <div class="hk-item"><span>F</span> 翻面</div>
-            <div class="hk-item"><span>R</span> 橫置 / 洗牌</div>
-            <div class="hk-item"><span>T</span> 放回牌組頂</div>
-            <div class="hk-item"><span>B</span> 放回牌組底</div>
-            <div class="hk-item"><span>C</span> 移至手牌</div>
-            <div class="hk-item"><span>V</span> 移至場外</div>
-            <div class="hk-item"><span>G</span> 移至檢索區</div>
-            <div class="hk-item"><span>N</span> 移至移除區</div>
-        </div>
-
-        <div id="drop-menu">
-            <div style="font-size: 12px; text-align: center; margin-bottom: 5px; font-weight: bold;">請選擇放置方式</div>
-            <button id="btn-top-faceup" class="drop-btn">正表放上 (突襲/直立)</button>
-            <button id="btn-bottom-facedown" class="drop-btn">背表放下 (墊底下)</button>
-            <button id="btn-bottom-faceup" class="drop-btn">正表放下 (墊底下)</button>
-            <button id="btn-cancel-drop" class="drop-btn cancel">取消放置</button>
-        </div>
             
-        <div class="board-wrapper" id="board-viewport">
-            
-            <div class="cam-ctrl-box">
-                <button class="cam-btn" onclick="toggle3D()" id="btn-3d" style="font-size: 14px;">3D</button>
-                <button class="cam-btn" onclick="zoomCam(0.15)">➕</button>
-                <button class="cam-btn" onclick="resetCam()">🎯</button>
-                <button class="cam-btn" onclick="zoomCam(-0.15)">➖</button>
-            </div>
-
-            <div class="hud-top">
-                <div class="look-zone" id="opp-look-zone"><div class="line-label">檢索區</div><div class="look-area" id="opp-look-area"></div></div>
-                <div class="hand-zone" style="flex:7;"><div class="line-label" style="color:#e74c3c;">對手手牌區</div><div class="hand-area" id="opp-hand-area"></div></div>
-            </div>
-
-            <div class="hud-sidebar">
-                <div style="color: #3498db; font-size: 13px; font-weight: bold; background: rgba(15, 20, 25, 0.7); padding: 15px; border-radius: 12px; border: 2px solid rgba(243, 156, 18, 0.5); width: 130px; box-sizing: border-box; box-shadow: 0 10px 30px rgba(0,0,0,0.5); z-index: 10010; pointer-events: auto; backdrop-filter: blur(8px); }
-                <hr style="width: 100%; border: 1px solid rgba(255,255,255,0.2); margin: 0;">
-                <div style="display: flex; flex-direction: column; gap: 8px;">
-                    <div class="phase-step active" onclick="setPhase(this, '起始')">起始階段</div>
-                    <div class="phase-step" onclick="setPhase(this, '移動')">移動階段</div>
-                    <div class="phase-step" onclick="setPhase(this, '主要')">主要階段</div>
-                    <div class="phase-step" onclick="setPhase(this, '戰鬥')">戰鬥階段</div>
-                </div>
-                <button id="btn-end-turn" onclick="endTurn()" class="start-btn" style="padding: 12px; font-size: 16px; width: 100%; border: 1px solid #c0392b; background: #e74c3c;">⛔ 結束回合</button>
-            </div>
-
-            <div class="hud-bottom">
-                <div class="hand-zone"><div class="line-label" style="color:#2ecc71;">YOUR HAND (我方手牌)</div><div class="hand-area" id="my-hand-area"></div></div>
-                <div class="look-zone">
-                    <div class="line-label" style="display: flex; justify-content: space-between; align-items: center;">
-                        <span>檢索確認區</span>
-                        <div><button class="ctrl-btn" style="padding: 2px 5px;" onclick="sendToDeck('my-look-area', 'my-deck-area', false)">置頂</button> <button class="ctrl-btn" style="padding: 2px 5px;" onclick="sendToDeck('my-look-area', 'my-deck-area', true)">置底</button></div>
+            <div class="builder-container">
+                
+                <div id="panel-deck" class="deck-panel">
+                    <div class="deck-controls">
+                        <select id="deck-selector" class="deck-selector"></select>
+                        <button id="btn-new-deck" class="ctrl-btn">➕ 新增</button>
+                        <button class="ctrl-btn danger" onclick="clearDeck()">清空</button>
                     </div>
-                    <div class="look-area" id="my-look-area"></div>
+                    <div class="ap-deck-section">
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+                            <h4 style="margin: 0; color: #f39c12; font-size: 15px;"> Action Point</h4>
+                            <span id="ap-counter" style="font-weight: bold; font-size: 14px;">0 / 3</span>
+                        </div>
+                        <div id="ap-deck-grid" class="card-grid"></div>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 5px; margin-top: 10px;">
+                        <h4 style="margin: 0; color: #3498db; font-size: 15px;">🃏 主要牌組</h4>
+                        <span id="deck-counter" style="font-weight: bold; font-size: 14px;">0 / 50</span>
+                    </div>
+                    <div id="deck-grid-inner" class="card-grid"></div>
                 </div>
+
+                <div id="panel-catalog" class="catalog-panel">
+                    <details class="import-details">
+                        <summary class="import-summary">✨ 一鍵匯入 (點擊展開)</summary>
+                        <div class="import-content">
+                            <input type="text" id="import-series-name" placeholder="作品名稱" class="network-input" style="flex: 1; min-width: 100px;">
+                            <textarea id="import-raw-text" class="import-textarea" placeholder="可貼上多個編號，以逗號或空白分隔"></textarea>
+                            <button class="ctrl-btn" style="background: #9b59b6;" onclick="executeBatchImport()">匯入</button>
+                        </div>
+                    </details>
+
+                    <div class="catalog-header">
+                        <h3 style="margin: 0; font-size: 16px;">卡片目錄 (點擊加入)</h3>
+                        <select id="series-filter" class="series-filter"><option value="ALL">全部作品 (All)</option></select>
+                    </div>
+                    <div id="catalog-grid" class="card-grid"></div>
+                </div>
+
+            </div>
+        </div>
+
+        <div id="card-magnifier"><img src="" id="magnifier-img"></div>
+
+        <div id="game-scene">
+            <div id="hotkey-guide">
+                <div class="hk-title">⌨️ 快捷鍵指南</div>
+                <div class="hk-item"><span>F</span> 翻面</div>
+                <div class="hk-item"><span>R</span> 橫置 / 洗牌</div>
+                <div class="hk-item"><span>T</span> 放回牌組頂</div>
+                <div class="hk-item"><span>B</span> 放回牌組底</div>
+                <div class="hk-item"><span>C</span> 移至手牌</div>
+                <div class="hk-item"><span>V</span> 移至場外</div>
+                <div class="hk-item"><span>G</span> 移至檢索區</div>
+                <div class="hk-item"><span>N</span> 移至移除區</div>
+                <div class="hk-item"><span>D</span> 抽一張牌</div>
+                <div class="hk-item"><span>Space</span> 結束回合</div>
             </div>
 
-            <div class="game-table" id="game-table-inner">
-
-                <div class="battlefield">
-                    
-                    <div id="opp-board" class="playmat">
-                        <div class="side-zone left-side">
-                            <div class="slot-group"><div class="line-label">卡組</div><div class="slot" id="opp-deck-area"></div></div>
-                            <div class="slot-group"><div class="line-label">公開</div><div class="slot" id="opp-public-area"></div></div>
-                            <div class="slot-group"><div class="line-label">場外</div><div class="slot" id="opp-outside-area"></div></div>
+            <div id="drop-menu">
+                <div style="font-size: 12px; text-align: center; margin-bottom: 5px; font-weight: bold;">請選擇放置方式</div>
+                <button id="btn-top-faceup" class="drop-btn">正表放上 (突襲/直立)</button>
+                <button id="btn-bottom-facedown" class="drop-btn">背表放下 (墊底下)</button>
+                <button id="btn-bottom-faceup" class="drop-btn">正表放下 (墊底下)</button>
+                <button id="btn-cancel-drop" class="drop-btn cancel">取消放置</button>
+            </div>
+            
+            <div id="bp-menu">
+                <div style="width:100%; text-align:center; font-size:12px; margin-bottom:5px; color:#f39c12;">調整 BP (點擊空白處取消)</div>
+                <button class="bp-btn positive" onclick="changeBp(500)">+ 500</button>
+                <button class="bp-btn positive" onclick="changeBp(1000)">+ 1000</button>
+                <button class="bp-btn" onclick="changeBp(-500)">- 500</button>
+                <button class="bp-btn" onclick="changeBp(-1000)">- 1000</button>
+                <button class="bp-btn" style="width:95%; background:#7f8c8d; margin-top:5px;" onclick="changeBp(0)">🔄 重置歸零</button>
+            </div>
+                
+            <div class="board-wrapper" id="board-viewport">
+                
+                <div id="chat-wrapper" style="position: absolute; top: 20px; left: 20px; z-index: 10010; pointer-events: none; display: flex; flex-direction: column; gap: 10px;">
+                    <button id="btn-chat-toggle" class="cam-btn" style="pointer-events: auto; width: 45px; height: 45px; font-size: 18px; border-color: #9b59b6;">💬</button>
+                    <div id="chat-panel" style="display: none; width: 280px; height: 220px; background: rgba(0,0,0,0.65); border: 2px solid #9b59b6; border-radius: 12px; pointer-events: auto; flex-direction: column; backdrop-filter: blur(5px); box-shadow: 0 10px 30px rgba(0,0,0,0.8);">
+                        <div style="background: rgba(155, 89, 182, 0.4); padding: 5px 10px; font-size: 12px; font-weight: bold; border-radius: 10px 10px 0 0; text-align: center;">對戰聊天室</div>
+                        <div id="chat-messages" style="flex: 1; overflow-y: auto; padding: 10px; font-size: 13px; display: flex; flex-direction: column; gap: 6px;"></div>
+                        <div style="display: flex; border-top: 2px solid rgba(155, 89, 182, 0.5);">
+                            <input type="text" id="chat-input" placeholder="輸入對話..." style="flex: 1; background: transparent; border: none; color: white; padding: 8px 10px; outline: none; font-size: 14px;">
+                            <button id="btn-chat-send" style="background: #9b59b6; border: none; color: white; cursor: pointer; padding: 0 15px; font-weight: bold; border-radius: 0 0 10px 0; transition: 0.2s;">送出</button>
                         </div>
-                        <div class="center-zone">
-                            <div class="line-label">ACTION POINT</div>
-                            <div class="card-row ap-row" id="opp-ap-area"><div class="slot" id="opp-ap-3"></div><div class="slot" id="opp-ap-2"></div><div class="slot" id="opp-ap-1"></div></div>
-                            <div class="line-label">ENERGY LINE</div>
-                            <div class="card-row" id="opp-energy-line"><div class="slot" id="opp-en-4"></div><div class="slot" id="opp-en-3"></div><div class="slot" id="opp-en-2"></div><div class="slot" id="opp-en-1"></div></div>
-                            <div class="line-label">FRONT LINE</div>
-                            <div class="card-row" id="opp-front-line">
-                                <div class="slot" id="opp-fl-4">
-                                    <div class="bp-ctrl">
-                                        <button class="bp-btn b-plus" onclick="changeBP('opp-fl-4', 1000, event)">+1K</button>
-                                        <button class="bp-btn b-plus" onclick="changeBP('opp-fl-4', 500, event)">+500</button>
-                                        <button class="bp-btn b-zero" onclick="changeBP('opp-fl-4', 'reset', event)">0</button>
-                                        <button class="bp-btn b-minus" onclick="changeBP('opp-fl-4', -500, event)">-500</button>
-                                        <button class="bp-btn b-minus" onclick="changeBP('opp-fl-4', -1000, event)">-1K</button>
-                                    </div>
-                                    <div class="bp-tag" id="bp-tag-opp-fl-4"></div>
-                                </div>
-                                <div class="slot" id="opp-fl-3">
-                                    <div class="bp-ctrl">
-                                        <button class="bp-btn b-plus" onclick="changeBP('opp-fl-3', 1000, event)">+1K</button>
-                                        <button class="bp-btn b-plus" onclick="changeBP('opp-fl-3', 500, event)">+500</button>
-                                        <button class="bp-btn b-zero" onclick="changeBP('opp-fl-3', 'reset', event)">0</button>
-                                        <button class="bp-btn b-minus" onclick="changeBP('opp-fl-3', -500, event)">-500</button>
-                                        <button class="bp-btn b-minus" onclick="changeBP('opp-fl-3', -1000, event)">-1K</button>
-                                    </div>
-                                    <div class="bp-tag" id="bp-tag-opp-fl-3"></div>
-                                </div>
-                                <div class="slot" id="opp-fl-2">
-                                    <div class="bp-ctrl">
-                                        <button class="bp-btn b-plus" onclick="changeBP('opp-fl-2', 1000, event)">+1K</button>
-                                        <button class="bp-btn b-plus" onclick="changeBP('opp-fl-2', 500, event)">+500</button>
-                                        <button class="bp-btn b-zero" onclick="changeBP('opp-fl-2', 'reset', event)">0</button>
-                                        <button class="bp-btn b-minus" onclick="changeBP('opp-fl-2', -500, event)">-500</button>
-                                        <button class="bp-btn b-minus" onclick="changeBP('opp-fl-2', -1000, event)">-1K</button>
-                                    </div>
-                                    <div class="bp-tag" id="bp-tag-opp-fl-2"></div>
-                                </div>
-                                <div class="slot" id="opp-fl-1">
-                                    <div class="bp-ctrl">
-                                        <button class="bp-btn b-plus" onclick="changeBP('opp-fl-1', 1000, event)">+1K</button>
-                                        <button class="bp-btn b-plus" onclick="changeBP('opp-fl-1', 500, event)">+500</button>
-                                        <button class="bp-btn b-zero" onclick="changeBP('opp-fl-1', 'reset', event)">0</button>
-                                        <button class="bp-btn b-minus" onclick="changeBP('opp-fl-1', -500, event)">-500</button>
-                                        <button class="bp-btn b-minus" onclick="changeBP('opp-fl-1', -1000, event)">-1K</button>
-                                    </div>
-                                    <div class="bp-tag" id="bp-tag-opp-fl-1"></div>
-                                </div>
+                    </div>
+                </div>
+
+                <div class="cam-ctrl-box">
+                    <button class="cam-btn" onclick="toggle3D()" id="btn-3d" style="font-size: 14px;">3D</button>
+                    <button class="cam-btn" onclick="zoomCam(0.15)">➕</button>
+                    <button class="cam-btn" onclick="resetCam()">🎯</button>
+                    <button class="cam-btn" onclick="zoomCam(-0.15)">➖</button>
+                </div>
+
+                <div class="hud-top">
+                    <div class="look-zone" id="opp-look-zone"><div class="line-label">檢索區</div><div class="look-area" id="opp-look-area"></div></div>
+                    <div class="hand-zone" style="flex:7;"><div class="line-label" style="color:#e74c3c;">對手手牌區</div><div class="hand-area" id="opp-hand-area"></div></div>
+                </div>
+
+                <div class="hud-sidebar">
+                    <div style="color: #3498db; font-size: 13px; font-weight: bold; background: rgba(52,152,219,0.2); padding: 5px 8px; border-radius: 5px; text-align: center; border: none;">對手階段<br><span id="opp-phase-display" style="color: white; font-size: 16px;">等待中</span></div>
+                    <hr style="width: 100%; border: 1px solid rgba(255,255,255,0.2); margin: 0;">
+                    <div style="display: flex; flex-direction: column; gap: 8px;">
+                        <div class="phase-step active" onclick="setPhase(this, '起始')">起始階段</div>
+                        <div class="phase-step" onclick="setPhase(this, '移動')">移動階段</div>
+                        <div class="phase-step" onclick="setPhase(this, '主要')">主要階段</div>
+                        <div class="phase-step" onclick="setPhase(this, '戰鬥')">戰鬥階段</div>
+                    </div>
+                    <button id="btn-end-turn" onclick="endTurn()" class="start-btn" style="padding: 12px; font-size: 16px; width: 100%; border: 1px solid #c0392b; background: #e74c3c;">⛔ 結束回合</button>
+                </div>
+
+                <div class="hud-bottom">
+                    <div class="hand-zone"><div class="line-label" style="color:#2ecc71;">YOUR HAND (我方手牌)</div><div class="hand-area" id="my-hand-area"></div></div>
+                    <div class="look-zone">
+                        <div class="line-label" style="display: flex; flex-direction: column; gap: 5px; align-items: center; border: none; background: transparent;">
+                            <span style="background: rgba(0,0,0,0.65); padding: 4px 12px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.1);">檢索確認</span>
+                            <div style="display: flex; gap: 8px; pointer-events: auto;">
+                                <button class="ctrl-btn" style="padding: 4px 8px; font-size: 12px; background: #2980b9;" onclick="sendToDeck('my-look-area', 'my-deck-area', false)">置頂</button> 
+                                <button class="ctrl-btn" style="padding: 4px 8px; font-size: 12px; background: #2980b9;" onclick="sendToDeck('my-look-area', 'my-deck-area', true)">置底</button>
+                            </div>
+                        </div>
+                        <div class="look-area" id="my-look-area"></div>
+                    </div>
+                    <div style="display: flex; flex-direction: column; gap: 10px; pointer-events: auto; margin-bottom: 15px;">
+                        <button onclick="rollDice()" class="ctrl-btn" style="background: #9b59b6; padding: 10px;">🎲 擲骰子</button>
+                        <button id="btn-back-builder" class="ctrl-btn danger" style="padding: 10px;">🔙 投降返回</button>
+                    </div>
+                </div>
+
+                <div class="game-table" id="game-table-inner">
+
+                    <div class="battlefield">
+                        
+                        <div id="opp-board" class="playmat">
+                            <div class="side-zone left-side">
+                                <div class="slot-group"><div class="line-label">卡組</div><div class="slot" id="opp-deck-area"></div></div>
+                                <div class="slot-group"><div class="line-label">公開</div><div class="slot" id="opp-public-area"></div></div>
+                                <div class="slot-group"><div class="line-label">場外</div><div class="slot" id="opp-outside-area"></div></div>
+                            </div>
+                            <div class="center-zone">
+                                <div class="line-label">ACTION POINT</div>
+                                <div class="card-row ap-row" id="opp-ap-area"><div class="slot" id="opp-ap-3"></div><div class="slot" id="opp-ap-2"></div><div class="slot" id="opp-ap-1"></div></div>
+                                <div class="line-label">ENERGY LINE</div>
+                                <div class="card-row" id="opp-energy-line"><div class="slot" id="opp-en-4"></div><div class="slot" id="opp-en-3"></div><div class="slot" id="opp-en-2"></div><div class="slot" id="opp-en-1"></div></div>
+                                <div class="line-label">FRONT LINE</div>
+                                <div class="card-row" id="opp-front-line"><div class="slot" id="opp-fl-4"></div><div class="slot" id="opp-fl-3"></div><div class="slot" id="opp-fl-2"></div><div class="slot" id="opp-fl-1"></div></div>
                             </div>
                             <div class="side-zone right-side">
                                 <div class="slot-group"><div class="line-label">生命區</div><div class="slot life-slot" id="opp-life-area"></div></div>
@@ -447,48 +450,7 @@
                             
                             <div class="center-zone">
                                 <div class="line-label">FRONT LINE</div>
-                                <div class="card-row" id="my-front-line">
-                                    <div class="slot" id="my-fl-1">
-                                        <div class="bp-ctrl">
-                                            <button class="bp-btn b-plus" onclick="changeBP('my-fl-1', 1000, event)">+1K</button>
-                                            <button class="bp-btn b-plus" onclick="changeBP('my-fl-1', 500, event)">+500</button>
-                                            <button class="bp-btn b-zero" onclick="changeBP('my-fl-1', 'reset', event)">0</button>
-                                            <button class="bp-btn b-minus" onclick="changeBP('my-fl-1', -500, event)">-500</button>
-                                            <button class="bp-btn b-minus" onclick="changeBP('my-fl-1', -1000, event)">-1K</button>
-                                        </div>
-                                        <div class="bp-tag" id="bp-tag-my-fl-1"></div>
-                                    </div>
-                                    <div class="slot" id="my-fl-2">
-                                        <div class="bp-ctrl">
-                                            <button class="bp-btn b-plus" onclick="changeBP('my-fl-2', 1000, event)">+1K</button>
-                                            <button class="bp-btn b-plus" onclick="changeBP('my-fl-2', 500, event)">+500</button>
-                                            <button class="bp-btn b-zero" onclick="changeBP('my-fl-2', 'reset', event)">0</button>
-                                            <button class="bp-btn b-minus" onclick="changeBP('my-fl-2', -500, event)">-500</button>
-                                            <button class="bp-btn b-minus" onclick="changeBP('my-fl-2', -1000, event)">-1K</button>
-                                        </div>
-                                        <div class="bp-tag" id="bp-tag-my-fl-2"></div>
-                                    </div>
-                                    <div class="slot" id="my-fl-3">
-                                        <div class="bp-ctrl">
-                                            <button class="bp-btn b-plus" onclick="changeBP('my-fl-3', 1000, event)">+1K</button>
-                                            <button class="bp-btn b-plus" onclick="changeBP('my-fl-3', 500, event)">+500</button>
-                                            <button class="bp-btn b-zero" onclick="changeBP('my-fl-3', 'reset', event)">0</button>
-                                            <button class="bp-btn b-minus" onclick="changeBP('my-fl-3', -500, event)">-500</button>
-                                            <button class="bp-btn b-minus" onclick="changeBP('my-fl-3', -1000, event)">-1K</button>
-                                        </div>
-                                        <div class="bp-tag" id="bp-tag-my-fl-3"></div>
-                                    </div>
-                                    <div class="slot" id="my-fl-4">
-                                        <div class="bp-ctrl">
-                                            <button class="bp-btn b-plus" onclick="changeBP('my-fl-4', 1000, event)">+1K</button>
-                                            <button class="bp-btn b-plus" onclick="changeBP('my-fl-4', 500, event)">+500</button>
-                                            <button class="bp-btn b-zero" onclick="changeBP('my-fl-4', 'reset', event)">0</button>
-                                            <button class="bp-btn b-minus" onclick="changeBP('my-fl-4', -500, event)">-500</button>
-                                            <button class="bp-btn b-minus" onclick="changeBP('my-fl-4', -1000, event)">-1K</button>
-                                        </div>
-                                        <div class="bp-tag" id="bp-tag-my-fl-4"></div>
-                                    </div>
-                                </div>
+                                <div class="card-row" id="my-front-line"><div class="slot" id="my-fl-1"></div><div class="slot" id="my-fl-2"></div><div class="slot" id="my-fl-3"></div><div class="slot" id="my-fl-4"></div></div>
                                 <div class="line-label">ENERGY LINE</div>
                                 <div class="card-row" id="my-energy-line"><div class="slot" id="my-en-1"></div><div class="slot" id="my-en-2"></div><div class="slot" id="my-en-3"></div><div class="slot" id="my-en-4"></div></div>
                                 <div class="line-label">ACTION POINT</div>
@@ -529,110 +491,91 @@
             </div>
         </div>
 
-    </div>
-
-    <script src="cards.js"></script>
+    </div> <script src="cards.js"></script>
 
     <script>
-        // ==========================================
-        // 🌟 核心變數與 BP 資料
-        // ==========================================
-        window.globalBpData = {};
-        window.isMagClickPrevent = false; 
+        window.appScale = 1;
+        // --- 網頁原生音效引擎 ---
+        let audioCtx = null;
+        // 監聽第一次點擊來解鎖瀏覽器音效限制
+        document.addEventListener('click', () => { 
+            if(!audioCtx) { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); } 
+        }, {once:true});
 
-        // 🌟 對戰桌面視角自動對焦 (精準填滿螢幕)
-        window.boardScale = 1; 
-        window.camX = 0; window.camY = 0;
-        let isCamDragging = false;
-        let camStartX = 0, camStartY = 0;
-
-        const appHeight = () => {
-            const doc = document.documentElement;
-            doc.style.setProperty('--app-height', `${window.innerHeight}px`);
+        window.playSound = function(type) {
+            if(!audioCtx) return;
+            if(audioCtx.state === 'suspended') audioCtx.resume();
+            let osc = audioCtx.createOscillator(), gain = audioCtx.createGain();
+            osc.connect(gain); gain.connect(audioCtx.destination);
+            let now = audioCtx.currentTime;
+            
+            if(type === 'draw') { 
+                osc.type = 'sine'; osc.frequency.setValueAtTime(600, now); osc.frequency.exponentialRampToValueAtTime(1200, now+0.1); 
+                gain.gain.setValueAtTime(0.2, now); gain.gain.exponentialRampToValueAtTime(0.01, now+0.1); 
+                osc.start(); osc.stop(now+0.1); 
+            } else if(type === 'turn') { 
+                osc.type = 'sine'; osc.frequency.setValueAtTime(880, now); 
+                gain.gain.setValueAtTime(0.3, now); gain.gain.exponentialRampToValueAtTime(0.01, now+0.5); 
+                osc.start(); osc.stop(now+0.5); 
+            } else if(type === 'play') {
+                osc.type = 'triangle'; osc.frequency.setValueAtTime(150, now); osc.frequency.exponentialRampToValueAtTime(40, now+0.1); 
+                gain.gain.setValueAtTime(0.4, now); gain.gain.exponentialRampToValueAtTime(0.01, now+0.1); 
+                osc.start(); osc.stop(now+0.1); 
+            }
         };
-        window.addEventListener('resize', appHeight);
-        appHeight();
 
-        function updateCamera() {
-            let gameTable = document.getElementById('game-table-inner');
-            if(gameTable) gameTable.style.transform = `translate(${window.camX}px, ${window.camY}px) scale(${window.boardScale})`;
+        window.pendingTriggerCard = null;
+        window.resolveTrigger = function(action) {
+            let card = window.pendingTriggerCard;
+            document.getElementById('trigger-modal').style.display = 'none';
+            if(!card) return;
+            
+            let destId = null;
+            if(action === 'hand') destId = 'my-hand-area';
+            else if(action === 'outside') destId = 'my-outside-area';
+            else if(action === 'remove') destId = 'my-remove-area';
+            
+            if(destId) {
+                let dest = document.getElementById(destId);
+                dest.appendChild(card);
+                card.style.position = (destId === 'my-hand-area') ? 'relative' : 'absolute';
+                card.style.left = '0'; card.style.top = '0'; card.style.transform = 'none';
+                card.classList.remove('is-flipped', 'rest', 'in-life');
+                card.style.zIndex = '';
+                recalcStacking(dest); updateSlotCounts(); broadcastMyState(); 
+                
+                if(currentModalSourceSlot && currentModalSourceSlot.querySelectorAll('.card').length === 0) {
+                    document.getElementById('close-modal-btn').click();
+                }
+            }
+            window.pendingTriggerCard = null;
+        };
+
+        function resizeApp() {
+            const canvas = document.getElementById('app-canvas');
+            const targetW = 1600;
+            const targetH = 900;
+            const windowW = window.innerWidth;
+            const windowH = window.innerHeight;
+            
+            if(windowW === 0 || windowH === 0) return; 
+            
+            window.appScale = Math.min(windowW / targetW, windowH / targetH);
+            canvas.style.transform = `scale(${window.appScale})`;
+        }
+        window.addEventListener('resize', resizeApp);
+        setTimeout(resizeApp, 100);
+        setTimeout(resizeApp, 500);
+        resizeApp();
+
+        function requestFullScreen() {
+            let elem = document.documentElement;
+            if (elem.requestFullscreen) { elem.requestFullscreen(); }
+            else if (elem.webkitRequestFullscreen) { elem.webkitRequestFullscreen(); } 
+            else if (elem.msRequestFullscreen) { elem.msRequestFullscreen(); } 
+            setTimeout(resizeApp, 300); 
         }
 
-        window.zoomCam = function(delta) {
-            window.boardScale += delta;
-            if(window.boardScale < 0.3) window.boardScale = 0.3;
-            if(window.boardScale > 2) window.boardScale = 2;
-            updateCamera();
-        };
-
-        window.resetCam = function() {
-            let wrapper = document.getElementById('board-viewport');
-            if(!wrapper || wrapper.clientWidth === 0) return;
-            
-            let w = wrapper.clientWidth;
-            let h = wrapper.clientHeight;
-            
-            // 完美計算，讓實體桌布自動縮放填滿螢幕高度，並保留 HUD 空間
-            let scaleW = w / 1180;
-            let scaleH = (h - 200) / 1050; 
-            
-            window.boardScale = Math.min(scaleW, scaleH);
-            if(window.boardScale > 1.2) window.boardScale = 1.2;
-            
-            window.camX = (w - (1150 * window.boardScale)) / 2;
-            window.camY = (h - (1000 * window.boardScale)) / 2;
-            
-            if (window.is3D) window.camY += 60 * window.boardScale; 
-            updateCamera();
-        };
-
-        window.is3D = false;
-        window.toggle3D = function() {
-            window.is3D = !window.is3D;
-            let btn = document.getElementById('btn-3d');
-            btn.style.background = window.is3D ? '#e74c3c' : 'rgba(0,0,0,0.8)';
-            let table = document.getElementById('game-table-inner');
-            if(window.is3D) table.classList.add('mode-3d');
-            else table.classList.remove('mode-3d');
-            
-            resetCam(); 
-        };
-
-        // ==========================================
-        // 🌟 BP 系統邏輯 (雙向同步)
-        // ==========================================
-        window.changeBP = function(slotId, delta, event) {
-            if(event) event.stopPropagation(); // 防止點擊觸發其他卡片事件
-            
-            if(delta === 'reset') {
-                delete window.globalBpData[slotId];
-            } else {
-                window.globalBpData[slotId] = (window.globalBpData[slotId] || 0) + delta;
-            }
-            
-            renderBP(slotId);
-            broadcastMyState(); // 瞬間廣播給對手
-        };
-
-        window.renderBP = function(slotId) {
-            let tag = document.getElementById('bp-tag-' + slotId);
-            if(!tag) return;
-            let val = window.globalBpData[slotId] || 0;
-            
-            if(val === 0) {
-                tag.style.display = 'none';
-            } else {
-                tag.style.display = 'block';
-                let sign = val > 0 ? '+' : '';
-                tag.innerText = `${sign}${val}`;
-                tag.style.background = val > 0 ? '#f1c40f' : '#e74c3c';
-                tag.style.color = val > 0 ? '#000' : '#fff';
-            }
-        };
-
-        // ==========================================
-        // 🌟 卡片資料與建構區邏輯
-        // ==========================================
         const preloadedImages = new Set();
         function preloadCardsInBg(cardsArray) {
             cardsArray.forEach(c => {
@@ -764,10 +707,7 @@
                     let el = document.createElement('div'); el.className = 'preview-card';
                     el.dataset.cardId = card.id; 
                     el.innerHTML = `<img src="${card.imageUrl}" loading="lazy" onerror="this.closest('.preview-card').style.display='none'; window.markCardInvalid('${card.id}');">`;
-                    
-                    // 🌟 防呆：長按放大不觸發加入牌組
-                    el.onclick = (e) => { 
-                        if(window.isMagClickPrevent) { window.isMagClickPrevent = false; return; }
+                    el.onclick = () => { 
                         if(card.series.includes("AP卡") || card.series.includes("Action Point") || card.id.includes("-AP")) {
                             if(myApData.length < 3) myApData.push({...card}); else alert("AP 卡最多只能配置 3 張！");
                         } else {
@@ -804,9 +744,7 @@
             uniqueDeck.forEach(card => {
                 let el = document.createElement('div'); el.className = 'preview-card'; el.dataset.cardId = card.id;
                 el.innerHTML = `<img src="${card.imageUrl}">` + (deckCounts[card.id] > 1 ? `<div class="card-badge">${deckCounts[card.id]}</div>` : '');
-                
-                el.onclick = (e) => { 
-                    if(window.isMagClickPrevent) { window.isMagClickPrevent = false; return; }
+                el.onclick = () => { 
                     let idx = myDeckData.findIndex(c => c.id === card.id);
                     if(idx !== -1) myDeckData.splice(idx, 1); 
                     renderDeck(); 
@@ -817,9 +755,7 @@
             uniqueAp.forEach(card => {
                 let el = document.createElement('div'); el.className = 'preview-card'; el.dataset.cardId = card.id;
                 el.innerHTML = `<img src="${card.imageUrl}">` + (apCounts[card.id] > 1 ? `<div class="card-badge">${apCounts[card.id]}</div>` : '');
-                
-                el.onclick = (e) => { 
-                    if(window.isMagClickPrevent) { window.isMagClickPrevent = false; return; }
+                el.onclick = () => { 
                     let idx = myApData.findIndex(c => c.id === card.id);
                     if(idx !== -1) myApData.splice(idx, 1); 
                     renderDeck(); 
@@ -830,6 +766,7 @@
             document.getElementById('deck-counter').innerText = `${myDeckData.length} / 50`;
             document.getElementById('ap-counter').innerText = `${myApData.length} / 3`;
             saveAllDecks();
+            
             updateBuilderBadges(); 
         }
         
@@ -846,7 +783,9 @@
 
         function showCenterAlert(icon, title, value, color) {
             let overlay = document.getElementById('center-overlay');
-            document.getElementById('overlay-icon').innerText = icon;
+            let iconEl = document.getElementById('overlay-icon');
+            if (icon) { iconEl.innerText = icon; iconEl.style.display = 'block'; } 
+            else { iconEl.style.display = 'none'; }
             document.getElementById('overlay-title').innerText = title;
             let valEl = document.getElementById('overlay-value');
             valEl.innerText = value;
@@ -855,7 +794,7 @@
             overlay.style.border = `4px solid ${color}`;
             overlay.style.boxShadow = `0 0 50px ${color}`;
             overlay.style.display = 'block';
-            setTimeout(() => { overlay.style.display = 'none'; }, 2500);
+            setTimeout(() => { overlay.style.display = 'none'; }, 500);
         }
 
         document.getElementById('btn-chat-toggle').addEventListener('click', function() {
@@ -913,15 +852,66 @@
             container.scrollTop = container.scrollHeight;
         }
 
+        window.camX = 0; window.camY = 0;
+        let isCamDragging = false;
+        let camStartX = 0, camStartY = 0;
+        window.boardScale = 1; 
+
+        function updateCamera() {
+            let gameTable = document.getElementById('game-table-inner');
+            if(gameTable) gameTable.style.transform = `translate(${window.camX}px, ${window.camY}px) scale(${window.boardScale})`;
+        }
+
+        window.zoomCam = function(delta) {
+            window.boardScale += delta;
+            if(window.boardScale < 0.3) window.boardScale = 0.3;
+            if(window.boardScale > 2) window.boardScale = 2;
+            updateCamera();
+        };
+
+        window.resetCam = function() {
+            let wrapper = document.getElementById('board-viewport');
+            if(!wrapper) return;
+            
+            let topUIHeight = 110;    
+            let bottomUIHeight = 280; 
+            
+            let safeHeight = wrapper.clientHeight - topUIHeight - bottomUIHeight; 
+            let targetHeight = 1000; 
+            
+            window.boardScale = safeHeight / targetHeight; 
+            
+            if(window.boardScale > 1.2) window.boardScale = 1.2;
+            if(window.boardScale < 0.3) window.boardScale = 0.3;
+            
+            window.camX = (wrapper.clientWidth - (1150 * window.boardScale)) / 2;
+            window.camY = topUIHeight + (safeHeight - (targetHeight * window.boardScale)) / 2; 
+            
+            updateCamera();
+        };
+
+        window.is3D = false;
+        window.toggle3D = function() {
+            window.is3D = !window.is3D;
+            let btn = document.getElementById('btn-3d');
+            btn.style.background = window.is3D ? '#e74c3c' : 'rgba(0,0,0,0.8)';
+            let table = document.getElementById('game-table-inner');
+            if(window.is3D) table.classList.add('mode-3d');
+            else table.classList.remove('mode-3d');
+        };
+
         function startPan(e) {
-            if(e.target.closest('.card') || e.target.closest('.slot') || e.target.closest('.cam-btn') || 
+            if(e.target.closest('.card') || e.target.closest('.marker') || e.target.closest('.bp-badge') || e.target.closest('.cam-btn') || 
                e.target.closest('.hud-sidebar') || e.target.closest('.hud-top') || e.target.closest('.hud-bottom') || 
                e.target.closest('#chat-wrapper') || e.target.closest('#hotkey-guide') || 
-               e.target.closest('#search-modal') || e.target.closest('#mulligan-modal') || e.target.closest('.bp-btn')) return; 
+               e.target.closest('#search-modal') || e.target.closest('#mulligan-modal')) return; 
                
             isCamDragging = true;
             let clientX = e.type.includes('touch') ? e.touches[0].clientX : e.clientX;
             let clientY = e.type.includes('touch') ? e.touches[0].clientY : e.clientY;
+            
+            clientX = clientX / (window.appScale || 1);
+            clientY = clientY / (window.appScale || 1);
 
             camStartX = clientX - window.camX;
             camStartY = clientY - window.camY;
@@ -932,6 +922,9 @@
             if (e.cancelable) e.preventDefault(); 
             let clientX = e.type.includes('touch') ? e.touches[0].clientX : e.clientX;
             let clientY = e.type.includes('touch') ? e.touches[0].clientY : e.clientY;
+            
+            clientX = clientX / (window.appScale || 1);
+            clientY = clientY / (window.appScale || 1);
 
             window.camX = clientX - camStartX;
             window.camY = clientY - camStartY;
@@ -945,17 +938,61 @@
             if(typeof masterCardCatalog !== 'undefined') masterCardCatalog.push(...savedCustom);
             updateDeckSelector(); initSeriesFilter(); renderBuilder(); renderDeck(); 
 
-            document.addEventListener('pointerdown', e => {
-                if (e.target.closest('.cam-btn') || e.target.closest('.modal-content') || e.target.closest('.hud-sidebar') || e.target.closest('.hud-top') || e.target.closest('.hud-bottom') || e.target.closest('#chat-wrapper') || e.target.closest('#hotkey-guide') || e.target.closest('.bp-btn')) return;
+            document.querySelectorAll('.slot').forEach(slot => {
+                if (!slot.id.includes('hand') && !slot.id.includes('look') && !slot.id.includes('deck')) {
+                    let m = document.createElement('div');
+                    m.className = 'marker';
+                    slot.appendChild(m);
+                    
+                    m.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        slot.classList.toggle('marked');
+                        broadcastMyState();
+                    });
+                }
+            });
+            
+            document.querySelectorAll('#my-front-line .slot, #opp-front-line .slot').forEach(slot => {
+                let tracker = document.createElement('div');
+                tracker.className = 'bp-tracker';
+                tracker.dataset.bp = 0;
+                slot.appendChild(tracker);
+                
+                let btn = document.createElement('div');
+                btn.className = 'bp-badge';
+                btn.innerText = '⚔️ BP';
+                slot.appendChild(btn);
+                
+                btn.addEventListener('click', e => {
+                    e.stopPropagation();
+                    window.currentBpSlot = slot;
+                    let menu = document.getElementById('bp-menu');
+                    let canvasRect = document.getElementById('app-canvas').getBoundingClientRect();
+                    let localX = (e.clientX - canvasRect.left) / (window.appScale || 1);
+                    let localY = (e.clientY - canvasRect.top) / (window.appScale || 1);
+                    
+                    menu.style.left = localX + 'px';
+                    menu.style.top = localY + 'px';
+                    menu.style.display = 'flex';
+                });
+            });
 
-                let slot = e.target.closest('.slot');
-                if (slot && slot.id.includes('opp-') && !slot.id.includes('hand') && !slot.id.includes('look')) {
-                    slot.classList.toggle('marked');
-                    broadcastMyState();
+            document.addEventListener('click', e => {
+                if(!e.target.closest('#bp-menu')) {
+                    let menu = document.getElementById('bp-menu');
+                    if(menu) menu.style.display = 'none';
                 }
             });
 
             let wrapper = document.getElementById('board-viewport');
+            
+            wrapper.addEventListener('wheel', e => {
+                if(document.getElementById('game-scene').style.display === 'none') return;
+                e.preventDefault(); 
+                let delta = e.deltaY > 0 ? -0.05 : 0.05;
+                zoomCam(delta);
+            }, { passive: false });
+
             wrapper.addEventListener('mousedown', startPan);
             wrapper.addEventListener('touchstart', startPan, {passive: false});
             window.addEventListener('mousemove', doPan);
@@ -964,25 +1001,76 @@
             window.addEventListener('touchend', endPan);
             window.addEventListener('touchcancel', endPan); 
 
-            window.addEventListener('resize', () => {
-                if(document.getElementById('game-scene').style.display === 'flex') resetCam();
-            });
+            window.addEventListener('resize', resetCam);
+        };
+        
+        function updateBpDisplay(slot, bpVal) {
+            let tracker = slot.querySelector('.bp-tracker');
+            if(!tracker) return;
+            tracker.dataset.bp = bpVal;
+            if(bpVal === 0) {
+                tracker.classList.remove('active', 'positive', 'negative');
+            } else {
+                tracker.classList.add('active');
+                if(bpVal > 0) { 
+                    tracker.classList.add('positive'); tracker.classList.remove('negative');
+                    tracker.innerText = `+${bpVal}`; 
+                } else { 
+                    tracker.classList.add('negative'); tracker.classList.remove('positive');
+                    tracker.innerText = `${bpVal}`; 
+                }
+            }
+        }
+
+        window.changeBp = function(amount) {
+            if(!window.currentBpSlot) return;
+            let slot = window.currentBpSlot;
+            let tracker = slot.querySelector('.bp-tracker');
+            let currentBp = parseInt(tracker.dataset.bp) || 0;
+            
+            if(amount === 0) currentBp = 0; 
+            else currentBp += amount;
+            
+            updateBpDisplay(slot, currentBp);
+            document.getElementById('bp-menu').style.display = 'none';
+
+            if (slot.id.includes('my-')) {
+                broadcastMyState(); 
+            } else if (slot.id.includes('opp-')) {
+                if (conn && isConnected) {
+                    let oppLocalId = slot.id.replace('opp-', 'my-');
+                    conn.send({ type: 'UPDATE_OPP_BP', slotId: oppLocalId, bp: currentBp });
+                }
+            }
         };
 
-        // ==========================================
-        // 🌟 網路連線與遊戲同步 (含 BP 資料傳送)
-        // ==========================================
         let myRoomId = Math.floor(100000 + Math.random() * 900000).toString();
+        
+        // ⚡ 啟用強制中繼 (TURN 伺服器) 來突破嚴格的防火牆
         let peer = new Peer(myRoomId, { 
             secure: true,
             pingInterval: 5000, 
             config: { 
                 'iceServers': [ 
+                    // 1. 先嘗試 Google 的免費 STUN (基本打洞)
                     { urls: 'stun:stun.l.google.com:19302' }, 
                     { urls: 'stun:stun1.l.google.com:19302' },
-                    { urls: 'turn:openrelay.metered.ca:80', username: 'openrelayproject', credential: 'openrelayproject' }, 
-                    { urls: 'turn:openrelay.metered.ca:443', username: 'openrelayproject', credential: 'openrelayproject' },
-                    { urls: 'turn:openrelay.metered.ca:443?transport=tcp', username: 'openrelayproject', credential: 'openrelayproject' }
+                    // 2. 如果 STUN 失敗，自動啟用 metered.ca 的 TURN (強制中繼)
+                    { 
+                        urls: 'turn:openrelay.metered.ca:80', 
+                        username: 'openrelayproject', 
+                        credential: 'openrelayproject' 
+                    },
+                    { 
+                        urls: 'turn:openrelay.metered.ca:443', 
+                        username: 'openrelayproject', 
+                        credential: 'openrelayproject' 
+                    },
+                    { 
+                        urls: 'turn:openrelay.metered.ca:443?transport=tcp', 
+                        username: 'openrelayproject', 
+                        credential: 'openrelayproject' 
+                    }
                 ] 
             } 
         });
@@ -1015,61 +1103,39 @@
             console.error(err);
             if (err.type === 'peer-unavailable') { alert("❌ 找不到這個對手！請確認對手網頁沒有關閉。"); } 
             else if (err.type === 'network' || err.type === 'server-error') { showSysMsg("⚠️ 配對伺服器塞車中，系統自動重試..."); }
-            
-            let btn = document.getElementById('btn-connect');
-            if(btn) { btn.disabled = false; btn.innerText = "連線加入"; }
         });
 
         peer.on('connection', connection => { conn = connection; setupConnection(); });
         
-        // 🌟 連線按鈕加入 8 秒逾時防呆
         document.getElementById('btn-connect').addEventListener('click', () => { 
             let targetId = document.getElementById('target-id').value.trim(); 
             if(targetId) { 
-                let btn = document.getElementById('btn-connect');
-                btn.disabled = true;
-                btn.innerText = "連線中...";
                 showSysMsg("🚀 正在發送配對請求..."); 
-                
                 conn = peer.connect(targetId, { reliable: true }); 
                 setupConnection(); 
-                
-                setTimeout(() => {
-                    btn.disabled = false;
-                    btn.innerText = "連線加入";
-                    if(!isConnected) {
-                        showSysMsg("⚠️ 連線逾時！請確認對手是否在線上，或互相重整網頁再試。");
-                    }
-                }, 8000);
             } 
         });
 
         function setupConnection() {
-            conn.on('error', err => {
-                showSysMsg("❌ 連線錯誤: " + err);
-            });
-            
             conn.on('open', () => {
                 isConnected = true; showSysMsg("✅ 連線成功！");
-                
-                let btn = document.getElementById('btn-connect');
-                if(btn) { btn.disabled = false; btn.innerText = "已連線"; }
-                
                 window.history.replaceState({}, document.title, window.location.pathname); 
                 
-                let startBtn = document.getElementById('start-game-btn'); startBtn.disabled = false; startBtn.innerText = "雙方就緒，進入對戰 ➔";
-                startBtn.onclick = () => {
+                let btn = document.getElementById('start-game-btn'); btn.disabled = false; btn.innerText = "雙方就緒，進入對戰 ➔";
+                btn.onclick = () => {
                     if(myDeckData.length === 0) { alert("請先建立主牌組！"); return; }
                     if(myApData.length !== 3) { alert("請挑選剛好 3 張 AP 卡！"); return; }
                     
+                    requestFullScreen();
+
                     document.body.classList.add('in-game');
+                    if (screen.orientation && screen.orientation.lock) {
+                        screen.orientation.lock('landscape').catch(err => console.log('視覺提示已啟動'));
+                    }
+
                     document.getElementById('builder-scene').style.display = 'none'; 
                     document.getElementById('game-scene').style.display = 'flex';
-                    
-                    setTimeout(() => {
-                        resetCam();
-                        setTimeout(resetCam, 300);
-                    }, 50);
+                    setTimeout(resetCam, 100); 
                     
                     let shuffledDeck = shuffleArray([...myDeckData]);
                     initMyBoard(shuffledDeck, myApData); conn.send({ type: 'START_GAME', deck: shuffledDeck, ap: myApData });
@@ -1089,6 +1155,14 @@
                 else if(data.type === 'SURRENDER') {
                     alert("對手已投降並返回構築區！\n點擊確定後將同步返回大廳。");
                     resetBoard();
+                }
+                else if(data.type === 'UPDATE_OPP_BP') {
+                    let slot = document.getElementById(data.slotId);
+                    if(slot) {
+                        updateBpDisplay(slot, data.bp);
+                        broadcastMyState(); 
+                        showCenterAlert('⚔️', 'BP 已變更', `對手調整了你的 BP`, '#f39c12');
+                    }
                 }
             });
             conn.on('close', () => {
@@ -1118,11 +1192,6 @@
             document.querySelectorAll('.slot.marked').forEach(s => s.classList.remove('marked'));
             document.querySelectorAll('.phase-step').forEach(btn => btn.classList.remove('active'));
             document.querySelector('.phase-step:first-child').classList.add('active');
-            
-            // 重置 BP 資料
-            window.globalBpData = {};
-            document.querySelectorAll('.bp-tag').forEach(tag => tag.style.display = 'none');
-
             document.getElementById('game-scene').style.display = 'none'; 
             document.getElementById('builder-scene').style.display = 'flex';
             myCardsElements = []; oppCardsElements = [];
@@ -1156,22 +1225,8 @@
 
         let myCardsElements = []; let oppCardsElements = [];
 
-        // 🌟 卡死修復核心：加入 Throttle (節流閥)，防止滑鼠移動產生過多同步訊號塞爆 WebRTC
-        let _syncTimer = null;
-        let _lastSyncTime = 0;
-
         function broadcastMyState() {
             if(!conn || !isConnected) return;
-            
-            let now = Date.now();
-            // 限制每秒最多發送約 25 次 (每 40 毫秒一次)
-            if (now - _lastSyncTime < 40) { 
-                if (_syncTimer) clearTimeout(_syncTimer);
-                _syncTimer = setTimeout(broadcastMyState, 40);
-                return;
-            }
-            _lastSyncTime = now;
-            
             let state = [];
             
             myCardsElements.forEach((el, index) => {
@@ -1224,7 +1279,13 @@
             let myPhase = activePhaseEl ? activePhaseEl.innerText : '等待中';
             let markedSlots = Array.from(document.querySelectorAll('.slot.marked')).map(el => el.id);
 
-            conn.send({ type: 'SYNC_BOARD', state: state, phase: myPhase, markedSlots: markedSlots, bpData: window.globalBpData });
+            let bpStates = {};
+            document.querySelectorAll('#my-front-line .slot').forEach(slot => {
+                let t = slot.querySelector('.bp-tracker');
+                if(t && t.dataset.bp != 0) bpStates[slot.id] = t.dataset.bp;
+            });
+
+            conn.send({ type: 'SYNC_BOARD', state: state, phase: myPhase, markedSlots: markedSlots, bpStates: bpStates });
         }
 
         function applyOpponentSync(data) {
@@ -1236,8 +1297,13 @@
                     el.style.opacity = '1';
 
                     let targetParentId = d.parent.replace('my-', 'opp-');
-                    let actualParentEl = d.isDragging ? document.getElementById('board-viewport') : document.getElementById(targetParentId);
                     
+                    // ⚡ FIX 2: 檢索視窗防呆！如果對手自己開了 Modal 把卡片拉進去，我們不要把卡片吸進我們隱藏的 Modal 導致永久消失
+                    if (targetParentId.includes('modal')) {
+                        targetParentId = el.parentElement ? el.parentElement.id : 'opp-outside-area';
+                    }
+
+                    let actualParentEl = d.isDragging ? document.getElementById('board-viewport') : document.getElementById(targetParentId);
                     let isInModal = el.parentElement && el.parentElement.id.includes('modal');
                     
                     if (!isInModal) {
@@ -1248,20 +1314,15 @@
                         if (d.isDragging && typeof d.x === 'string' && d.x.endsWith('_board')) {
                             let nx = parseFloat(d.x);
                             let ny = parseFloat(d.y);
-                            
                             let flippedNx = 1 - nx;
                             let flippedNy = 1 - ny;
-                            
                             let logicalCx = flippedNx * 1150;
                             let logicalCy = flippedNy * 1000;
-                            
                             let cx = logicalCx * window.boardScale + window.camX;
                             let cy = logicalCy * window.boardScale + window.camY;
-                            
                             let cardW = el.offsetWidth;
                             let cardH = el.offsetHeight;
                             let currentScale = window.boardScale * 1.05;
-                            
                             let px = cx - (cardW * currentScale) / 2;
                             let py = cy - (cardH * currentScale) / 2;
 
@@ -1291,7 +1352,9 @@
                     
                     if(d.isFlipped) el.classList.add('is-flipped'); else el.classList.remove('is-flipped');
                     if(d.isRest) el.classList.add('rest'); else el.classList.remove('rest');
-                    if(d.inLife) el.classList.add('in-life'); else el.classList.remove('in-life');
+                    
+                    // ⚡ FIX 3: 如果卡片正在我們的 Modal 裡面，我們絕對不要再套用 .in-life 讓它亂旋轉
+                    if(d.inLife && !isInModal) el.classList.add('in-life'); else el.classList.remove('in-life');
                     
                     if(d.tilt) el.style.setProperty('--tilt', d.tilt);
                 }
@@ -1308,16 +1371,14 @@
                 });
             }
 
-            if (data.bpData) {
-                window.globalBpData = {};
-                for (let key in data.bpData) {
-                    let localKey = key.startsWith('my-') ? key.replace('my-', 'opp-') : key.replace('opp-', 'my-');
-                    window.globalBpData[localKey] = data.bpData[key];
-                }
-                for(let i=1; i<=4; i++) {
-                    renderBP('my-fl-' + i);
-                    renderBP('opp-fl-' + i);
-                }
+            if(data.bpStates) {
+                document.querySelectorAll('#opp-front-line .slot').forEach(slot => {
+                    let localId = slot.id.replace('opp-', 'my-');
+                    let bpVal = data.bpStates[localId] || 0;
+                    updateBpDisplay(slot, bpVal);
+                });
+            } else {
+                document.querySelectorAll('#opp-front-line .slot').forEach(slot => updateBpDisplay(slot, 0));
             }
 
             updateSlotCounts();
@@ -1336,6 +1397,7 @@
 
         function createCardDOM(cardData, networkId, isMine) {
             let el = document.createElement("div"); el.className = "card is-flipped"; el.dataset.networkId = networkId;
+            el.dataset.cardId = cardData.id; 
             el.innerHTML = `<div class="card-inner"><div class="card-front"><img src="${cardData.imageUrl}"></div><div class="card-back"></div></div>`;
             if(isMine) attachMyDragEvents(el); return el;
         }
@@ -1368,7 +1430,7 @@
 
         function drawInitialHand() {
             let deckArea = document.getElementById('my-deck-area'), handArea = document.getElementById('my-hand-area'); let cards = Array.from(deckArea.querySelectorAll('.card'));
-            for(let i=0; i<7; i++) { if(cards.length > 0) { let c = cards.pop(); handArea.appendChild(c); c.classList.remove('is-flipped', 'rest'); } }
+            for(let i=0; i<7; i++) { if(cards.length > 0) { let c = cards.pop(); handArea.appendChild(c); c.style.position = 'relative'; c.style.left = '0'; c.style.top = '0'; c.style.zIndex = ''; c.classList.remove('is-flipped', 'rest'); } }
             recalcStacking(deckArea); recalcStacking(handArea); updateSlotCounts(); broadcastMyState(); document.getElementById('mulligan-modal').style.display = 'block';
         }
 
@@ -1451,6 +1513,9 @@
                 let clientX = isTouch ? event.touches[0].clientX : event.clientX;
                 let clientY = isTouch ? event.touches[0].clientY : event.clientY;
                 
+                clientX = clientX / (window.appScale || 1);
+                clientY = clientY / (window.appScale || 1);
+                
                 cardElement.dataset.isSecretDrag = (originalParent && (originalParent.id.includes('hand') || originalParent.id.includes('look'))) ? 'true' : 'false';
 
                 let dragThreshold = isTouch ? 15 : 6;
@@ -1460,6 +1525,9 @@
                 function onMove(event) {
                     let curClientX = isTouch ? event.touches[0].clientX : event.clientX;
                     let curClientY = isTouch ? event.touches[0].clientY : event.clientY;
+                    
+                    curClientX = curClientX / (window.appScale || 1);
+                    curClientY = curClientY / (window.appScale || 1);
 
                     if (!isDragging && (Math.abs(curClientX - startClientX) > dragThreshold || Math.abs(curClientY - startClientY) > dragThreshold)) {
                         isDragging = true; if(typeof longPressTimer !== 'undefined') clearTimeout(longPressTimer);
@@ -1487,14 +1555,14 @@
                         
                         if (isStackDrag) {
                             stackCardsData.forEach((item, index) => { 
-                                let localX = (curClientX - viewportRect.left) - (item.el.offsetWidth / 2) + (index * 8);
-                                let localY = (curClientY - viewportRect.top) - (item.el.offsetHeight / 2) + (index * 8);
+                                let localX = (curClientX - viewportRect.left/(window.appScale || 1)) - (item.el.offsetWidth / 2) + (index * 8);
+                                let localY = (curClientY - viewportRect.top/(window.appScale || 1)) - (item.el.offsetHeight / 2) + (index * 8);
                                 item.el.style.left = localX + 'px'; item.el.style.top = localY + 'px'; 
                                 item.el.style.transform = `scale(${window.boardScale * 1.05})`; 
                             });
                         } else { 
-                            let localX = (curClientX - viewportRect.left) - (cardElement.offsetWidth / 2);
-                            let localY = (curClientY - viewportRect.top) - (cardElement.offsetHeight / 2);
+                            let localX = (curClientX - viewportRect.left/(window.appScale || 1)) - (cardElement.offsetWidth / 2);
+                            let localY = (curClientY - viewportRect.top/(window.appScale || 1)) - (cardElement.offsetHeight / 2);
                             cardElement.style.left = localX + 'px'; cardElement.style.top = localY + 'px'; 
                             cardElement.style.transform = `scale(${window.boardScale * 1.05})`; 
                         }
@@ -1526,6 +1594,7 @@
                                 clearTimeout(cardElement.singleTapTimeout);
                                 cardElement.classList.toggle('is-flipped');
                                 broadcastMyState();
+                                if(typeof playSound === 'function') playSound('turn'); 
                             } else {
                                 cardElement.singleTapTimeout = setTimeout(() => {
                                     if (!cardElement.classList.contains('in-life') && canRest) {
@@ -1562,8 +1631,14 @@
 
                         if (isDropFieldSlot && hasExistingCards && !isSameSlot) {
                             let menu = document.getElementById('drop-menu');
-                            menu.style.left = (endX + 10) + 'px'; menu.style.top = (endY + 10) + 'px';
-                            menu.style.display = 'flex'; window.pendingDrop = { cards: cardsToDrop, dropZone: dropZone, originalParent: originalParent, endX: endX };
+                            let canvasRect = document.getElementById('app-canvas').getBoundingClientRect();
+                            let localX = (endX - canvasRect.left) / (window.appScale || 1);
+                            let localY = (endY - canvasRect.top) / (window.appScale || 1);
+                            
+                            menu.style.left = (localX + 15) + 'px'; 
+                            menu.style.top = (localY + 15) + 'px';
+                            menu.style.display = 'flex'; 
+                            window.pendingDrop = { cards: cardsToDrop, dropZone: dropZone, originalParent: originalParent, endX: endX };
                         } else finalizeDrop(cardsToDrop, dropZone, 'default', originalParent, endX);
                     }
                 }
@@ -1612,6 +1687,7 @@
                     }
                     if(dropZone.id.includes('hand') || dropZone.id.includes('look') || dropZone.id.includes('modal-')) { 
                         c.style.position = 'relative'; c.style.left = '0'; c.style.top = '0'; 
+                        c.style.zIndex = ''; 
                         c.classList.remove('is-flipped', 'rest'); 
                     } 
                     else c.style.position = 'absolute'; 
@@ -1624,87 +1700,55 @@
             if (dropZone && action !== 'cancel' && !dropZone.id.includes('modal-')) recalcStacking(dropZone); 
             else if (originalParent && !originalParent.id.includes('modal-')) recalcStacking(originalParent);
             updateSlotCounts(); broadcastMyState();
+            
+            if (action !== 'cancel' && typeof playSound === 'function') {
+                playSound('play');
+            }
         }
 
         function updateSlotCounts() { document.querySelectorAll('.slot').forEach(slot => { slot.setAttribute('data-count', slot.querySelectorAll('.card').length); }); }
 
         let hoveredCard = null, hoveredSlot = null, magnifyTimer = null;
-        
         document.addEventListener('mouseover', e => {
             let card = e.target.closest('.card');
-            let previewCard = e.target.closest('.preview-card');
-            let targetForMag = card || previewCard;
+            let previewCard = e.target.closest('.preview-card'); 
+            let slot = e.target.closest('.slot'); 
+            if(slot) hoveredSlot = slot;
             
-            let slot = e.target.closest('.slot'); if(slot) hoveredSlot = slot;
-            if(card) hoveredCard = card;
-
-            if(targetForMag) {
+            if(card || previewCard) {
+                hoveredCard = card; 
                 clearTimeout(magnifyTimer);
                 magnifyTimer = setTimeout(() => {
+                    let imgSrc = "";
                     if(card) {
                         if(card.parentElement && (card.parentElement.id.includes('opp-hand') || card.parentElement.id.includes('opp-look'))) return;
                         if(card.classList.contains('is-flipped')) return;
-                    }
-                    
-                    let imgSrc = '';
-                    if(card) {
-                        let imgEl = card.querySelector('.card-front img');
-                        if(imgEl) imgSrc = imgEl.src;
+                        let frontImg = card.querySelector('.card-front img');
+                        if(frontImg) imgSrc = frontImg.src;
                     } else if (previewCard) {
-                        let imgEl = previewCard.querySelector('img');
-                        if(imgEl) imgSrc = imgEl.src;
+                        let img = previewCard.querySelector('img');
+                        if(img) imgSrc = img.src;
                     }
-                    
-                    let magView = document.getElementById('card-magnifier');
-                    let magImg = document.getElementById('magnifier-img');
-                    
+
+                    let magView = document.getElementById('card-magnifier'), magImg = document.getElementById('magnifier-img');
                     if(imgSrc && magView && magImg) { 
                         magImg.src = imgSrc; 
                         magView.style.display = 'block'; 
                     }
-                }, 1000); 
+                }, 600); 
             }
         });
-        
         document.addEventListener('mouseout', e => { 
-            let card = e.target.closest('.card');
+            let card = e.target.closest('.card'); 
             let previewCard = e.target.closest('.preview-card');
-            
-            if(card) { if(card === hoveredCard) hoveredCard = null; }
             if(card || previewCard) { 
+                if(card && card === hoveredCard) hoveredCard = null; 
                 clearTimeout(magnifyTimer); 
                 let magView = document.getElementById('card-magnifier'); 
                 if(magView) magView.style.display = 'none'; 
             }
-            let slot = e.target.closest('.slot'); if(slot === hoveredSlot) hoveredSlot = null; 
-        });
-
-        let magTouchTimer;
-        document.addEventListener('touchstart', e => {
-            let previewCard = e.target.closest('.preview-card');
-            if (previewCard) {
-                window.isMagClickPrevent = false;
-                magTouchTimer = setTimeout(() => {
-                    window.isMagClickPrevent = true; 
-                    let imgEl = previewCard.querySelector('img');
-                    let magView = document.getElementById('card-magnifier');
-                    let magImg = document.getElementById('magnifier-img');
-                    if(imgEl && magView && magImg) {
-                        magImg.src = imgEl.src;
-                        magView.style.display = 'block';
-                    }
-                }, 500); 
-            }
-        }, {passive: true});
-        
-        document.addEventListener('touchmove', () => { clearTimeout(magTouchTimer); });
-        document.addEventListener('touchend', e => {
-            clearTimeout(magTouchTimer);
-            let previewCard = e.target.closest('.preview-card');
-            if(previewCard) {
-                let magView = document.getElementById('card-magnifier');
-                if(magView) magView.style.display = 'none';
-            }
+            let slot = e.target.closest('.slot'); 
+            if(slot === hoveredSlot) hoveredSlot = null; 
         });
 
         document.addEventListener('keydown', e => {
@@ -1712,6 +1756,31 @@
             if(e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
 
             let key = e.key.toLowerCase();
+            if (e.code === 'Space') {
+                e.preventDefault();
+                if(confirm("確定要結束回合嗎？")) { 
+                    endTurn(); 
+                    playSound('turn'); 
+                }
+                return;
+            }
+
+            if (key === 'd') {
+                let deckArea = document.getElementById('my-deck-area');
+                let cards = Array.from(deckArea.querySelectorAll('.card'));
+                if (cards.length > 0) {
+                    let cardToDraw = cards[cards.length - 1]; 
+                    let handArea = document.getElementById('my-hand-area');
+                    handArea.appendChild(cardToDraw);
+                    cardToDraw.style.position = 'relative'; cardToDraw.style.left = '0'; cardToDraw.style.top = '0'; cardToDraw.style.transform = 'none';
+                    cardToDraw.classList.remove('is-flipped', 'rest', 'in-life'); cardToDraw.style.zIndex = '';
+                    recalcStacking(deckArea); updateSlotCounts(); broadcastMyState(); 
+                    
+                    playSound('draw'); 
+                    showCenterAlert('', '抽牌', 'Draw!', '#2ecc71');
+                }
+                return;
+            }
             
             if (key === 'r') {
                 let isHoveringDeck = hoveredSlot && hoveredSlot.id === 'my-deck-area';
@@ -1748,7 +1817,11 @@
             }
 
             if(hoveredCard && !hoveredCard.parentElement.id.includes('opp-')) {
-                if(key === 'f') { hoveredCard.classList.toggle('is-flipped'); broadcastMyState(); }
+                if(key === 'f') { 
+                    hoveredCard.classList.toggle('is-flipped'); 
+                    broadcastMyState(); 
+                    if(typeof playSound === 'function') playSound('turn'); 
+                }
 
                 if(key === 'b' || key === 't') {
                     let dest = document.getElementById('my-deck-area');
@@ -1791,6 +1864,9 @@
                         recalcStacking(dest);
                         if(prevParent) recalcStacking(prevParent);
                         updateSlotCounts(); broadcastMyState();
+                        
+                        if (key === 'c') playSound('draw');
+                        else playSound('play');
                     }
                 }
             }
@@ -1804,23 +1880,22 @@
         window.sendToDeck = function(sourceId, destId, toBottom) {
             let source = document.getElementById(sourceId), dest = document.getElementById(destId); 
             let cards = Array.from(source.querySelectorAll('.card')).sort((a,b) => a.getBoundingClientRect().left - b.getBoundingClientRect().left);
-            if(toBottom) cards.reverse().forEach(c => { dest.insertBefore(c, dest.firstChild); c.classList.add('is-flipped'); c.classList.remove('rest'); });
-            else cards.forEach(c => { dest.appendChild(c); c.classList.add('is-flipped'); c.classList.remove('rest'); });
+            if(toBottom) cards.reverse().forEach(c => { dest.insertBefore(c, dest.firstChild); c.classList.add('is-flipped'); c.classList.remove('rest'); c.style.position = 'absolute'; });
+            else cards.forEach(c => { dest.appendChild(c); c.classList.add('is-flipped'); c.classList.remove('rest'); c.style.position = 'absolute'; });
             recalcStacking(dest); recalcStacking(source); updateSlotCounts(); broadcastMyState();
         };
 
         const modal = document.getElementById('search-modal'), modalContainer = document.getElementById('modal-cards-container'), modalTitle = document.getElementById('modal-title');
         let currentModalSourceSlot = null;
         
-        document.querySelectorAll('#my-deck-area, #my-outside-area, #my-remove-area, #my-life-area, #my-public-area, #opp-deck-area, #opp-outside-area, #opp-remove-area, #opp-life-area, #opp-public-area, #my-front-line .slot, #my-energy-line .slot, #opp-front-line .slot, #opp-energy-line .slot').forEach(zone => {
+        document.querySelectorAll('#my-outside-area, #my-remove-area, #my-life-area, #my-public-area, #opp-outside-area, #opp-remove-area, #opp-life-area, #opp-public-area, #my-front-line .slot, #my-energy-line .slot, #opp-front-line .slot, #opp-energy-line .slot').forEach(zone => {
             zone.addEventListener('contextmenu', e => {
                 e.preventDefault(); 
                 let cards = Array.from(zone.querySelectorAll('.card')); 
                 if (cards.length === 0 && !zone.id.includes('outside') && !zone.id.includes('public') && !zone.id.includes('life')) return; 
                 currentModalSourceSlot = zone;
                 
-                if(zone.id.includes('deck')) modalTitle.innerText = `檢索中：卡組 (${cards.length}張)`;
-                else if(zone.id.includes('outside')) modalTitle.innerText = `檢索中：場外 (${cards.length}張)`;
+                if(zone.id.includes('outside')) modalTitle.innerText = `檢索中：場外 (${cards.length}張)`;
                 else if(zone.id.includes('remove')) modalTitle.innerText = `檢索中：移除區 (${cards.length}張)`;
                 else if(zone.id.includes('public')) modalTitle.innerText = `檢索中：公開區 (${cards.length}張)`;
                 else if(zone.id.includes('life')) modalTitle.innerText = `檢索中：生命區 (${cards.length}張) (點擊可翻開)`;
@@ -1834,6 +1909,7 @@
                     Array.from(document.getElementById('my-public-area').querySelectorAll('.card')).forEach(c => {
                         document.getElementById('modal-public-container').appendChild(c);
                         c.classList.remove('in-life', 'rest', 'is-flipped'); c.style.position = 'relative'; c.style.left = '0'; c.style.top = '0'; c.style.transform = 'none';
+                        c.style.zIndex = '';
                     });
                 }
                 
@@ -1842,6 +1918,7 @@
                     if(!zone.id.includes('life') && !zone.id.includes('opp-')) card.classList.remove('is-flipped'); else if (zone.id.includes('life')) card.classList.add('is-flipped'); 
                     card.classList.remove('rest', 'in-life'); 
                     card.style.position = 'relative'; card.style.left = '0px'; card.style.top = '0px'; card.style.transform = 'none';
+                    card.style.zIndex = '';
                 });
                 modal.style.display = 'flex';
             });
@@ -1849,10 +1926,15 @@
 
         modalContainer.addEventListener('click', e => {
             let card = e.target.closest('.card');
-            if(card && currentModalSourceSlot && currentModalSourceSlot.id.includes('life')) {
+            if(!card) return;
+
+            if(currentModalSourceSlot && currentModalSourceSlot.id.includes('life')) {
                 card.classList.toggle('is-flipped');
                 if (myCardsElements.includes(card)) {
                     broadcastMyState();
+                    if (!card.classList.contains('is-flipped')) {
+                        if(typeof playSound === 'function') playSound('turn');
+                    }
                 } else {
                     if (conn) conn.send({ type: 'FLIP_CARD', id: card.dataset.networkId });
                 }
