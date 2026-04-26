@@ -275,6 +275,8 @@
                 </details>
 
                 <div class="header-actions">
+                    <button class="ctrl-btn" id="btn-show-readme" style="background: #27ae60;">📖 使用說明</button>
+                    
                     <select id="game-mode-selector" class="network-input" style="background: #2c3e50; color: white; display: none;">
                         <option value="sandbox">🛠️ 沙盒模式 (全手動)</option>
                         <option value="auto">⚡ 全自動模式 (測試中)</option>
@@ -489,6 +491,51 @@
             <div style="display: flex; gap: 15px; justify-content: center; flex-wrap: wrap;">
                 <button class="start-btn" onclick="confirmHand()">保留 (Keep)</button>
                 <button class="ctrl-btn danger" style="padding: 10px 20px; font-size: 16px;" onclick="executeMulligan()">調度 (Mulligan)</button>
+            </div>
+        </div>
+<div id="readme-modal" style="display: none; position: fixed; z-index: 100500; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.85); justify-content: center; align-items: center; flex-direction: column; backdrop-filter: blur(5px);">
+            <div class="modal-header" style="width: 80%; max-width: 800px; margin-bottom: 0; padding: 15px 20px; background: #2c3e50; border: 4px solid #f39c12; border-bottom: none; border-radius: 15px 15px 0 0; box-sizing: border-box; display: flex; justify-content: space-between; align-items: center;">
+                <span style="color: white; font-size: 18px; font-weight: bold;">📖 UA 遠端對戰平台 - 使用說明書</span>
+                <button id="close-readme-btn" class="start-btn" style="background: #e74c3c;">關閉</button>
+            </div>
+            <div class="modal-content" style="width: 80%; max-width: 800px; max-height: 70vh; border-radius: 0 0 15px 15px; border-top: none; justify-content: flex-start; align-items: flex-start; flex-direction: column; overflow-y: auto; padding: 25px; background: #1a1a1a; box-sizing: border-box; line-height: 1.6; color: #ddd; font-size: 15px; -webkit-overflow-scrolling: touch;">
+                
+                <h3 style="color: #f39c12; margin-top: 0; border-bottom: 1px solid rgba(243, 156, 18, 0.3); padding-bottom: 5px;">🛠️ 大廳與連線 (Builder & Network)</h3>
+                <ul style="margin-top: 5px; margin-bottom: 20px;">
+                    <li><b>牌組管理</b>：可透過大廳選項「新增、命名、切換、清空」多套牌組。</li>
+                    <li><b>快速匯入</b>：點擊「✨ 一鍵匯入」，貼上卡片編號（以逗號或空白分隔），可快速匯入未收錄的卡片。</li>
+                    <li><b>邀請對手</b>：點擊左上角黃色的「你的 ID」，即可複製邀請連結，傳給對手即可一鍵連線。</li>
+                </ul>
+
+                <h3 style="color: #3498db; margin-top: 0; border-bottom: 1px solid rgba(52, 152, 219, 0.3); padding-bottom: 5px;">🖱️ 基礎操作 (對戰中)</h3>
+                <ul style="margin-top: 5px; margin-bottom: 20px;">
+                    <li><b>移動卡片</b>：直接拖曳卡片到任何區域。拖曳放回牌組時，會跳出「置頂/置底」選單。</li>
+                    <li><b>疊牌拖曳</b>：對著場上的卡片<b>長按不放（約0.3秒）</b>直到發出黃光，即可將整疊卡片一起拖曳。</li>
+                    <li><b>橫置 / 直立</b>：單擊卡片。</li>
+                    <li><b>翻面</b>：手機上可透過快速雙擊卡片翻面。</li>
+                    <li><b>檢索區域</b>：對著「牌組、生命區、場外、移除區、場上卡槽」<b>點擊右鍵（手機為長按）</b>，即可開啟彈出視窗，查看或檢索裡面的卡片。</li>
+                    <li><b>調整 BP</b>：點擊前線卡槽右下角的「⚔️ BP」標籤，即可開啟數值增減面板。</li>
+                </ul>
+
+                <h3 style="color: #9b59b6; margin-top: 0; border-bottom: 1px solid rgba(155, 89, 182, 0.3); padding-bottom: 5px;">⌨️ 鍵盤快捷鍵 (滑鼠懸停於卡片上時)</h3>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 5px; margin-top: 10px; margin-bottom: 20px;">
+                    <div><kbd style="background:#333;padding:2px 6px;border-radius:4px;border:1px solid #777;">F</kbd>：翻面</div>
+                    <div><kbd style="background:#333;padding:2px 6px;border-radius:4px;border:1px solid #777;">R</kbd>：橫置 (懸停牌組為<b>洗牌</b>)</div>
+                    <div><kbd style="background:#333;padding:2px 6px;border-radius:4px;border:1px solid #777;">T</kbd> / <kbd style="background:#333;padding:2px 6px;border-radius:4px;border:1px solid #777;">B</kbd>：放回牌組 頂 / 底</div>
+                    <div><kbd style="background:#333;padding:2px 6px;border-radius:4px;border:1px solid #777;">C</kbd>：移至手牌</div>
+                    <div><kbd style="background:#333;padding:2px 6px;border-radius:4px;border:1px solid #777;">V</kbd>：移至場外</div>
+                    <div><kbd style="background:#333;padding:2px 6px;border-radius:4px;border:1px solid #777;">G</kbd>：移至檢索區 (公開確認)</div>
+                    <div><kbd style="background:#333;padding:2px 6px;border-radius:4px;border:1px solid #777;">N</kbd>：移至移除區</div>
+                    <div><kbd style="background:#333;padding:2px 6px;border-radius:4px;border:1px solid #777;">D</kbd>：抽一張牌</div>
+                    <div><kbd style="background:#333;padding:2px 6px;border-radius:4px;border:1px solid #777;">Space</kbd>：結束回合</div>
+                </div>
+                
+                <h3 style="color: #2ecc71; margin-top: 0; border-bottom: 1px solid rgba(46, 204, 113, 0.3); padding-bottom: 5px;">🌐 系統與防作弊</h3>
+                <ul style="margin-top: 5px; margin-bottom: 0;">
+                    <li><b>對戰聊天室</b>：點擊畫面左上角的 💬 開啟。</li>
+                    <li><b>系統播報</b>：當你或對手將卡片放回牌組（置頂或置底）時，不論是從手牌、場上或檢索區移入，系統都會自動在聊天室發送公播訊息，確保雙方資訊透明。</li>
+                    <li><b>視角控制</b>：右下角按鈕可切換 3D/2D 視角、縮放畫面（也可使用滑鼠滾輪），點擊空白處拖曳可平移視角。</li>
+                </ul>
             </div>
         </div>
 
@@ -1735,9 +1782,12 @@
 
                         if (dropZone.id.includes('deck')) { 
                             if (originalParent && originalParent.id.includes('public')) c.classList.remove('is-flipped'); else c.classList.add('is-flipped'); 
-                            let actionTxt = (action === 'bottom-facedown' || action === 'bottom-faceup') ? "底部" : "頂部";
+                            
+                            // 自動判定放置位置並公播
+                            let isBottom = (action === 'bottom-facedown' || action === 'bottom-faceup');
+                            let actionTxt = isBottom ? "底部" : "頂部";
                             sendSystemChat(`[系統動作] 對手將卡片放置於牌組【${actionTxt}】。`);
-                        } 
+                        }
                         else if (dropZone.id.includes('public') || dropZone.id.includes('modal-public')) c.classList.remove('is-flipped');
                         
                         if (dropZone.id.includes('outside') || dropZone.id.includes('remove') || dropZone.id.includes('deck') || dropZone.id.includes('public')) {
@@ -1939,12 +1989,18 @@
         window.sendToDeck = function(sourceId, destId, toBottom) {
             let source = document.getElementById(sourceId), dest = document.getElementById(destId); 
             let cards = Array.from(source.querySelectorAll('.card')).sort((a,b) => a.getBoundingClientRect().left - b.getBoundingClientRect().left);
-            if(toBottom) cards.reverse().forEach(c => { dest.insertBefore(c, dest.firstChild); c.classList.add('is-flipped'); c.classList.remove('rest'); c.style.position = 'absolute'; });
-            else cards.forEach(c => { dest.appendChild(c); c.classList.add('is-flipped'); c.classList.remove('rest'); c.style.position = 'absolute'; });
+            
+            if(toBottom) {
+                cards.reverse().forEach(c => { dest.insertBefore(c, dest.firstChild); c.classList.add('is-flipped'); c.classList.remove('rest'); c.style.position = 'absolute'; });
+            } else {
+                cards.forEach(c => { dest.appendChild(c); c.classList.add('is-flipped'); c.classList.remove('rest'); c.style.position = 'absolute'; });
+            }
+            
             recalcStacking(dest); recalcStacking(source); updateSlotCounts(); broadcastMyState();
             
+            // 全域公播訊息
             let actionTxt = toBottom ? "底部" : "頂部";
-            sendSystemChat(`[系統動作] 對手將檢索區的卡片放回牌組【${actionTxt}】。`);
+            sendSystemChat(`[系統動作] 對手將卡片放回牌組【${actionTxt}】。`);
         };
 
         const modal = document.getElementById('search-modal'), modalContainer = document.getElementById('modal-cards-container'), modalTitle = document.getElementById('modal-title');
@@ -2031,7 +2087,20 @@
             }
             modal.style.display = 'none'; currentModalSourceSlot = null; updateSlotCounts(); broadcastMyState();
         });
-
+// README 說明書的開關事件
+        document.getElementById('btn-show-readme').addEventListener('click', () => {
+            document.getElementById('readme-modal').style.display = 'flex';
+        });
+        document.getElementById('close-readme-btn').addEventListener('click', () => {
+            document.getElementById('readme-modal').style.display = 'none';
+        });
+        // 點擊 Modal 半透明背景也可關閉
+        document.getElementById('readme-modal').addEventListener('click', (e) => {
+            if (e.target.id === 'readme-modal') {
+                document.getElementById('readme-modal').style.display = 'none';
+            }
+        });
+        
     </script>
 </body>
 </html>
