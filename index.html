@@ -641,6 +641,9 @@
                 updateDeckSelector();
             }
         });
+
+        document.getElementById('btn-new-deck').addEventListener('click', () => {
+            let newName = prompt("請輸入新牌組的名稱：");
             if (newName && !allDecks[newName]) {
                 saveAllDecks(); allDecks[newName] = { main: [], ap: [] }; currentDeckName = newName; 
                 myDeckData = allDecks[currentDeckName].main; myApData = allDecks[currentDeckName].ap;
@@ -1152,15 +1155,9 @@
                 setupConnection(connectTimeout); 
             } 
         });
-        // 並將 setupConnection 修改為接收參數：
         function setupConnection(timeoutId) {
             conn.on('open', () => {
-                if(timeoutId) clearTimeout(timeoutId); // 連線成功，解除逾時警報
-                isConnected = true; showSysMsg("✅ 連線成功！");
-                // ... [保留原本邏輯] ...
-
-        function setupConnection() {
-            conn.on('open', () => {
+                if(timeoutId) clearTimeout(timeoutId);
                 isConnected = true; showSysMsg("✅ 連線成功！");
                 window.history.replaceState({}, document.title, window.location.pathname); 
                 
@@ -1626,6 +1623,7 @@
                             }, 50); // 約 20 FPS 的同步率，非常順暢且不卡頓
                         }
                     }
+                }
 
                 function onEnd(event) {
                     document.removeEventListener('mousemove', onMove); document.removeEventListener('mouseup', onEnd);
