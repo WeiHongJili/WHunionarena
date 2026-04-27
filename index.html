@@ -1978,6 +1978,10 @@
                     
                     updateSlotCounts();
                     broadcastMyState();
+                    
+                    // 【新增】：快捷鍵操作也要觸發全域公播訊息
+                    let actionTxt = (key === 'b') ? "底部" : "頂部";
+                    sendSystemChat(`[系統動作] 對手將卡片放回牌組【${actionTxt}】。`);
                 }
 
                 if(key === 'c' || key === 'v' || key === 'g' || key === 'n') {
