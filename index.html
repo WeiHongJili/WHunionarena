@@ -1281,8 +1281,18 @@
             oppCardsElements.forEach(c => { if(c && c.parentNode) c.remove(); });
             document.querySelectorAll('.card').forEach(c => c.remove());
 
-            document.querySelectorAll('.slot, .hand-area, .look-area').forEach(el => {
+            // 1. 手牌區與檢索區可以直接清空
+            document.querySelectorAll('.hand-area, .look-area').forEach(el => {
                 el.innerHTML = ''; 
+            });
+            
+            // 2. 針對卡槽(slot)，只移除殘留的卡片，嚴格保留你的標記與 BP 元件
+            document.querySelectorAll('.slot').forEach(slot => {
+                Array.from(slot.children).forEach(child => {
+                    if (!child.classList.contains('marker') && !child.classList.contains('bp-tracker') && !child.classList.contains('bp-badge')) {
+                        child.remove();
+                    }
+                });
             });
 
             document.querySelectorAll('.slot.marked').forEach(s => s.classList.remove('marked'));
