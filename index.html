@@ -11,6 +11,8 @@
     <link rel="manifest" href="manifest.json">
     <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
     <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700;900&display=swap');
+        
         :root {
             --card-h: 170px; 
             --card-w: calc(var(--card-h) * 0.714); 
@@ -22,7 +24,7 @@
             background-color: #000; margin: 0; 
             position: fixed; top: 0; left: 0; right: 0; bottom: 0; 
             overflow: hidden; overscroll-behavior: none; 
-            font-family: '微軟正黑體', sans-serif; 
+            font-family: 'Noto Sans TC', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", sans-serif; 
             color: white; touch-action: none; -webkit-user-select: none; user-select: none; 
         }
 
@@ -174,6 +176,18 @@
         
         .card.dragging { --scale: 1.15; --rot: 5deg; z-index: 999999 !important; transition: none; box-shadow: -20px 40px 50px rgba(0,0,0,0.6); }
         .card.stack-glowing { box-shadow: 0 0 15px 5px #f1c40f !important; }
+        .card.active-touch { z-index: 600 !important; }
+        .card.active-touch::before {
+            content: ''; position: absolute;
+            top: -4px; left: -4px; right: -4px; bottom: -4px;
+            background: linear-gradient(135deg, #e74c3c, #8e44ad, #3498db, #e74c3c);
+            background-size: 300% 300%;
+            border-radius: 8px; z-index: -1;
+            animation: metallic-glow 2.5s ease infinite;
+            box-shadow: 0 0 15px rgba(231, 76, 60, 0.5), 0 0 15px rgba(52, 152, 219, 0.5);
+            pointer-events: none;
+        }
+        @keyframes metallic-glow { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
         .card.rest { --rot: 90deg !important; }
         .card.in-life { --rot: -90deg !important; }
 
@@ -226,7 +240,7 @@
         #overlay-value { font-size: 50px; color: #f1c40f; font-weight: 900; text-shadow: 0 0 20px rgba(241, 196, 15, 0.8); margin: 10px 0; white-space: nowrap;}
 
         @media (max-width: 1100px) {
-            #hotkey-guide { display: none !important; }
+            #hotkey-guide { transform: translateY(-50%) scale(0.85); transform-origin: left center; display: flex !important; }
         }
         
         @media (max-width: 850px) {
@@ -332,18 +346,23 @@
         <div id="card-magnifier"><img src="" id="magnifier-img"></div>
 
         <div id="game-scene">
-            <div id="hotkey-guide">
-                <div class="hk-title">⌨️ 快捷鍵指南</div>
-                <div class="hk-item"><span>F</span> 翻面</div>
-                <div class="hk-item"><span>R</span> 橫置 / 洗牌</div>
-                <div class="hk-item"><span>T</span> 放回牌組頂</div>
-                <div class="hk-item"><span>B</span> 放回牌組底</div>
-                <div class="hk-item"><span>C</span> 移至手牌</div>
-                <div class="hk-item"><span>V</span> 移至場外</div>
-                <div class="hk-item"><span>G</span> 移至檢索區</div>
-                <div class="hk-item"><span>N</span> 移至移除區</div>
-                <div class="hk-item"><span>D</span> 抽一張牌</div>
-                <div class="hk-item"><span>Space</span> 結束回合</div>
+            <div id="hotkey-guide" style="pointer-events: auto; background: rgba(20,25,30,0.85); border: 1px solid #34495e; box-shadow: 0 10px 30px rgba(0,0,0,0.8);">
+                <div class="hk-title" style="color: #ecf0f1; border-bottom: 1px solid #34495e; font-size: 13px; margin-bottom: 8px;">觸控與快捷操作<br><span style="font-size: 11px; color: #7f8c8d; font-weight: normal;">(點選卡片後操作)</span></div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+                    <button class="ctrl-btn" onclick="executeTouchAction('f')" style="background: #2c3e50; border: 1px solid #455a64; color: #ecf0f1; display: flex; align-items: center; justify-content: center; gap: 6px;"><span style="color: #3498db; font-family: monospace; font-weight: 900; font-size: 15px;">F</span> 翻面</button>
+                    <button class="ctrl-btn" onclick="executeTouchAction('r')" style="background: #2c3e50; border: 1px solid #455a64; color: #ecf0f1; display: flex; align-items: center; justify-content: center; gap: 6px;"><span style="color: #3498db; font-family: monospace; font-weight: 900; font-size: 15px;">R</span> 橫置</button>
+                    <button class="ctrl-btn" onclick="executeTouchAction('t')" style="background: #2c3e50; border: 1px solid #455a64; color: #ecf0f1; display: flex; align-items: center; justify-content: center; gap: 6px;"><span style="color: #2ecc71; font-family: monospace; font-weight: 900; font-size: 15px;">T</span> 回牌頂</button>
+                    <button class="ctrl-btn" onclick="executeTouchAction('b')" style="background: #2c3e50; border: 1px solid #455a64; color: #ecf0f1; display: flex; align-items: center; justify-content: center; gap: 6px;"><span style="color: #2ecc71; font-family: monospace; font-weight: 900; font-size: 15px;">B</span> 回牌底</button>
+                    <button class="ctrl-btn" onclick="executeTouchAction('c')" style="background: #2c3e50; border: 1px solid #455a64; color: #ecf0f1; display: flex; align-items: center; justify-content: center; gap: 6px;"><span style="color: #f1c40f; font-family: monospace; font-weight: 900; font-size: 15px;">C</span> 至手牌</button>
+                    <button class="ctrl-btn" onclick="executeTouchAction('v')" style="background: #2c3e50; border: 1px solid #455a64; color: #ecf0f1; display: flex; align-items: center; justify-content: center; gap: 6px;"><span style="color: #e67e22; font-family: monospace; font-weight: 900; font-size: 15px;">V</span> 至場外</button>
+                    <button class="ctrl-btn" onclick="executeTouchAction('g')" style="background: #2c3e50; border: 1px solid #455a64; color: #ecf0f1; display: flex; align-items: center; justify-content: center; gap: 6px;"><span style="color: #9b59b6; font-family: monospace; font-weight: 900; font-size: 15px;">G</span> 至檢索</button>
+                    <button class="ctrl-btn" onclick="executeTouchAction('n')" style="background: #2c3e50; border: 1px solid #455a64; color: #ecf0f1; display: flex; align-items: center; justify-content: center; gap: 6px;"><span style="color: #e74c3c; font-family: monospace; font-weight: 900; font-size: 15px;">N</span> 至移除</button>
+                </div>
+                <div style="border-top: 1px solid #34495e; margin: 10px 0 8px 0;"></div>
+                <div style="display: flex; flex-direction: column; gap: 8px;">
+                    <button class="ctrl-btn" onclick="executeGlobalTouch('d')" style="background: #1abc9c; border: 1px solid #16a085; color: #fff; font-weight: bold;"><span style="color: #000; font-family: monospace; font-weight: 900; margin-right: 5px;">D</span> 抽一張牌</button>
+                    <button class="ctrl-btn" onclick="executeGlobalTouch('shuffle')" style="background: #34495e; border: 1px solid #7f8c8d; color: #fff; font-weight: bold;"><span style="color: #f1c40f; font-family: monospace; font-weight: 900; margin-right: 5px;">R</span> 牌組洗牌</button>
+                </div>
             </div>
 
             <div id="drop-menu">
@@ -517,16 +536,20 @@
                     <li><b>調整 BP</b>：點擊前線卡槽右下角的「⚔️ BP」標籤，即可開啟數值增減面板。</li>
                 </ul>
 
-                <h3 style="color: #9b59b6; margin-top: 0; border-bottom: 1px solid rgba(155, 89, 182, 0.3); padding-bottom: 5px;">⌨️ 鍵盤快捷鍵 (滑鼠懸停於卡片上時)</h3>
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 5px; margin-top: 10px; margin-bottom: 20px;">
-                    <div><kbd style="background:#333;padding:2px 6px;border-radius:4px;border:1px solid #777;">F</kbd>：翻面</div>
-                    <div><kbd style="background:#333;padding:2px 6px;border-radius:4px;border:1px solid #777;">R</kbd>：橫置 (懸停牌組為<b>洗牌</b>)</div>
-                    <div><kbd style="background:#333;padding:2px 6px;border-radius:4px;border:1px solid #777;">T</kbd> / <kbd style="background:#333;padding:2px 6px;border-radius:4px;border:1px solid #777;">B</kbd>：放回牌組 頂 / 底</div>
-                    <div><kbd style="background:#333;padding:2px 6px;border-radius:4px;border:1px solid #777;">C</kbd>：移至手牌</div>
-                    <div><kbd style="background:#333;padding:2px 6px;border-radius:4px;border:1px solid #777;">V</kbd>：移至場外</div>
-                    <div><kbd style="background:#333;padding:2px 6px;border-radius:4px;border:1px solid #777;">G</kbd>：移至檢索區 (公開確認)</div>
-                    <div><kbd style="background:#333;padding:2px 6px;border-radius:4px;border:1px solid #777;">N</kbd>：移至移除區</div>
-                    <div><kbd style="background:#333;padding:2px 6px;border-radius:4px;border:1px solid #777;">D</kbd>：抽一張牌</div>
+                <h3 style="color: #9b59b6; margin-top: 0; border-bottom: 1px solid rgba(155, 89, 182, 0.3); padding-bottom: 5px;">⌨️ 快捷鍵 & 👆 觸控面板操作</h3>
+                <ul style="margin-top: 5px; margin-bottom: 10px;">
+                    <li><b>電腦版玩家</b>：將滑鼠懸停於卡片上，並按下對應鍵盤按鍵。</li>
+                    <li><b>平板 / 手機版玩家</b>：先<b>點擊卡片</b>選取（卡片會亮起綠框），再點擊畫面左側的<b>觸控面板按鈕</b>執行動作。</li>
+                </ul>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 5px; margin-bottom: 20px;">
+                    <div><kbd style="background:#333;padding:2px 6px;border-radius:4px;border:1px solid #777;">F</kbd> 或 面板：翻面</div>
+                    <div><kbd style="background:#333;padding:2px 6px;border-radius:4px;border:1px solid #777;">R</kbd> 或 面板：橫置 / 洗牌</div>
+                    <div><kbd style="background:#333;padding:2px 6px;border-radius:4px;border:1px solid #777;">T</kbd> / <kbd style="background:#333;padding:2px 6px;border-radius:4px;border:1px solid #777;">B</kbd> 或 面板：放回牌組 頂 / 底</div>
+                    <div><kbd style="background:#333;padding:2px 6px;border-radius:4px;border:1px solid #777;">C</kbd> 或 面板：移至手牌</div>
+                    <div><kbd style="background:#333;padding:2px 6px;border-radius:4px;border:1px solid #777;">V</kbd> 或 面板：移至場外</div>
+                    <div><kbd style="background:#333;padding:2px 6px;border-radius:4px;border:1px solid #777;">G</kbd> 或 面板：移至檢索區</div>
+                    <div><kbd style="background:#333;padding:2px 6px;border-radius:4px;border:1px solid #777;">N</kbd> 或 面板：移至移除區</div>
+                    <div><kbd style="background:#333;padding:2px 6px;border-radius:4px;border:1px solid #777;">D</kbd> 或 面板：抽一張牌</div>
                     <div><kbd style="background:#333;padding:2px 6px;border-radius:4px;border:1px solid #777;">Space</kbd>：結束回合</div>
                 </div>
                 
@@ -982,7 +1005,8 @@
                e.target.closest('.hud-sidebar') || e.target.closest('.hud-top') || e.target.closest('.hud-bottom') || 
                e.target.closest('#chat-wrapper') || e.target.closest('#hotkey-guide') || 
                e.target.closest('#search-modal') || e.target.closest('#mulligan-modal')) return; 
-               
+               document.querySelectorAll('.active-touch').forEach(el => el.classList.remove('active-touch'));
+               window.activeCard = null;
             isCamDragging = true;
             let clientX = e.type.includes('touch') ? e.touches[0].clientX : e.clientX;
             let clientY = e.type.includes('touch') ? e.touches[0].clientY : e.clientY;
@@ -1624,6 +1648,11 @@
 
                 event.stopPropagation();
                 
+                // 【觸控優化】：標記目前被點選的卡片
+                document.querySelectorAll('.active-touch').forEach(el => el.classList.remove('active-touch'));
+                cardElement.classList.add('active-touch');
+                window.activeCard = cardElement;
+                
                 let isDragging = false, isStackDrag = false, stackCardsData = [];
                 let originalParent = cardElement.parentElement;
                 
@@ -2020,6 +2049,97 @@
         document.getElementById('btn-bottom-facedown').addEventListener('click', () => { if(window.pendingDrop) finalizeDrop(window.pendingDrop.cards, window.pendingDrop.dropZone, 'bottom-facedown', window.pendingDrop.originalParent, window.pendingDrop.endX); document.getElementById('drop-menu').style.display = 'none'; window.pendingDrop = null; });
         document.getElementById('btn-bottom-faceup').addEventListener('click', () => { if(window.pendingDrop) finalizeDrop(window.pendingDrop.cards, window.pendingDrop.dropZone, 'bottom-faceup', window.pendingDrop.originalParent, window.pendingDrop.endX); document.getElementById('drop-menu').style.display = 'none'; window.pendingDrop = null; });
         document.getElementById('btn-cancel-drop').addEventListener('click', () => { if(window.pendingDrop) finalizeDrop(window.pendingDrop.cards, null, 'cancel', window.pendingDrop.originalParent, window.pendingDrop.endX); document.getElementById('drop-menu').style.display = 'none'; window.pendingDrop = null; });
+        // ===== 觸控面板操作功能 =====
+        window.executeTouchAction = function(key) {
+            let targetCard = window.activeCard;
+            if (!targetCard) return showSysMsg("⚠️ 請先點選一張要操作的卡片");
+            if (targetCard.parentElement && targetCard.parentElement.id.includes('opp-')) return showSysMsg("⚠️ 無法操作對手的卡片");
+
+            if (key === 'f') {
+                targetCard.classList.toggle('is-flipped'); 
+                broadcastMyState(); 
+                if(typeof playSound === 'function') playSound('turn'); 
+            }
+            else if (key === 'r') {
+                let pId = targetCard.parentElement ? targetCard.parentElement.id : '';
+                let noRestZones = ['hand', 'look', 'outside', 'deck', 'remove', 'public'];
+                if (!targetCard.classList.contains('in-life') && !noRestZones.some(z => pId.includes(z))) {
+                    targetCard.classList.toggle('rest'); broadcastMyState(); 
+                }
+            }
+            else if (key === 'b' || key === 't') {
+                let dest = document.getElementById('my-deck-area');
+                if (key === 'b') dest.insertBefore(targetCard, dest.firstChild); 
+                else dest.appendChild(targetCard); 
+                
+                targetCard.classList.add('is-flipped');
+                targetCard.classList.remove('rest', 'in-life');
+                targetCard.style.setProperty('--tilt', '0deg');
+                
+                let prevParent = targetCard.parentElement;
+                recalcStacking(dest);
+                if(prevParent) recalcStacking(prevParent);
+                
+                updateSlotCounts(); broadcastMyState();
+                
+                let actionTxt = (key === 'b') ? "底部" : "頂部";
+                sendSystemChat(`[系統動作] 對手將卡片放回牌組【${actionTxt}】。`);
+            }
+            else if (key === 'c' || key === 'v' || key === 'g' || key === 'n') {
+                let destId = 'my-outside-area';
+                if (key === 'c') destId = 'my-hand-area';
+                else if (key === 'g') destId = 'my-look-area';
+                else if (key === 'n') destId = 'my-remove-area'; 
+
+                let dest = document.getElementById(destId);
+                let prevParent = targetCard.parentElement;
+                dest.appendChild(targetCard); 
+                targetCard.classList.remove('rest', 'is-flipped');
+                targetCard.style.setProperty('--tilt', '0deg');
+
+                if(dest.id.includes('hand') || dest.id.includes('look')) {
+                    targetCard.style.position = 'relative'; targetCard.style.zIndex = ''; 
+                } else { 
+                    targetCard.style.position = 'absolute'; 
+                    applyStackingStyle(targetCard, dest, Array.from(dest.querySelectorAll('.card')).indexOf(targetCard)); 
+                }
+                recalcStacking(dest);
+                if(prevParent) recalcStacking(prevParent);
+                updateSlotCounts(); broadcastMyState();
+                
+                if (key === 'c') playSound('draw'); else playSound('play');
+            }
+        };
+
+        window.executeGlobalTouch = function(action) {
+            let deckArea = document.getElementById('my-deck-area');
+            let cards = Array.from(deckArea.querySelectorAll('.card'));
+            
+            if (action === 'd' && cards.length > 0) {
+                let cardToDraw = cards[cards.length - 1]; 
+                let handArea = document.getElementById('my-hand-area');
+                handArea.appendChild(cardToDraw);
+                cardToDraw.style.position = 'relative'; cardToDraw.style.left = '0'; cardToDraw.style.top = '0'; cardToDraw.style.transform = 'none';
+                cardToDraw.classList.remove('is-flipped', 'rest', 'in-life'); cardToDraw.style.zIndex = '';
+                recalcStacking(deckArea); updateSlotCounts(); broadcastMyState(); 
+                
+                playSound('draw'); showCenterAlert('', '抽牌', 'Draw!', '#2ecc71');
+            } else if (action === 'shuffle' && cards.length > 1) {
+                cards.forEach(c => {
+                    let rx = (Math.random() - 0.5) * 60; let ry = (Math.random() - 0.5) * 60; let rr = (Math.random() - 0.5) * 45;
+                    c.style.transition = 'transform 0.2s ease-out';
+                    c.style.transform = `translate(${rx}px, ${ry}px) rotate(${rr}deg)`;
+                });
+                showCenterAlert('🔀', '洗牌中', 'Shuffling', '#3498db');
+                if(conn && isConnected) conn.send({ type: 'SHUFFLE_DECK' });
+                
+                setTimeout(() => {
+                    cards.forEach(c => c.style.transform = '');
+                    shuffleDOMDeck(deckArea); broadcastMyState();
+                }, 400);
+            }
+        };
+        // ============================
 
         window.sendToDeck = function(sourceId, destId, toBottom) {
             let source = document.getElementById(sourceId), dest = document.getElementById(destId); 
