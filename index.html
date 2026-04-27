@@ -1220,7 +1220,11 @@
                         screen.orientation.lock('landscape').catch(err => console.log('視覺提示已啟動'));
                     }
 
-                    resetBoard(); // 強制清盤
+                    // 【修改】：移除無差別的 resetBoard()，改為「只清空我方區域」，保護已經在背景載入的對手卡片
+                    myCardsElements.forEach(c => { if(c && c.parentNode) c.remove(); });
+                    myCardsElements = [];
+                    document.querySelectorAll('#my-board .card, #my-hand-area .card, #my-look-area .card').forEach(c => c.remove());
+                    
                     document.getElementById('builder-scene').style.display = 'none'; 
                     document.getElementById('game-scene').style.display = 'flex';
                     setTimeout(resetCam, 100); 
