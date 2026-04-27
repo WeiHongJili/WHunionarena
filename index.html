@@ -1234,7 +1234,21 @@
                 };
             });
             conn.on('data', data => {
-                if(data.type === 'START_GAME') { showSysMsg("對手已進入盤面！"); initOpponentBoard(data.deck, data.ap); }
+                if(data.type === 'START_GAME') { 
+                    // 1. 顯示系統訊息提示
+                    showSysMsg("🔔 對手已進入盤面，正在等你就緒！"); 
+                    
+                    // 2. 初始化對手的盤面資料（在背景完成，不會干擾你目前的構築畫面）
+                    initOpponentBoard(data.deck, data.ap); 
+                    
+                    // 3. 更新開始按鈕的文字與樣式，提醒玩家對手正在等待
+                    let startBtn = document.getElementById('start-game-btn');
+                    if (startBtn) {
+                        startBtn.innerText = "⚔️ 對手已就緒，點擊進入對戰";
+                        startBtn.style.background = "#f39c12"; // 變更為橘色以示提醒
+                        startBtn.style.boxShadow = "0 0 15px #f39c12";
+                    }
+                }
                 else if(data.type === 'SYNC_BOARD') applyOpponentSync(data);
                 else if(data.type === 'FLIP_CARD') applyOpponentFlip(data.id);
                 else if(data.type === 'CHAT_MSG') appendChatMsg(data.isSystem ? 'system' : 'opp', data.text);
@@ -1532,6 +1546,9 @@
             let apSlots = document.querySelectorAll('#opp-ap-area .slot');
             apSlots.forEach((slot, i) => { slot.innerHTML = ''; let apData = apDeck[i] || apDeck[0]; let apEl = createCardDOM(apData, `p_ap_${i}`, false); apEl.classList.add('ap-card'); oppCardsElements.push(apEl); slot.appendChild(apEl); });
             updateSlotCounts();
+            
+            // 【新增】：確保資料初始化後，也向對手同步一次目前狀態 (加上連線防呆)
+            if (isConnected) broadcastMyState(); 
         }
 
         function drawInitialHand() {
