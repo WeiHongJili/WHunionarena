@@ -1147,14 +1147,31 @@
 
         let myRoomId = Math.floor(100000 + Math.random() * 900000).toString();
         
-        // ⚡ 恢復最穩定的基礎連線設定 (確保同網段 LAN 與一般網路絕對能連)
+        // ⚡ 啟用強制中繼 (TURN 伺服器) 來突破嚴格的防火牆
         let peer = new Peer(myRoomId, { 
             secure: true,
             pingInterval: 5000, 
             config: { 
                 'iceServers': [ 
+                    // 1. 先嘗試 Google 的免費 STUN (基本打洞)
                     { urls: 'stun:stun.l.google.com:19302' }, 
-                    { urls: 'stun:stun1.l.google.com:19302' }
+                    { urls: 'stun:stun1.l.google.com:19302' },
+                    // 2. 如果 STUN 失敗，自動啟用 metered.ca 的 TURN (強制中繼)
+                    { 
+                        urls: 'turn:openrelay.metered.ca:80', 
+                        username: 'openrelayproject', 
+                        credential: 'openrelayproject' 
+                    },
+                    { 
+                        urls: 'turn:openrelay.metered.ca:443', 
+                        username: 'openrelayproject', 
+                        credential: 'openrelayproject' 
+                    },
+                    { 
+                        urls: 'turn:openrelay.metered.ca:443?transport=tcp', 
+                        username: 'openrelayproject', 
+                        credential: 'openrelayproject' 
+                    }
                 ] 
             } 
         });
