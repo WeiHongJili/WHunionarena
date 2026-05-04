@@ -1147,26 +1147,18 @@
 
         let myRoomId = Math.floor(100000 + Math.random() * 900000).toString();
         
-        // ⚡ 啟用強制中繼 (TURN 伺服器) 來突破嚴格的防火牆
+        // ⚡ 強化版穿透：加入 Cloudflare 與 Twilio 節點，並強制 TCP 備援來突破宿舍防火牆
         let peer = new Peer(myRoomId, { 
             secure: true,
             pingInterval: 5000, 
             config: { 
                 'iceServers': [ 
-                    // 1. 先嘗試 Google 的免費 STUN (基本打洞)
+                    // 1. 強化 STUN 打洞 (Google + Cloudflare + Twilio)
                     { urls: 'stun:stun.l.google.com:19302' }, 
                     { urls: 'stun:stun1.l.google.com:19302' },
-                    // 2. 如果 STUN 失敗，自動啟用 metered.ca 的 TURN (強制中繼)
-                    { 
-                        urls: 'turn:openrelay.metered.ca:80', 
-                        username: 'openrelayproject', 
-                        credential: 'openrelayproject' 
-                    },
-                    { 
-                        urls: 'turn:openrelay.metered.ca:443', 
-                        username: 'openrelayproject', 
-                        credential: 'openrelayproject' 
-                    },
+                    { urls: 'stun:stun.cloudflare.com:3478' },
+                    { urls: 'stun:global.stun.twilio.com:3478?transport=tcp' },
+                    // 2. 免費 TURN 中繼 (強制走 443 TCP 偽裝成一般網頁流量)
                     { 
                         urls: 'turn:openrelay.metered.ca:443?transport=tcp', 
                         username: 'openrelayproject', 
