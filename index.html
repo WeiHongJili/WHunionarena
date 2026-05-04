@@ -1147,23 +1147,14 @@
 
         let myRoomId = Math.floor(100000 + Math.random() * 900000).toString();
         
-        // ⚡ 強化版穿透：加入 Cloudflare 與 Twilio 節點，並強制 TCP 備援來突破宿舍防火牆
+        // ⚡ 恢復最穩定的基礎連線設定 (確保同網段 LAN 與一般網路絕對能連)
         let peer = new Peer(myRoomId, { 
             secure: true,
             pingInterval: 5000, 
             config: { 
                 'iceServers': [ 
-                    // 1. 強化 STUN 打洞 (Google + Cloudflare + Twilio)
                     { urls: 'stun:stun.l.google.com:19302' }, 
-                    { urls: 'stun:stun1.l.google.com:19302' },
-                    { urls: 'stun:stun.cloudflare.com:3478' },
-                    { urls: 'stun:global.stun.twilio.com:3478?transport=tcp' },
-                    // 2. 免費 TURN 中繼 (強制走 443 TCP 偽裝成一般網頁流量)
-                    { 
-                        urls: 'turn:openrelay.metered.ca:443?transport=tcp', 
-                        username: 'openrelayproject', 
-                        credential: 'openrelayproject' 
-                    }
+                    { urls: 'stun:stun1.l.google.com:19302' }
                 ] 
             } 
         });
