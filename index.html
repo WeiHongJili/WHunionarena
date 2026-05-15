@@ -1147,31 +1147,14 @@
 
         let myRoomId = Math.floor(100000 + Math.random() * 900000).toString();
         
-        // ⚡ 啟用強制中繼 (TURN 伺服器) 來突破嚴格的防火牆
+        // ⚡ 暫時關閉不穩定的 TURN 中繼，僅使用 STUN 進行 P2P 連線
         let peer = new Peer(myRoomId, { 
             secure: true,
             pingInterval: 5000, 
             config: { 
                 'iceServers': [ 
-                    // 1. 先嘗試 Google 的免費 STUN (基本打洞)
                     { urls: 'stun:stun.l.google.com:19302' }, 
-                    { urls: 'stun:stun1.l.google.com:19302' },
-                    // 2. 如果 STUN 失敗，自動啟用 metered.ca 的 TURN (強制中繼)
-                    { 
-                        urls: 'turn:openrelay.metered.ca:80', 
-                        username: 'openrelayproject', 
-                        credential: 'openrelayproject' 
-                    },
-                    { 
-                        urls: 'turn:openrelay.metered.ca:443', 
-                        username: 'openrelayproject', 
-                        credential: 'openrelayproject' 
-                    },
-                    { 
-                        urls: 'turn:openrelay.metered.ca:443?transport=tcp', 
-                        username: 'openrelayproject', 
-                        credential: 'openrelayproject' 
-                    }
+                    { urls: 'stun:stun1.l.google.com:19302' }
                 ] 
             } 
         });
