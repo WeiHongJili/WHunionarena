@@ -1147,17 +1147,42 @@
 
         let myRoomId = Math.floor(100000 + Math.random() * 900000).toString();
         
-        // ⚡ 暫時關閉不穩定的 TURN 中繼，僅使用 STUN 進行 P2P 連線
+// ⚡ 啟用專屬的 TURN 中繼伺服器，突破嚴格的防火牆
         let peer = new Peer(myRoomId, { 
             secure: true,
             pingInterval: 5000, 
             config: { 
                 'iceServers': [ 
+                    // 1. 保留 Google 的免費 STUN 作為第一線嘗試
                     { urls: 'stun:stun.l.google.com:19302' }, 
-                    { urls: 'stun:stun1.l.google.com:19302' }
+                    { urls: 'stun:stun1.l.google.com:19302' },
+                    
+                    // 2. 你的專屬 Metered TURN 伺服器 (A 和 B 連線就靠這個了)
+                    { urls: "stun:stun.relay.metered.ca:80" },
+                    {
+                        urls: "turn:global.relay.metered.ca:80",
+                        username: "968921041e4bdb371cce4413",
+                        credential: "x/xElHfaL9G++EO/"
+                    },
+                    {
+                        urls: "turn:global.relay.metered.ca:80?transport=tcp",
+                        username: "968921041e4bdb371cce4413",
+                        credential: "x/xElHfaL9G++EO/"
+                    },
+                    {
+                        urls: "turn:global.relay.metered.ca:443",
+                        username: "968921041e4bdb371cce4413",
+                        credential: "x/xElHfaL9G++EO/"
+                    },
+                    {
+                        urls: "turns:global.relay.metered.ca:443?transport=tcp",
+                        username: "968921041e4bdb371cce4413",
+                        credential: "x/xElHfaL9G++EO/"
+                    }
                 ] 
             } 
         });
+
         
         let conn = null; let isConnected = false;
 
