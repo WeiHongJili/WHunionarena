@@ -251,6 +251,16 @@
             body #portrait-warning { display: flex; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.98); z-index: 999999; color: #f1c40f; font-size: 24px; font-weight: bold; justify-content: center; align-items: center; text-align: center; flex-direction: column; padding: 20px; box-sizing: border-box; }
             #app-canvas { display: none !important; }
         }
+
+        @media print {
+            body > *:not(#print-area) { display: none !important; }
+            body { background: white !important; overflow: visible !important; position: static !important; }
+            #print-area { display: block !important; width: 100%; }
+            @page { size: A4 portrait; margin: 10mm; }
+            .print-page { display: flex; flex-wrap: wrap; align-content: flex-start; justify-content: flex-start; gap: 0; page-break-after: always; width: 100%; }
+            .print-card { width: 63mm; height: 88mm; box-sizing: border-box; border: 1px dashed #999; }
+            .print-card img { width: 100%; height: 100%; object-fit: cover; }
+        }
     </style>
 </head>
 <body>
@@ -308,6 +318,7 @@
                         <button id="btn-rename-deck" class="ctrl-btn" style="background: #f39c12; color: #000;">✏️ 重新命名</button>
                         <button id="btn-new-deck" class="ctrl-btn">➕ 新增</button>
                         <button class="ctrl-btn danger" onclick="clearDeck()">清空</button>
+                        <button class="ctrl-btn" style="background: #27ae60;" onclick="generatePrintLayout()">🖨️ 列印代牌</button>
                     </div>
                     <div class="ap-deck-section">
                         <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
@@ -524,6 +535,7 @@
                     <li><b>牌組管理</b>：可透過大廳選項「新增、命名、切換、清空」多套牌組。</li>
                     <li><b>快速匯入</b>：點擊「✨ 一鍵匯入」，貼上卡片編號（以逗號或空白分隔），可快速匯入未收錄的卡片。</li>
                     <li><b>邀請對手</b>：點擊左上角黃色的「你的 ID」，即可複製邀請連結，傳給對手即可一鍵連線。</li>
+                    <li><b>列印代牌</b>：點擊大廳的「🖨️ 列印代牌」將自動排版為 63x88mm 的 A4 格式，列印時請確保「縮放比例」為 100% 或預設。</li>
                 </ul>
 
                 <h3 style="color: #3498db; margin-top: 0; border-bottom: 1px solid rgba(52, 152, 219, 0.3); padding-bottom: 5px;">🖱️ 基礎操作 (對戰中)</h3>
@@ -561,6 +573,8 @@
                 </ul>
             </div>
         </div>
+
+    <div id="print-area" style="display: none;"></div>
 
     </div> <script src="cards.js"></script>
 
@@ -2263,6 +2277,36 @@
                 document.getElementById('readme-modal').style.display = 'none';
             }
         });
+
+        window.generatePrintLayout = function() {
+            let allPrintCards = [...myDeckData, ...myApData];
+            if (allPrintCards.length === 0) return alert("牌組目前是空的，無法列印喔！");
+            
+            let printArea = document.getElementById('print-area');
+            printArea.innerHTML = ''; 
+            printArea.style.display = 'block';
+            
+            const CARDS_PER_PAGE = 9;
+            for (let i = 0; i < allPrintCards.length; i += CARDS_PER_PAGE) {
+                let pageCards = allPrintCards.slice(i, i + CARDS_PER_PAGE);
+                let pageDiv = document.createElement('div'); 
+                pageDiv.className = 'print-page';
+                
+                pageCards.forEach(card => {
+                    let cardDiv = document.createElement('div'); 
+                    cardDiv.className = 'print-card';
+                    cardDiv.innerHTML = `<img src="${card.imageUrl}" loading="eager">`;
+                    pageDiv.appendChild(cardDiv);
+                });
+                printArea.appendChild(pageDiv);
+            }
+
+            showSysMsg("🖨️ 正在產生列印版面...");
+            setTimeout(() => {
+                window.print();
+                setTimeout(() => { printArea.style.display = 'none'; printArea.innerHTML = ''; }, 1000);
+            }, 800);
+        };
         
     </script>
 </body>
