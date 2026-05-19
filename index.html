@@ -256,8 +256,10 @@
             body > *:not(#print-area) { display: none !important; }
             html, body { background: white !important; overflow: visible !important; position: static !important; width: auto !important; height: auto !important; }
             #print-area { display: block !important; width: 100%; }
-            @page { size: A4 portrait; margin: 10mm; }
-            .print-page { display: flex; flex-wrap: wrap; align-content: flex-start; justify-content: flex-start; gap: 0; page-break-after: always; width: 100%; }
+            /* 1. 將邊距縮小到 5mm，讓中間有空間可以放間隙 */
+            @page { size: A4 portrait; margin: 5mm; }
+            /* 2. 加入 gap: 3mm 產生間隙，並讓整張紙的卡片置中 (justify-content: center) */
+            .print-page { display: flex; flex-wrap: wrap; align-content: flex-start; justify-content: center; gap: 3mm; page-break-after: always; width: 100%; padding-top: 5mm; }
             .print-card { width: 63mm; height: 88mm; box-sizing: border-box; border: 1px dashed #999; }
             .print-card img { width: 100%; height: 100%; object-fit: cover; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
         }
